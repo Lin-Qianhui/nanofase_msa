@@ -481,4 +481,4 @@ module RiverReachModule
         end if
     end function
 
-end module
+end module RiverReachModule

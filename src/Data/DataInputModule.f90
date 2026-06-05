@@ -1196,7 +1196,7 @@ module DataInputModule
         end if
     end function
 
-end module
+end module DataInputModule
 
 
 ! AUDITING TO DO:

@@ -174,4 +174,4 @@ program main
     call LOGR%add("Wall time taken to run simulation (s): " // &
                   trim(str(real(finish_wall - start_wall) / real(clock_rate))), COLOR_YELLOW)
 
-end program
+end program main

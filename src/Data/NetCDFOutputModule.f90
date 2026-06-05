@@ -1066,4 +1066,4 @@ module NetCDFOutputModule
         call me%nc%close()
     end subroutine
 
-end module
+end module NetCDFOutputModule

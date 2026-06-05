@@ -237,4 +237,4 @@ module ReactorModule
         C_particle = C_mass / (rho_particle*(4.0_dp/3.0_dp)*C%pi*(d/2)**3)
     end function
     
-end module
+end module ReactorModule

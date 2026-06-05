@@ -627,4 +627,4 @@ module NetCDFAggregatedOutputModule
         deallocate(me%output_soil__bulk_density)
     end subroutine
 
-end module
+end module NetCDFAggregatedOutputModule

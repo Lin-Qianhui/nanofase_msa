@@ -572,4 +572,4 @@ module AbstractBedSedimentModule
         m_np_buried = me%m_np(C%nSedimentLayers+3,:,:,:)
     end function
 
-end module
+end module AbstractBedSedimentModule

@@ -131,4 +131,4 @@ module AbstractEnvironmentModule
 
     end interface
 
-end module
+end module AbstractEnvironmentModule

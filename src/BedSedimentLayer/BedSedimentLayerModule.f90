@@ -423,4 +423,4 @@ module BedSedimentLayerModule
         print *, "Total: ", me%M_f_layer()                      ! print out mass of FS in layer [kg/m2]
     end subroutine
 
-end module
+end module BedSedimentLayerModule

@@ -562,4 +562,4 @@ module GlobalsModule
         real(dp) :: mu_w
         mu_w = (2.414e-5_dp * 10.0_dp**(247.8_dp/((T+273.15_dp)-140.0_dp)))
     end function
-end module
+end module GlobalsModule

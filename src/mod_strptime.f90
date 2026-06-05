@@ -15,4 +15,4 @@ module mod_strptime
         dt = datetime(year, month, day)
     end function
     
-end module
+end module mod_strptime

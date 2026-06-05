@@ -82,4 +82,4 @@ module PointSourceModule
         end if
     end subroutine
 
-end module
+end module PointSourceModule

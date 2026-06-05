@@ -51,4 +51,4 @@ module AbstractBiotaModule
         type(Result)            :: rslt
     end function
 
-end module
+end module AbstractBiotaModule

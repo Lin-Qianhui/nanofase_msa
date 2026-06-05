@@ -469,4 +469,4 @@ module UtilModule
             heteroaggregated = sum(x(:,1,3:), dim=1)
         end function
 
-end module
+end module UtilModule

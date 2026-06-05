@@ -1,0 +1,437 @@
+# This file is generated automatically. DO NOT EDIT!
+
+main :  \
+	example.o
+
+add_and_subtract :  \
+	add_and_subtract.o \
+	datetime_module.o
+
+run_tests :  \
+	datetime_module.o \
+	datetime_tests.o
+
+example_usage :  \
+	example_usage.o \
+	ErrorCriteria.o \
+	ErrorHandler.o \
+	ErrorInstance.o \
+	Result.o
+
+trace :  \
+	trace.o \
+	ErrorCriteria.o \
+	ErrorHandler.o \
+	ErrorInstance.o \
+	Result.o
+
+run_test :  \
+	ErrorCriteria.o \
+	ErrorHandler.o \
+	ErrorInstance.o \
+	Result.o \
+	assert.o \
+	run_tests.o \
+	tests_ErrorCriteria.o \
+	tests_ErrorInstance.o \
+	tests_Result.o \
+	util.o
+
+example_read :  \
+	read.o \
+	mo_netcdf.o \
+	mo_types.o
+
+example_write :  \
+	write.o \
+	mo_netcdf.o \
+	mo_types.o
+
+test_putdata :  \
+	mo_netcdf.o \
+	mo_types.o \
+	mo_assert.o \
+	mo_string.o \
+	mo_testhelper.o \
+	test_setdata.o
+
+AbstractBedSedimentModule.o :  \
+	AbstractBedSedimentLayerModule.o \
+	FineSedimentModule.o \
+	GlobalsModule.o \
+	ErrorInstance.o \
+	Result.o \
+	mo_netcdf.o
+
+BedSedimentModule.o :  \
+	AbstractBedSedimentModule.o \
+	BedSedimentLayerModule.o \
+	FineSedimentModule.o \
+	GlobalsModule.o \
+	UtilModule.o \
+	Result.o
+
+AbstractBedSedimentLayerModule.o :  \
+	FineSedimentModule.o \
+	GlobalsModule.o \
+	ErrorInstance.o \
+	Result.o
+
+BedSedimentLayerModule.o :  \
+	AbstractBedSedimentLayerModule.o \
+	FineSedimentModule.o \
+	DataInputModule.o \
+	GlobalsModule.o \
+	UtilModule.o \
+	ErrorInstance.o \
+	Result.o
+
+FineSedimentModule.o :  \
+	GlobalsModule.o \
+	UtilModule.o \
+	ErrorInstance.o \
+	Result.o
+
+AbstractBiotaModule.o :  \
+	GlobalsModule.o \
+	Result.o
+
+BiotaSoilModule.o :  \
+	AbstractBiotaModule.o \
+	DataInputModule.o \
+	GlobalsModule.o \
+	datetime_module.o \
+	Result.o
+
+BiotaWaterModule.o :  \
+	AbstractBiotaModule.o \
+	DataInputModule.o \
+	GlobalsModule.o \
+	datetime_module.o \
+	Result.o
+
+CheckpointModule.o :  \
+	DataInputModule.o \
+	DefaultsModule.o \
+	AbstractEnvironmentModule.o \
+	EnvironmentModule.o \
+	GlobalsModule.o \
+	LoggerModule.o \
+	UtilModule.o \
+	FlowModule.o \
+	ErrorInstance.o \
+	Result.o
+
+DataInputModule.o :  \
+	DefaultsModule.o \
+	GlobalsModule.o \
+	LoggerModule.o \
+	UtilModule.o \
+	ErrorInstance.o \
+	Result.o \
+	mo_netcdf.o
+
+DataOutputModule.o :  \
+	DataInputModule.o \
+	NetCDFAggregatedOutputModule.o \
+	NetCDFOutputModule.o \
+	DefaultsModule.o \
+	AbstractEnvironmentModule.o \
+	EnvironmentModule.o \
+	GlobalsModule.o \
+	AbstractGridCellModule.o \
+	LoggerModule.o \
+	UtilModule.o \
+	EstuaryReachModule.o \
+	RiverReachModule.o \
+	datetime_module.o \
+	mo_netcdf.o
+
+NetCDFAggregatedOutputModule.o :  \
+	DataInputModule.o \
+	NetCDFOutputModule.o \
+	AbstractEnvironmentModule.o \
+	EnvironmentModule.o \
+	GlobalsModule.o \
+	UtilModule.o \
+	datetime_module.o \
+	mo_netcdf.o
+
+NetCDFOutputModule.o :  \
+	DataInputModule.o \
+	AbstractEnvironmentModule.o \
+	EnvironmentModule.o \
+	GlobalsModule.o \
+	UtilModule.o \
+	datetime_module.o \
+	mo_netcdf.o
+
+DefaultsModule.o : 
+
+AbstractEnvironmentModule.o :  \
+	GlobalsModule.o \
+	AbstractGridCellModule.o \
+	ReachModule.o \
+	Result.o \
+	mo_netcdf.o
+
+EnvironmentModule.o :  \
+	DataInputModule.o \
+	AbstractEnvironmentModule.o \
+	GlobalsModule.o \
+	GridCellModule.o \
+	UtilModule.o \
+	datetime_module.o \
+	Result.o \
+	mo_netcdf.o
+
+GlobalsModule.o :  \
+	DefaultsModule.o \
+	VersionModule.o \
+	mod_strptime.o \
+	datetime_module.o \
+	ErrorCriteria.o \
+	ErrorInstance.o \
+	Result.o \
+	mo_netcdf.o
+
+AbstractGridCellModule.o :  \
+	GlobalsModule.o \
+	CropModule.o \
+	AbstractSoilProfileModule.o \
+	DiffuseSourceModule.o \
+	ReachModule.o \
+	Result.o \
+	mo_netcdf.o
+
+CropModule.o :  \
+	GlobalsModule.o
+
+GridCellModule.o :  \
+	DataInputModule.o \
+	GlobalsModule.o \
+	AbstractGridCellModule.o \
+	CropModule.o \
+	LoggerModule.o \
+	SoilProfileModule.o \
+	UtilModule.o \
+	EstuaryReachModule.o \
+	RiverReachModule.o \
+	Result.o
+
+LoggerModule.o :  \
+	GlobalsModule.o \
+	UtilModule.o \
+	ErrorInstance.o
+
+AbstractReactorModule.o :  \
+	GlobalsModule.o \
+	Result.o
+
+ReactorModule.o :  \
+	DataInputModule.o \
+	GlobalsModule.o \
+	AbstractReactorModule.o \
+	UtilModule.o \
+	Result.o
+
+AbstractSoilLayerModule.o :  \
+	BiotaSoilModule.o \
+	GlobalsModule.o \
+	Result.o \
+	mo_netcdf.o
+
+AbstractSoilProfileModule.o :  \
+	GlobalsModule.o \
+	AbstractSoilLayerModule.o \
+	Result.o
+
+SoilLayerModule.o :  \
+	BiotaSoilModule.o \
+	DataInputModule.o \
+	GlobalsModule.o \
+	AbstractSoilLayerModule.o \
+	UtilModule.o \
+	datetime_module.o
+
+SoilProfileModule.o :  \
+	DataInputModule.o \
+	GlobalsModule.o \
+	AbstractSoilProfileModule.o \
+	SoilLayerModule.o \
+	UtilModule.o \
+	datetime_module.o \
+	Result.o \
+	mo_netcdf.o
+
+DiffuseSourceModule.o :  \
+	DataInputModule.o \
+	GlobalsModule.o \
+	Result.o
+
+PointSourceModule.o :  \
+	DataInputModule.o \
+	GlobalsModule.o \
+	Result.o
+
+UtilModule.o :  \
+	GlobalsModule.o
+
+VersionModule.o : 
+
+EstuaryReachModule.o :  \
+	BedSedimentModule.o \
+	GlobalsModule.o \
+	LoggerModule.o \
+	ReactorModule.o \
+	UtilModule.o \
+	ReachModule.o \
+	Result.o
+
+FlowModule.o :  \
+	GlobalsModule.o
+
+ReachModule.o :  \
+	DataInputModule.o \
+	DefaultsModule.o \
+	GlobalsModule.o \
+	WaterBodyModule.o \
+	ErrorInstance.o \
+	Result.o
+
+RiverReachModule.o :  \
+	BedSedimentModule.o \
+	BiotaWaterModule.o \
+	DataInputModule.o \
+	GlobalsModule.o \
+	LoggerModule.o \
+	ReactorModule.o \
+	UtilModule.o \
+	ReachModule.o \
+	Result.o
+
+WaterBodyModule.o :  \
+	AbstractBedSedimentModule.o \
+	BiotaWaterModule.o \
+	DataInputModule.o \
+	GlobalsModule.o \
+	AbstractReactorModule.o \
+	DiffuseSourceModule.o \
+	PointSourceModule.o \
+	FlowModule.o
+
+main.o :  \
+	CheckpointModule.o \
+	DataInputModule.o \
+	DataOutputModule.o \
+	DefaultsModule.o \
+	EnvironmentModule.o \
+	GlobalsModule.o \
+	LoggerModule.o \
+	UtilModule.o \
+	EstuaryReachModule.o \
+	RiverReachModule.o \
+	datetime_module.o \
+	Result.o
+
+mod_strptime.o :  \
+	datetime_module.o
+
+add_and_subtract.o :  \
+	datetime_module.o
+
+datetime_module.o : 
+
+datetime_tests.o :  \
+	datetime_module.o
+
+CustomErrorCriteria.o :  \
+	ErrorCriteria.o \
+	ErrorInstance.o
+
+TestClass.o :  \
+	ErrorCriteria.o \
+	ErrorInstance.o \
+	Result.o
+
+example_usage.o :  \
+	ErrorCriteria.o \
+	ErrorInstance.o \
+	Result.o
+
+trace.o :  \
+	ErrorCriteria.o \
+	ErrorInstance.o \
+	Result.o
+
+ErrorCriteria.o :  \
+	ErrorHandler.o \
+	ErrorInstance.o
+
+ErrorHandler.o :  \
+	ErrorInstance.o
+
+ErrorInstance.o : 
+
+Result.o :  \
+	ErrorInstance.o
+
+assert.o :  \
+	util.o
+
+run_tests.o :  \
+	tests_ErrorCriteria.o \
+	tests_ErrorInstance.o \
+	tests_Result.o
+
+tests_ErrorCriteria.o :  \
+	ErrorCriteria.o \
+	ErrorInstance.o \
+	assert.o
+
+tests_ErrorInstance.o :  \
+	ErrorInstance.o \
+	assert.o
+
+tests_Result.o :  \
+	ErrorInstance.o \
+	Result.o \
+	assert.o \
+	util.o
+
+util.o : 
+
+read.o :  \
+	mo_netcdf.o
+
+write.o :  \
+	mo_netcdf.o
+
+mo_netcdf.o :  \
+	mo_types.o
+
+mo_types.o : 
+
+mo_assert.o :  \
+	mo_types.o \
+	mo_string.o
+
+mo_string.o :  \
+	mo_types.o
+
+mo_testhelper.o :  \
+	mo_types.o
+
+test_setdata.o :  \
+	mo_netcdf.o \
+	mo_types.o \
+	mo_assert.o \
+	mo_string.o \
+	mo_testhelper.o
+
+example.o : 
+
+Spoof.o :  \
+	sparskit.o
+
+sparskit.o : 

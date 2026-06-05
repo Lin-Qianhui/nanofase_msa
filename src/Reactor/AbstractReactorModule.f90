@@ -150,4 +150,4 @@ module AbstractReactorModule
     
     end interface
 
-end module
+end module AbstractReactorModule

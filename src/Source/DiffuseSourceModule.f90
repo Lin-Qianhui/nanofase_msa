@@ -138,4 +138,4 @@ module DiffuseSourceModule
         end if
     end subroutine
 
-end module
+end module DiffuseSourceModule

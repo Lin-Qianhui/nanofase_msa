@@ -247,4 +247,4 @@ module FlowModule
         obj%diffuseSources = arr(6)
     end subroutine
 
-end module
+end module FlowModule

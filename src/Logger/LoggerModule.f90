@@ -122,4 +122,4 @@ module LoggerModule
             values(1), "-", values(2), "-", values(3), "_", values(5), ".", values(6), ".", values(7)
     end function
 
-end module
+end module LoggerModule
