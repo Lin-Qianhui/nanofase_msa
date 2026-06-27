@@ -1,0 +1,778 @@
+# !! DEGRADED COVERAGE - PSyclone could not build PSyIR for these file(s).
+#    They were salvaged with the coarse fparser2 fallback: shared-state and
+#    derived-type component deps are recovered ONLY for imported module-variable
+#    roots. Local/dummy roots, call-argument accesses and combined RW detail
+#    may be MISSING for the module(s) below - treat their rows as a floor.
+#    - gridcellmodule  (src/GridCell/GridCellModule.f90)
+
+# Shared mutable state (R=read, W=write, RW=both)
+
+<program>
+    [internal] datainputmodule::dataset                  
+    [internal] loggermodule::logr                     
+BedSedimentLayerModule
+    [internal] datainputmodule::dataset                  R
+CheckpointModule
+    [internal] datainputmodule::dataset                  RW
+    [internal] datainputmodule::dataset                  
+    [internal] datainputmodule::dataset                  R
+    [internal] globalsmodule::c                        RW
+    [internal] globalsmodule::c                        
+    [internal] globalsmodule::c                        R
+    [internal] globalsmodule::c                        W
+    [internal] globalsmodule::error_handler            
+    [internal] loggermodule::logr                     
+DataInputModule
+    [internal] loggermodule::logr                     
+DataOutputModule
+    [internal] datainputmodule::dataset                  R
+    [internal] datainputmodule::dataset                  RW
+    [internal] globalsmodule::c                        RW
+    [internal] globalsmodule::c                        R
+    [internal] globalsmodule::c                        
+    [internal] loggermodule::logr                     
+DiffuseSourceModule
+    [EXTERNAL] netcdf::nf90_fill_double         R
+EnvironmentModule
+    [internal] datainputmodule::dataset                  R
+EstuaryReachModule
+    [internal] loggermodule::logr                     
+FlowModule
+    [internal] globalsmodule::c                        R
+    [internal] globalsmodule::c                        
+GlobalsModule
+    [internal] defaultsmodule::configdefaults           R
+    [internal] globalsmodule::c                        RW
+    [internal] globalsmodule::c                        
+    [internal] globalsmodule::c                        W
+    [internal] globalsmodule::c                        R
+    [internal] globalsmodule::error_handler            
+gridcellmodule
+    [internal] datainputmodule::dataset                  R
+    [internal] globalsmodule::c                        RW
+    [internal] globalsmodule::c                        R
+mo_netcdf
+    [EXTERNAL] netcdf::nf90_64bit_offset        R
+    [EXTERNAL] netcdf::nf90_byte                R
+    [EXTERNAL] netcdf::nf90_classic_model       R
+    [EXTERNAL] netcdf::nf90_close               RW
+    [EXTERNAL] netcdf::nf90_create              R
+    [EXTERNAL] netcdf::nf90_def_dim             RW
+    [EXTERNAL] netcdf::nf90_def_grp             RW
+    [EXTERNAL] netcdf::nf90_def_var             R
+    [EXTERNAL] netcdf::nf90_def_var             RW
+    [EXTERNAL] netcdf::nf90_double              R
+    [EXTERNAL] netcdf::nf90_fill_byte           R
+    [EXTERNAL] netcdf::nf90_fill_double         R
+    [EXTERNAL] netcdf::nf90_fill_float          R
+    [EXTERNAL] netcdf::nf90_fill_int            R
+    [EXTERNAL] netcdf::nf90_fill_short          R
+    [EXTERNAL] netcdf::nf90_float               R
+    [EXTERNAL] netcdf::nf90_get_att             RW
+    [EXTERNAL] netcdf::nf90_get_var             RW
+    [EXTERNAL] netcdf::nf90_global              RW
+    [EXTERNAL] netcdf::nf90_hdf5                R
+    [EXTERNAL] netcdf::nf90_inq_dimid           R
+    [EXTERNAL] netcdf::nf90_inq_dimid           RW
+    [EXTERNAL] netcdf::nf90_inq_grp_parent      RW
+    [EXTERNAL] netcdf::nf90_inq_grpname         RW
+    [EXTERNAL] netcdf::nf90_inq_ncid            R
+    [EXTERNAL] netcdf::nf90_inq_ncid            RW
+    [EXTERNAL] netcdf::nf90_inq_varid           R
+    [EXTERNAL] netcdf::nf90_inq_varid           RW
+    [EXTERNAL] netcdf::nf90_inq_varids          RW
+    [EXTERNAL] netcdf::nf90_inquire             RW
+    [EXTERNAL] netcdf::nf90_inquire_attribute   RW
+    [EXTERNAL] netcdf::nf90_inquire_dimension   RW
+    [EXTERNAL] netcdf::nf90_inquire_variable    RW
+    [EXTERNAL] netcdf::nf90_int                 R
+    [EXTERNAL] netcdf::nf90_netcdf4             R
+    [EXTERNAL] netcdf::nf90_noerr               R
+    [EXTERNAL] netcdf::nf90_nowrite             R
+    [EXTERNAL] netcdf::nf90_open                R
+    [EXTERNAL] netcdf::nf90_put_att             RW
+    [EXTERNAL] netcdf::nf90_put_var             RW
+    [EXTERNAL] netcdf::nf90_rename_att          RW
+    [EXTERNAL] netcdf::nf90_rename_dim          RW
+    [EXTERNAL] netcdf::nf90_rename_var          RW
+    [EXTERNAL] netcdf::nf90_share               R
+    [EXTERNAL] netcdf::nf90_short               R
+    [EXTERNAL] netcdf::nf90_strerror            RW
+    [EXTERNAL] netcdf::nf90_sync                RW
+    [EXTERNAL] netcdf::nf90_unlimited           R
+    [EXTERNAL] netcdf::nf90_write               R
+NetCDFAggregatedOutputModule
+    [internal] datainputmodule::dataset                  RW
+    [internal] datainputmodule::dataset                  R
+    [internal] globalsmodule::c                        R
+    [internal] globalsmodule::c                        RW
+    [EXTERNAL] mo_netcdf::nf90_fill_double         RW
+    [EXTERNAL] mo_netcdf::nf90_fill_double         R
+NetCDFOutputModule
+    [internal] datainputmodule::dataset                  RW
+    [internal] datainputmodule::dataset                  
+    [internal] datainputmodule::dataset                  R
+    [internal] globalsmodule::c                        R
+    [internal] globalsmodule::c                        RW
+    [internal] globalsmodule::c                        
+    [EXTERNAL] mo_netcdf::nf90_fill_double         RW
+    [EXTERNAL] mo_netcdf::nf90_fill_double         R
+    [EXTERNAL] mo_netcdf::nf90_fill_int            RW
+PointSourceModule
+    [internal] datainputmodule::dataset                  R
+ReachModule
+    [internal] datainputmodule::dataset                  RW
+    [internal] datainputmodule::dataset                  R
+ReactorModule
+    [internal] datainputmodule::dataset                  R
+RiverReachModule
+    [internal] datainputmodule::dataset                  R
+    [internal] datainputmodule::dataset                  RW
+    [internal] loggermodule::logr                     
+SoilLayerModule
+    [internal] datainputmodule::dataset                  R
+SoilProfileModule
+    [internal] datainputmodule::dataset                  RW
+    [internal] datainputmodule::dataset                  R
+    [EXTERNAL] netcdf::nf90_fill_real           R
+
+# Derived-type component dependencies (home -> type_module::Type%component  R/W  [binding])
+#   [binding] local/arg/module-var : dependency on an imported TYPE only
+#   [binding] var-import           : root object imported -> also a shared VARIABLE (see list above)
+
+<program>    (35 type-dep, 5 var-import)
+    [internal] checkpointmodule::Checkpoint%init                 [local]
+    [internal] checkpointmodule::Checkpoint%reinstate            [local]
+    [internal] checkpointmodule::Checkpoint%save                 [local]
+    [internal] datetime_module::timedelta%total_seconds         [local]
+    [internal] mo_netcdf::NcDataset%close                 [local]
+    [internal] mo_netcdf::NcDataset%getAttribute          [local]
+    [internal] mo_netcdf::NcDataset%getGroup              [local]
+    [internal] mo_netcdf::NcDataset%setAttribute          [local]
+    [internal] mo_netcdf::NcDataset%setGroup              [local]
+    [internal] mo_netcdf::NcDataset%setVariable           [local]
+    [internal] mo_netcdf::NcGroup%getAttribute            [local]
+    [internal] mo_netcdf::NcGroup%getVariable             [local]
+    [internal] mo_netcdf::NcGroup%setAttribute            [local]
+    [internal] mo_netcdf::NcGroup%setDimension            [local]
+    [internal] mo_netcdf::NcGroup%setVariable             [local]
+    [internal] mo_netcdf::NcVariable%getAttribute         [local]
+    [internal] mo_netcdf::NcVariable%getData              [local]
+    [internal] mo_netcdf::NcVariable%setAttribute         [local]
+    [internal] mo_netcdf::NcVariable%setData              [local]
+    [internal] mo_netcdf::NcVariable%setFillValue         [local]
+    [EXTERNAL] ::CSRMatrix%multiply           R  [local]  (? type module unresolved)
+    [EXTERNAL] ::DataOutput%finalise             [local]  (? type module unresolved)
+    [EXTERNAL] ::DataOutput%finaliseChunk        [local]  (? type module unresolved)
+    [EXTERNAL] ::DataOutput%init                 [local]  (? type module unresolved)
+    [EXTERNAL] ::DataOutput%initSedimentSizeDistribution    [local]  (? type module unresolved)
+    [EXTERNAL] ::DataOutput%newChunk             [local]  (? type module unresolved)
+    [EXTERNAL] ::DataOutput%update               [local]  (? type module unresolved)
+    [EXTERNAL] ::DataOutput%updateSedimentSizeDistribution R  [local]  (? type module unresolved)
+    [EXTERNAL] ::DiagonalMatrix%multiply      R  [local]  (? type module unresolved)
+    [EXTERNAL] ::Environment%create              [local]  (? type module unresolved)
+    [EXTERNAL] ::Environment%parseNewBatchData    [local]  (? type module unresolved)
+    [EXTERNAL] ::Environment%update              [local]  (? type module unresolved)
+    [EXTERNAL] ::ErrorCriteria%init              [local]  (? type module unresolved)
+    [EXTERNAL] ::ErrorCriteria%trigger           [local]  (? type module unresolved)
+    [EXTERNAL] ::Result0D%addToTrace             [local]  (? type module unresolved)
+    [internal] datainputmodule::database%init                   [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%update                 [var-import]  (? type module unresolved)
+    [internal] loggermodule::logger%add                      [var-import]  (? type module unresolved)
+    [internal] loggermodule::logger%init                     [var-import]  (? type module unresolved)
+    [internal] loggermodule::logger%toFile                   [var-import]  (? type module unresolved)
+AbstractBedSedimentModule    (3 type-dep, 2 var-import)
+    [internal] resultmodule::Result0D%addError               [local]
+    [internal] resultmodule::Result0D%addToTrace             [local]
+    [internal] resultmodule::Result0D%hasCriticalError       [local]
+    [internal] globalsmodule::globalstype%nSedimentLayers  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+abstractenvironmentmodule    (0 type-dep, 2 var-import)
+    [internal] globalsmodule::globalstype%nSizeClassesNM   R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSpm  R  [var-import]  (? type module unresolved)
+abstractgridcellmodule    (0 type-dep, 1 var-import)
+    [internal] globalsmodule::globalstype%nSizeClassesSpm  R  [var-import]  (? type module unresolved)
+abstractreactormodule    (0 type-dep, 3 var-import)
+    [internal] globalsmodule::globalstype%nSizeClassesNM   R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSpm  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+abstractsoilprofilemodule    (0 type-dep, 1 var-import)
+    [internal] globalsmodule::globalstype%nSizeClassesSpm  R  [var-import]  (? type module unresolved)
+BedSedimentLayerModule    (6 type-dep, 3 var-import)
+    [internal] bedsedimentlayermodule::FineSediment%V_f                [arg]  (? type module unresolved)
+    [internal] bedsedimentlayermodule::FineSediment%V_w                [arg]  (? type module unresolved)
+    [internal] bedsedimentlayermodule::FineSediment%set                [arg]  (? type module unresolved)
+    [internal] resultmodule::Result%AddError                 [local]
+    [internal] resultmodule::Result%addToTrace               [local]
+    [internal] resultmodule::Result%hasCriticalError         [local]
+    [internal] datainputmodule::database%sedimentFractionalComposition R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%sedimentInitialMass R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%sedimentPorosity    R  [var-import]  (? type module unresolved)
+BedSedimentModule    (15 type-dep, 1 var-import)
+    [internal] bedsedimentmodule::FineSediment%M_f                [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::FineSediment%M_f                [arg]  (? type module unresolved)
+    [internal] bedsedimentmodule::FineSediment%V_f                [arg]  (? type module unresolved)
+    [internal] bedsedimentmodule::FineSediment%V_f                [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::FineSediment%V_w                [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::FineSediment%create             [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::FineSediment%f_comp          RW [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::FineSediment%f_comp          RW [arg]  (? type module unresolved)
+    [internal] bedsedimentmodule::FineSediment%set                [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::Result%addError                 [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::Result%addErrors                [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::Result%addToTrace               [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::Result%hasCriticalError         [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::ResultFineSediment2D%addError    [local]  (? type module unresolved)
+    [internal] bedsedimentmodule::ResultFineSediment2D%setData    [local]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSedimentLayers  R  [var-import]  (? type module unresolved)
+BiotaSoilModule    (4 type-dep, 0 var-import)
+    [internal] biotasoilmodule::datetime%getMonth               [local]  (? type module unresolved)
+    [internal] resultmodule::Result%addError                 [local]
+    [internal] resultmodule::Result%addErrors                [local]
+    [internal] resultmodule::Result%addToTrace               [local]
+BiotaWaterModule    (4 type-dep, 0 var-import)
+    [internal] biotawatermodule::datetime%getMonth               [local]  (? type module unresolved)
+    [internal] resultmodule::Result%addError                 [local]
+    [internal] resultmodule::Result%addErrors                [local]
+    [internal] resultmodule::Result%addToTrace               [local]
+CheckpointModule    (0 type-dep, 14 var-import)
+    [internal] datainputmodule::database%gridBounds          R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%gridRes             R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%gridShape           R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%nWaterbodies        R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::ErrorCriteria%trigger           [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%epsilon          R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nFracCompsSpm    R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSedimentLayers  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSPM  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSoilLayers      R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%t0               W  [var-import]  (? type module unresolved)
+    [internal] loggermodule::logger%toConsole                [var-import]  (? type module unresolved)
+    [internal] loggermodule::logger%toFile                   [var-import]  (? type module unresolved)
+CropModule    (1 type-dep, 0 var-import)
+    [internal] cropmodule::crop%create                     [local]  (? type module unresolved)
+CustomErrorCriteriaModule    (2 type-dep, 0 var-import)
+    [internal] customerrorcriteriamodule::ErrorInstance%addToTrace        [local]  (? type module unresolved)
+    [internal] customerrorcriteriamodule::ErrorInstance%message        W  [local]  (? type module unresolved)
+DataInputModule    (7 type-dep, 2 var-import)
+    [internal] datainputmodule::NcDataset%getVariable           [local]  (? type module unresolved)
+    [internal] datainputmodule::NcDimension%getLength           [local]  (? type module unresolved)
+    [internal] datainputmodule::NcVariable%getAttribute         [local]  (? type module unresolved)
+    [internal] datainputmodule::NcVariable%getData              [local]  (? type module unresolved)
+    [internal] resultmodule::Result%addError                 [local]
+    [internal] resultmodule::Result%addErrors                [local]
+    [internal] resultmodule::Result%addToTrace               [local]
+    [internal] loggermodule::logger%toConsole                [var-import]  (? type module unresolved)
+    [internal] loggermodule::logger%toFile                   [var-import]  (? type module unresolved)
+DataOutputModule    (2 type-dep, 23 var-import)
+    [internal] dataoutputmodule::datetime%isoformat              [local]  (? type module unresolved)
+    [internal] dataoutputmodule::datetime%now                    [local]  (? type module unresolved)
+    [internal] datainputmodule::database%sedimentInitialMass R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%simulationMask      R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%x                   R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%y                   R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%batchStartDate   R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSedimentFluxes R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSedimentLayerBreakdown R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilErosionYields R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilLayerBreakdown R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilStateBreakdown R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSpmSizeClassBreakdown R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeWaterbodyBreakdown R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSedimentLayers  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSpm  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nTimestepsInBatch R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%netCDFWriteMode  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%runToSteadyState R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%timeStep         R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%writeCSV         R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%writeCompartmentStats R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%writeMetadataAsComment R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%writeNetCDF      R  [var-import]  (? type module unresolved)
+    [internal] loggermodule::logger%add                      [var-import]  (? type module unresolved)
+datetime_module    (48 type-dep, 0 var-import)
+    [internal] datetime_module::datetime%addDays                [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%addHours               [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%addMilliseconds        [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%addMinutes             [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%addSeconds             [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%day                 W  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%day                 R  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%hour                W  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%hour                R  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%hour                RW [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%millisecond         W  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%millisecond         R  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%millisecond         RW [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%minute              W  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%minute              R  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%minute              RW [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%month               W  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%month               R  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%second              W  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%second              R  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%second              RW [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%tz                  W  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%utc                    [arg]  (? type module unresolved)
+    [internal] datetime_module::datetime%year                W  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%year                R  [local]  (? type module unresolved)
+    [internal] datetime_module::datetime%yearday                [local]  (? type module unresolved)
+    [internal] datetime_module::timedelta%days               W  [local]  (? type module unresolved)
+    [internal] datetime_module::timedelta%hours              W  [local]  (? type module unresolved)
+    [internal] datetime_module::timedelta%milliseconds       W  [local]  (? type module unresolved)
+    [internal] datetime_module::timedelta%minutes            W  [local]  (? type module unresolved)
+    [internal] datetime_module::timedelta%seconds            W  [local]  (? type module unresolved)
+    [internal] datetime_module::timedelta%total_seconds         [local]  (? type module unresolved)
+    [internal] datetime_module::timedelta%total_seconds         [arg]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_hour            W  [local]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_hour            R  [arg]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_isdst           W  [local]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_mday            W  [local]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_mday            R  [arg]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_min             W  [local]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_min             R  [arg]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_mon             W  [local]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_mon             R  [arg]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_sec             W  [local]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_sec             R  [arg]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_wday            W  [local]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_yday            W  [local]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_year            W  [local]  (? type module unresolved)
+    [internal] datetime_module::tm_struct%tm_year            R  [arg]  (? type module unresolved)
+datetime_tests    (3 type-dep, 0 var-import)
+    [internal] datetime_tests::clock%reset                     [local]  (? type module unresolved)
+    [internal] datetime_tests::clock%tick                      [local]  (? type module unresolved)
+    [internal] datetime_tests::datetime%now                    [local]  (? type module unresolved)
+EnvironmentModule    (23 type-dep, 7 var-import)
+    [internal] environmentmodule::GridCellPointer%item         W  [local]  (? type module unresolved)
+    [internal] environmentmodule::GridCellPointer%item%area    R  [local]  (? type module unresolved)
+    [internal] environmentmodule::GridCellPointer%item%colSoilProfiles%item%m_np_eroded R  [local]  (? type module unresolved)
+    [internal] environmentmodule::GridCellPointer%item%colSoilProfiles%item%m_transformed_eroded R  [local]  (? type module unresolved)
+    [internal] environmentmodule::GridCellPointer%item%erodedSediment R  [local]  (? type module unresolved)
+    [internal] environmentmodule::GridCellPointer%item%getTotalReachLength    [local]  (? type module unresolved)
+    [internal] environmentmodule::GridCellPointer%item%q_runoff_timeSeries RW [local]  (? type module unresolved)
+    [internal] environmentmodule::GridCellPointer%item%x       R  [local]  (? type module unresolved)
+    [internal] environmentmodule::GridCellPointer%item%y       R  [local]  (? type module unresolved)
+    [internal] environmentmodule::ReachPointer%item            RW [local]  (? type module unresolved)
+    [internal] environmentmodule::ReachPointer%item%inflows%item%isUpdated R  [local]  (? type module unresolved)
+    [internal] environmentmodule::ReachPointer%item%isUpdated  W  [local]  (? type module unresolved)
+    [internal] environmentmodule::ReachPointer%item%length     R  [arg]  (? type module unresolved)
+    [internal] environmentmodule::ReachPointer%item%nInflows   R  [local]  (? type module unresolved)
+    [internal] environmentmodule::ReachPointer%item%outflow%item R  [local]  (? type module unresolved)
+    [internal] environmentmodule::ReachPointer%item%streamOrder W  [local]  (? type module unresolved)
+    [internal] environmentmodule::ReachPointer%item%update        [arg]  (? type module unresolved)
+    [internal] environmentmodule::ReachPointer%item%x          R  [arg]  (? type module unresolved)
+    [internal] environmentmodule::ReachPointer%item%y          R  [arg]  (? type module unresolved)
+    [internal] environmentmodule::Result%addErrors                [local]  (? type module unresolved)
+    [internal] environmentmodule::Result%addToTrace               [local]  (? type module unresolved)
+    [internal] environmentmodule::Result%clear                    [local]  (? type module unresolved)
+    [internal] environmentmodule::Result%hasCriticalError         [local]  (? type module unresolved)
+    [internal] datainputmodule::database%gridMask            R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%gridShape           R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%quickflow           R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%simulationMask      R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesNM   R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSpm  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+ErrorCriteriaModule    (2 type-dep, 0 var-import)
+    [internal] errorcriteriamodule::ErrorInstance%addToTrace        [local]  (? type module unresolved)
+    [internal] errorcriteriamodule::ErrorInstance%message        W  [local]  (? type module unresolved)
+ErrorHandlerModule    (6 type-dep, 0 var-import)
+    [internal] errorhandlermodule::ErrorInstance%code           W  [local]  (? type module unresolved)
+    [internal] errorhandlermodule::ErrorInstance%getCode           [local]  (? type module unresolved)
+    [internal] errorhandlermodule::ErrorInstance%isCritical     W  [local]  (? type module unresolved)
+    [internal] errorhandlermodule::ErrorInstance%isCritical     RW [local]  (? type module unresolved)
+    [internal] errorhandlermodule::ErrorInstance%message        W  [local]  (? type module unresolved)
+    [internal] errorhandlermodule::ErrorInstance%trace          W  [local]  (? type module unresolved)
+ErrorInstanceModule    (4 type-dep, 0 var-import)
+    [internal] errorinstancemodule::errorinstance%code           W  [local]  (? type module unresolved)
+    [internal] errorinstancemodule::errorinstance%isCritical     W  [local]  (? type module unresolved)
+    [internal] errorinstancemodule::errorinstance%message        W  [local]  (? type module unresolved)
+    [internal] errorinstancemodule::errorinstance%trace          R  [local]  (? type module unresolved)
+EstuaryReachModule    (4 type-dep, 3 var-import)
+    [internal] estuaryreachmodule::Result%addErrors                [local]  (? type module unresolved)
+    [internal] estuaryreachmodule::Result%addToTrace               [local]  (? type module unresolved)
+    [internal] estuaryreachmodule::Result%hasCriticalError         [local]  (? type module unresolved)
+    [internal] estuaryreachmodule::datetime%yearday                [local]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSPM  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+    [internal] loggermodule::logger%toFile                   [var-import]  (? type module unresolved)
+FineSedimentModule    (18 type-dep, 0 var-import)
+    [internal] finesedimentmodule::ErrorInstance%addToTrace        [local]  (? type module unresolved)
+    [internal] finesedimentmodule::ErrorInstance%isError           [local]  (? type module unresolved)
+    [internal] finesedimentmodule::finesediment%M_f                [arg]  (? type module unresolved)
+    [internal] finesedimentmodule::finesediment%V_w                [arg]  (? type module unresolved)
+    [internal] finesedimentmodule::finesediment%audit_comp         [arg]  (? type module unresolved)
+    [internal] finesedimentmodule::finesediment%f_comp          R  [arg]  (? type module unresolved)
+    [internal] finesedimentmodule::finesediment%nfComp          R  [arg]  (? type module unresolved)
+    [internal] finesedimentmodule::finesediment%pd_comp         R  [arg]  (? type module unresolved)
+    [internal] finesedimentmodule::finesediment%set                [arg]  (? type module unresolved)
+    [internal] finesedimentmodule::resultfinesediment0d%addError    [local]  (? type module unresolved)
+    [internal] finesedimentmodule::resultfinesediment0d%data    R  [local]  (? type module unresolved)
+    [internal] finesedimentmodule::resultfinesediment0d%hasCriticalError    [local]  (? type module unresolved)
+    [internal] finesedimentmodule::resultfinesediment0d%setErrors    [local]  (? type module unresolved)
+    [internal] finesedimentmodule::resultfinesediment1d%data    R  [local]  (? type module unresolved)
+    [internal] finesedimentmodule::resultfinesediment1d%setErrors    [local]  (? type module unresolved)
+    [internal] finesedimentmodule::resultfinesediment2d%data    R  [local]  (? type module unresolved)
+    [internal] finesedimentmodule::resultfinesediment2d%setErrors    [local]  (? type module unresolved)
+    [internal] resultmodule::Result%addError                 [local]
+FlowModule    (0 type-dep, 2 var-import)
+    [internal] globalsmodule::globalstype%nSizeClassesSPM  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+GlobalsModule    (82 type-dep, 35 var-import)
+    [internal] globalsmodule::ErrorCriteria%init              [module-var]  (? type module unresolved)
+    [internal] globalsmodule::ErrorCriteria%trigger           [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%audit               [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%bashColors       W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%batchConstantFiles R  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%batchEndDate     W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%batchInputFiles  R  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%batchNTimesteps  RW [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%batchStartDate   W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%batchStartDates  RW [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%checkpointFile   W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%configFilePath   W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%constantsFile    W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%d_nm             R  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%d_spm            R  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%d_spm_low        RW [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%d_spm_upp        RW [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%epsilon          W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%hasSimulationMask W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%ignoreNM         W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeAttachment W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeBankErosion W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeBedSediment W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeBioturbation W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeClayEnrichment W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeEstuary   W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includePointSources W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSedimentFluxes W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSedimentLayerBreakdown W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilErosion W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilErosionYields W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilLayerBreakdown W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilStateBreakdown W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSpmSizeClassBreakdown W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeWaterbodyBreakdown W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%inputFile        W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%isBatchRun       RW [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%logFilePath      W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%minEstuaryTimestep W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%minStreamSlope   W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nChunks          RW [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nExtraStatesNM   W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nFormsNM         W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nFracCompsSpm    W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSedimentLayers  W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesNM   W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSpm  RW [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSoilLayers      W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nTimeSteps       RW [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nTimesteps       R  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nTimestepsInBatch W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%netCDFWriteMode  W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%outputHash       W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%outputPath       W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%preserveTimestep W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%reinstateCheckpoint W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%runDescription   W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%runToSteadyState W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%saveCheckpoint   W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%saveCheckpoint   R  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%saveCheckpointAfterWarmUp W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%saveCheckpointAfterWarmUp R  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%sedimentLayerDepth W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%sedimentPECUnits W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%sedimentParticleDensities R  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%simulationMaskPath W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%soilLayerDepth   W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%soilPECUnits     W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%startDate        RW [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%steadyStateDelta W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%steadyStateMode  W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%timeStep         W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%triggerWarnings  RW [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%warmUpPeriod     W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%writeCSV         W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%writeCompartmentStats W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%writeMetadataAsComment W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%writeNetCDF      W  [module-var]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%writeToLog       W  [module-var]  (? type module unresolved)
+    [internal] resultmodule::Result%addError                 [local]
+    [internal] resultmodule::Result%addToTrace               [local]
+    [internal] defaultsmodule::configdefaultstype%bashColors R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%checkpointFile R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%description R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%ignoreNM  R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeBankErosion R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeClayEnrichment R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeEstuary R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeSedimentFluxes R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeSedimentLayerBreakdown R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeSoilErosion R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeSoilErosionYields R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeSoilLayerBreakdown R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeSoilStateBreakdown R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeSpmSizeClassBreakdown R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%includeWaterbodyBreakdown R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%minEstuaryTimestep R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%minStreamSlope R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%netCDFWriteMode R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%outputHash R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%preserveTimeStep R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%reinstateCheckpoint R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%runToSteadyState R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%saveCheckpoint R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%saveCheckpointAfterWarmUp R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%sedimentPECUnits R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%simulationMask R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%soilPECUnits R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%steadyStateDelta R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%steadyStateMode R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%warmUpPeriod R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%writeCSV  R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%writeCompartmentStats R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%writeMetadataAsComment R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%writeNetCDF R  [var-import]  (? type module unresolved)
+    [internal] defaultsmodule::configdefaultstype%writeToLog R  [var-import]  (? type module unresolved)
+gridcellmodule    (0 type-dep, 14 var-import)
+    [internal] datainputmodule::database%coordsToFractionalCellIndex R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%emissionsPointWaterCoords R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%evap                R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%gridRes             R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%isEstuary           R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%nPointSources       R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%nWaterbodies        R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%outflow             R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%precip              R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%runoff              R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSpm  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nTimeSteps       R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%sedimentLayerDepth R  [var-import]  (? type module unresolved)
+mo_netcdf    (11 type-dep, 0 var-import)
+    [internal] mo_netcdf::ncdataset%fname              W  [local]  (? type module unresolved)
+    [internal] mo_netcdf::ncdataset%id                 R  [local]  (? type module unresolved)
+    [internal] mo_netcdf::ncdataset%mode               W  [local]  (? type module unresolved)
+    [internal] mo_netcdf::ncdimension%getLength           [local]  (? type module unresolved)
+    [internal] mo_netcdf::ncdimension%id               W  [local]  (? type module unresolved)
+    [internal] mo_netcdf::ncdimension%id               R  [local]  (? type module unresolved)
+    [internal] mo_netcdf::ncdimension%isUnlimited         [local]  (? type module unresolved)
+    [internal] mo_netcdf::ncdimension%parent           W  [local]  (? type module unresolved)
+    [internal] mo_netcdf::ncgroup%id                   W  [local]  (? type module unresolved)
+    [internal] mo_netcdf::ncvariable%id                W  [local]  (? type module unresolved)
+    [internal] mo_netcdf::ncvariable%parent            W  [local]  (? type module unresolved)
+mo_string    (1 type-dep, 0 var-import)
+    [internal] mo_string::string%data                  W  [local]  (? type module unresolved)
+NetCDFAggregatedOutputModule    (0 type-dep, 13 var-import)
+    [internal] datainputmodule::database%gridShape           RW [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%gridShape           R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%batchNTimesteps  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSedimentFluxes R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilErosionYields R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilLayerBreakdown R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilStateBreakdown R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSedimentLayers  RW [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSedimentLayers  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSoilLayers      RW [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSoilLayers      R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nTimestepsInBatch RW [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%netCDFWriteMode  R  [var-import]  (? type module unresolved)
+NetCDFOutputModule    (3 type-dep, 21 var-import)
+    [internal] mo_netcdf::NcVariable%setAttribute         [local]
+    [internal] mo_netcdf::NcVariable%setData              [local]
+    [internal] netcdfoutputmodule::datetime%now                    [local]  (? type module unresolved)
+    [internal] datainputmodule::database%crsWKT              R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%epsgCode            RW [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%gridShape           RW [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%gridShape           R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%landUse             R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilBulkDensity     RW [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%x                   RW [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%y                   RW [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%batchNTimesteps  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSedimentFluxes R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilErosionYields R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilLayerBreakdown R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%includeSoilStateBreakdown R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSedimentLayers  RW [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSedimentLayers  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSoilLayers      RW [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSoilLayers      R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nTimeStepsInBatch R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nTimestepsInBatch RW [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%netCDFWriteMode  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%timeStep         R  [var-import]  (? type module unresolved)
+PointSourceModule    (0 type-dep, 7 var-import)
+    [internal] datainputmodule::database%defaultMatrixEmbeddedDistributionToSpm R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%defaultNMSizeDistribution R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%emissionsPointWaterCoords R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%emissionsPointWaterDissolved R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%emissionsPointWaterMatrixEmbedded R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%emissionsPointWaterPristine R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%emissionsPointWaterTransformed R  [var-import]  (? type module unresolved)
+ReachModule    (5 type-dep, 16 var-import)
+    [internal] reachmodule::FineSediment%create             [local]  (? type module unresolved)
+    [internal] reachmodule::FineSediment%set                [local]  (? type module unresolved)
+    [internal] resultmodule::Result%addErrors                [local]
+    [internal] resultmodule::Result%addToTrace               [local]
+    [internal] resultmodule::Result%hasCriticalError         [local]
+    [internal] datainputmodule::database%bankErosionAlpha    R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%bankErosionBeta     R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%dem                 R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%depositionAlpha     RW [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%depositionBeta      RW [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%gridRes             R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%inModelDomain       R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%inflows             R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%isHeadwater         R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%nWaterbodies        R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%nmDensity           RW [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%outflow             R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%sedimentFractionalComposition R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%spmDensityBySizeClass RW [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSPM  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+ReactorModule    (1 type-dep, 7 var-import)
+    [internal] reactormodule::Result%addErrors                [local]  (? type module unresolved)
+    [internal] datainputmodule::database%nmDensity           R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%water_k_diss_pristine R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%water_k_diss_transformed R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%water_k_transform_pristine R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesNM   R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSpm  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+ResultModule    (12 type-dep, 0 var-import)
+    [internal] resultmodule::ErrorInstance%isCriticalError    [arg]  (? type module unresolved)
+    [internal] resultmodule::ErrorInstance%isError           [arg]  (? type module unresolved)
+    [internal] resultmodule::result0d%data                R  [local]  (? type module unresolved)
+    [internal] resultmodule::result0d%setErrors              [local]  (? type module unresolved)
+    [internal] resultmodule::result1d%data                R  [local]  (? type module unresolved)
+    [internal] resultmodule::result1d%setErrors              [local]  (? type module unresolved)
+    [internal] resultmodule::result2d%data                R  [local]  (? type module unresolved)
+    [internal] resultmodule::result2d%setErrors              [local]  (? type module unresolved)
+    [internal] resultmodule::result3d%data                R  [local]  (? type module unresolved)
+    [internal] resultmodule::result3d%setErrors              [local]  (? type module unresolved)
+    [internal] resultmodule::result4d%data                R  [local]  (? type module unresolved)
+    [internal] resultmodule::result4d%setErrors              [local]  (? type module unresolved)
+RiverReachModule    (5 type-dep, 14 var-import)
+    [internal] riverreachmodule::Result%addErrors                [local]  (? type module unresolved)
+    [internal] riverreachmodule::Result%addToTrace               [local]  (? type module unresolved)
+    [internal] riverreachmodule::Result0D%addError               [local]  (? type module unresolved)
+    [internal] riverreachmodule::Result0D%addToTrace             [local]  (? type module unresolved)
+    [internal] riverreachmodule::datetime%yearday                [local]  (? type module unresolved)
+    [internal] datainputmodule::database%biotaCompartment    R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%hasBiota            R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%nBiota              R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%resuspensionAlpha   R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%resuspensionBeta    R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%riverAttachmentEfficiency R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%riverMeanderingFactor R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%sedimentTransport_a R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%sedimentTransport_b R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%sedimentTransport_c R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%waterTemperature    R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSPM  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+    [internal] loggermodule::logger%toFile                   [var-import]  (? type module unresolved)
+SoilLayerModule    (4 type-dep, 10 var-import)
+    [internal] soillayermodule::Result%addError                 [local]  (? type module unresolved)
+    [internal] soillayermodule::Result%addErrors                [local]  (? type module unresolved)
+    [internal] soillayermodule::Result%addToTrace               [local]  (? type module unresolved)
+    [internal] soillayermodule::datetime%yearday                [local]  (? type module unresolved)
+    [internal] datainputmodule::database%biotaCompartment    R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%hasBiota            R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%nBiota              R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilAttachmentEfficiency R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilAttachmentRate  R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilDarcyVelocity   R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilHamakerConstant R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilParticleDensity R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%waterTemperature    R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesNM   R  [var-import]  (? type module unresolved)
+SoilProfileModule    (5 type-dep, 30 var-import)
+    [internal] resultmodule::Result%addError                 [local]
+    [internal] resultmodule::Result%addErrors                [local]
+    [internal] resultmodule::Result%addToTrace               [local]
+    [internal] resultmodule::Result%hasCriticalError         [local]
+    [internal] soilprofilemodule::datetime%yearday                [local]  (? type module unresolved)
+    [internal] datainputmodule::database%defaultSpmSizeDistribution R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%earthwormDensityArable R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%earthwormDensityConiferous R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%earthwormDensityDeciduous R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%earthwormDensityGrassland R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%earthwormDensityHeathland R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%earthwormDensityUrbanCapped R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%earthwormDensityUrbanGardens R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%earthwormDensityUrbanParks R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%evap                R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%landUse             R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%precip              R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilBulkDensity     R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilDefaultPorosity R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilErosivity_a1    R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilErosivity_a2    R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilErosivity_a3    R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilErosivity_b     R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilHydraulicConductivity R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilTextureClayContent R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilTextureCoarseFragContent R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilTextureSandContent R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilTextureSiltContent R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilUsleCFactor     R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilUsleLSFactor    R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilUslePFactor     R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilWaterContentFieldCapacity R  [var-import]  (? type module unresolved)
+    [internal] datainputmodule::database%soilWaterContentSaturation R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSpm  R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+Spoof    (17 type-dep, 0 var-import)
+    [EXTERNAL] spoof::csrmatrix%col_ind            R  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::csrmatrix%col_ind            RW [local]  (? type module unresolved)
+    [EXTERNAL] spoof::csrmatrix%data               R  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::csrmatrix%data               RW [local]  (? type module unresolved)
+    [EXTERNAL] spoof::csrmatrix%ncol               W  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::csrmatrix%ncol               RW [local]  (? type module unresolved)
+    [EXTERNAL] spoof::csrmatrix%nrow               W  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::csrmatrix%nrow               RW [local]  (? type module unresolved)
+    [EXTERNAL] spoof::csrmatrix%row_ptr            R  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::csrmatrix%row_ptr            RW [local]  (? type module unresolved)
+    [EXTERNAL] spoof::diagonalmatrix%data          R  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::diagonalmatrix%data          W  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::diagonalmatrix%idiag         W  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::diagonalmatrix%ncol          W  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::diagonalmatrix%ndiag         W  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::diagonalmatrix%nrow          W  [local]  (? type module unresolved)
+    [EXTERNAL] spoof::diagonalmatrix%offsets       R  [local]  (? type module unresolved)
+tests_ErrorCriteria    (13 type-dep, 0 var-import)
+    [internal] tests_errorcriteria::ErrorCriteria%equal             [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorCriteria%getErrorFromCode R  [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorCriteria%greaterThan       [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorCriteria%init              [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorCriteria%lessThan          [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorCriteria%limit             [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorCriteria%negative       R  [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorCriteria%nonZero        R  [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorCriteria%notEqual          [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorCriteria%positive       R  [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorCriteria%zero           R  [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorInstance%code           RW [local]  (? type module unresolved)
+    [internal] tests_errorcriteria::ErrorInstance%isError           [local]  (? type module unresolved)
+tests_ErrorInstance    (6 type-dep, 0 var-import)
+    [internal] tests_errorinstance::ErrorInstance%addToTrace        [local]  (? type module unresolved)
+    [internal] tests_errorinstance::ErrorInstance%code           RW [local]  (? type module unresolved)
+    [internal] tests_errorinstance::ErrorInstance%isCritical     RW [local]  (? type module unresolved)
+    [internal] tests_errorinstance::ErrorInstance%message        RW [local]  (? type module unresolved)
+    [internal] tests_errorinstance::ErrorInstance%trace             [local]  (? type module unresolved)
+    [internal] tests_errorinstance::ErrorInstance%trace          RW [local]  (? type module unresolved)
+tests_Result    (1 type-dep, 0 var-import)
+    [internal] tests_result::Result0D%hasError               [local]  (? type module unresolved)
+utilmodule    (0 type-dep, 2 var-import)
+    [internal] globalsmodule::globalstype%nSizeClassesNM   R  [var-import]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%npDim            R  [var-import]  (? type module unresolved)
+WaterBodyModule    (1 type-dep, 1 var-import)
+    [internal] waterbodymodule::PointSource%create              [local]  (? type module unresolved)
+    [internal] globalsmodule::globalstype%nSizeClassesSPM  R  [var-import]  (? type module unresolved)
