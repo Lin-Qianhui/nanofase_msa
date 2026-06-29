@@ -3,6 +3,10 @@ module GlobalsModule
     use datetime_module
     use mod_strptime, only: f_strptime
     use VersionModule, only: MODEL_VERSION
+    use KernelModule, only: dp, ESC, COLOR_BLUE, COLOR_LIGHT_BLUE, COLOR_GREEN, &
+        COLOR_YELLOW, COLOR_RED, COLOR_RESET, kernel_g => g, kernel_k_B => k_B, &
+        kernel_pi => pi, kernel_n_river => n_river, kernel_rho_w => rho_w, &
+        kernel_nu_w => nu_w, kernel_mu_w => mu_w
     use DefaultsModule, only: iouConfig, iouBatchConfig, iouVersion, configDefaults
     use ErrorCriteriaModule
     use ErrorInstanceModule
@@ -10,14 +14,6 @@ module GlobalsModule
     implicit none
     
     type(ErrorCriteria)             :: ERROR_HANDLER                        ! Global error handling
-    integer, parameter              :: dp = selected_real_kind(15, 307)     ! Double precision
-    character(len=*), parameter     :: ESC = char(27)                       ! Terminal escape character
-    character(len=*), parameter     :: COLOR_BLUE = ESC // "[94m"           ! Escape sequence for blue text
-    character(len=*), parameter     :: COLOR_LIGHT_BLUE = ESC // "[39m"     ! Escape sequence for light blue text
-    character(len=*), parameter     :: COLOR_GREEN = ESC // "[32m"          ! Escape sequence for green text
-    character(len=*), parameter     :: COLOR_YELLOW = ESC // "[33m"         ! Escape sequence for yellow text
-    character(len=*), parameter     :: COLOR_RED = ESC // "[91m"            ! Escape sequence for red text
-    character(len=*), parameter     :: COLOR_RESET = ESC // "[0m"           ! Escape sequence to reset text color
 
     type, public :: GlobalsType
         ! Get model version from the version module (which our build script should modify)
@@ -108,10 +104,10 @@ module GlobalsModule
         type(NcDataset) :: dataset                          !! The NetCDF dataset
 
         ! Physical constants
-        real(dp) :: g = 9.80665_dp          !! Gravitational acceleration [m/s^2]
-        real(dp) :: k_B = 1.38064852e-23    !! Boltzmann constant [m2 kg s-2 K-1]
-        real(dp) :: pi = 4*atan(1.0_dp)     !! Pi [-]
-        real(dp) :: n_river = 0.035_dp      !! Manning's roughness coefficient, for natural streams and major rivers.
+        real(dp) :: g = kernel_g            !! Gravitational acceleration [m/s^2]
+        real(dp) :: k_B = kernel_k_B        !! Boltzmann constant [m2 kg s-2 K-1]
+        real(dp) :: pi = kernel_pi          !! Pi [-]
+        real(dp) :: n_river = kernel_n_river !! Manning's roughness coefficient, for natural streams and major rivers.
                                             !! [Reference](http://www.engineeringtoolbox.com/mannings-roughness-d_799.html).
 
         ! Temp
@@ -524,12 +520,9 @@ module GlobalsModule
         real(dp), intent(in), optional :: S                     !! Salinity \( S \) [g/kg]
         real(dp) :: rho_w                                       !! Density of water \( \rho_w \) [kg/m**3].
         if (present(S)) then
-            rho_w = 1000.0_dp*(1-(T+288.9414_dp)/(508929.2_dp*(T+68.12963_dp))*(T-3.9863_dp)**2) &
-                    + (0.824493_dp - 0.0040899_dp*T + 0.000076438_dp*T**2 - 0.00000082467_dp*T**3 + 0.0000000053675_dp*T**4)*S &
-                    + (-0.005724_dp + 0.00010227_dp*T - 0.0000016546_dp*T**2)*S**(3.0_dp/2.0_dp) &
-                    + 0.00048314_dp*S**2
+            rho_w = kernel_rho_w(T, S)
         else
-            rho_w = 1000.0_dp*(1-(T+288.9414_dp)/(508929.2_dp*(T+68.12963_dp))*(T-3.9863_dp)**2)
+            rho_w = kernel_rho_w(T)
         end if
     end function
 
@@ -545,9 +538,9 @@ module GlobalsModule
         real(dp), intent(in), optional :: S                     !! Salinity \( S \) [g/kg]
         real(dp) :: nu_w                                        !! Kinematic viscosity of water \( \nu_{\text{w}} \)
         if (present(S)) then
-            nu_w = (2.414e-5_dp * 10.0_dp**(247.8_dp/((T+273.15_dp)-140.0_dp)))/me%rho_w(T,S)
+            nu_w = kernel_nu_w(T, S)
         else
-            nu_w = (2.414e-5_dp * 10.0_dp**(247.8_dp/((T+273.15_dp)-140.0_dp)))/me%rho_w(T)
+            nu_w = kernel_nu_w(T)
         end if
     end function
     
@@ -560,6 +553,6 @@ module GlobalsModule
         class(GlobalsType), intent(in) :: me
         real, intent(in) :: T
         real(dp) :: mu_w
-        mu_w = (2.414e-5_dp * 10.0_dp**(247.8_dp/((T+273.15_dp)-140.0_dp)))
+        mu_w = kernel_mu_w(T)
     end function
 end module GlobalsModule

@@ -1,27 +1,13 @@
 !> The DefaultsModule holds default values used throughout the model, such as those
 !! used in input data or config
 module DefaultsModule
+    use KernelModule, only: dp, iouConfig, iouBatchConfig, iouVersion, iouConstants, &
+        iouOutputSummary, iouOutputWater, iouOutputSediment, iouOutputSoil, iouOutputSSD, &
+        iouOutputStats, iouCheckpoint, iouLog
     implicit none
 
     ! Double precision reals. Private for the moment as it's also in GlobalsModule
-    integer, private, parameter :: dp = selected_real_kind(15, 307)
-
-    ! Config file IO units
-    integer, parameter :: iouConfig = 1
-    integer, parameter :: iouBatchConfig = 2
-    integer, parameter :: iouVersion = 3
-    ! Constants file IO units
-    integer, parameter :: iouConstants = 10
-    ! Output file IO units
-    integer, parameter :: iouOutputSummary = 100
-    integer, parameter :: iouOutputWater = 101
-    integer, parameter :: iouOutputSediment = 102
-    integer, parameter :: iouOutputSoil = 103
-    integer, parameter :: iouOutputSSD = 104
-    integer, parameter :: iouOutputStats = 105
-    ! Checkpoint and logging
-    integer, parameter :: iouCheckpoint = 500
-    integer, parameter :: iouLog = 501
+    private :: dp
 
     ! Defaults for config, encapsulated in a type
     type, public :: ConfigDefaultsType
