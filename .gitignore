@@ -26,8 +26,16 @@ output/
 scratch/
 *.dat
 
+# Local verification outputs and baselines
+verification/baselines/
+verification/runs/
+
 # Prerequisites
 *.d
+
+# Python cache files
+__pycache__/
+*.py[cod]
 
 # Compiled Object files
 *.slo
