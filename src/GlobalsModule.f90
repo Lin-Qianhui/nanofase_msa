@@ -8,6 +8,13 @@ module GlobalsModule
         kernel_pi => pi, kernel_n_river => n_river, kernel_rho_w => rho_w, &
         kernel_nu_w => nu_w, kernel_mu_w => mu_w
     use DefaultsModule, only: iouConfig, iouBatchConfig, iouVersion, configDefaults
+    use ModelDimensionsModule, only: initModelDimensions, dim_nSoilLayers => nSoilLayers, &
+        dim_nSedimentLayers => nSedimentLayers, dim_nSizeClassesSpm => nSizeClassesSpm, &
+        dim_nSizeClassesNM => nSizeClassesNM, dim_nFracCompsSpm => nFracCompsSpm, &
+        dim_nFormsNM => nFormsNM, dim_nExtraStatesNM => nExtraStatesNM, &
+        dim_npDim => npDim, dim_d_spm => d_spm, dim_d_spm_low => d_spm_low, &
+        dim_d_spm_upp => d_spm_upp, dim_d_nm => d_nm, &
+        dim_sedimentParticleDensities => sedimentParticleDensities
     use ErrorCriteriaModule
     use ErrorInstanceModule
     use ResultModule, only: Result
@@ -142,7 +149,7 @@ module GlobalsModule
 
     !> Initialise global variables, such as `ERROR_HANDLER`
     subroutine GLOBALS_INIT()
-        integer :: n, i                                     ! Iterators
+        integer :: i                                        ! Iterators
         integer :: nmlIOStat                                ! IO status for namelist reading
         type(ErrorInstance) :: errors(17)                   ! ErrorInstances to be added to ErrorHandler
         character(len=256) :: configFilePath, batchRunFilePath
@@ -156,9 +163,8 @@ module GlobalsModule
         character(len=3) :: netcdf_write_mode
         character(len=32) :: output_hash
         integer, allocatable :: n_timesteps_per_chunk(:)
-        integer :: n_nm_size_classes, n_nm_forms, n_nm_extra_states, warm_up_period, n_spm_size_classes, &
-            n_fractional_compositions, n_chunks
-        integer :: timestep, n_timesteps, n_soil_layers, n_sediment_layers, min_estuary_timestep
+        integer :: n_nm_forms, n_nm_extra_states, warm_up_period, n_chunks
+        integer :: timestep, n_timesteps, min_estuary_timestep
         real :: min_stream_slope
         real(dp) :: epsilon, delta
         real, allocatable :: soil_layer_depth(:), nm_size_classes(:), spm_size_classes(:), &
@@ -172,8 +178,6 @@ module GlobalsModule
             include_soil_erosion
         
         ! Config file namelists
-        namelist /allocatable_array_sizes/ n_soil_layers, n_nm_size_classes, n_spm_size_classes, &
-            n_fractional_compositions, n_sediment_layers
         namelist /nanomaterial/ n_nm_forms, n_nm_extra_states, nm_size_classes
         namelist /data/ input_file, constants_file, output_path
         namelist /output/ write_metadata_as_comment, include_sediment_layer_breakdown, include_soil_layer_breakdown, &
@@ -237,14 +241,16 @@ module GlobalsModule
         call get_command_argument(1, configFilePath, configFilePathLength)
         call get_command_argument(2, batchRunFilePath, batchRunFilePathLength)
 
-        ! Open the config file, or try and find one at config/config.nml if it can't be found 
+        ! Resolve the config file, or try and find one at config/config.nml if it can't be found.
         if (configFilePathLength > 0) then
-            open(iouConfig, file=trim(configFilePath), status="old")
             C%configFilePath = configFilePath
         else
-            open(iouConfig, file="config/config.nml", status="old")
             C%configFilePath = "config/config.nml"
         end if
+
+        call initModelDimensions(trim(C%configFilePath))
+
+        open(iouConfig, file=trim(C%configFilePath), status="old")
 
         ! If this is a batch run, then open the batch run config file and store the data from it
         if (batchRunFilePathLength > 0) then
@@ -273,14 +279,13 @@ module GlobalsModule
             close(iouBatchConfig)
         end if
 
-        read(iouConfig, nml=allocatable_array_sizes); rewind(iouConfig)
         ! Use the allocatable array sizes to allocate those arrays (allocatable arrays
         ! must be allocated before being read in to)
-        allocate(soil_layer_depth(n_soil_layers))
-        allocate(sediment_layer_depth(n_sediment_layers))
-        allocate(nm_size_classes(n_nm_size_classes))
-        allocate(spm_size_classes(n_spm_size_classes))
-        allocate(sediment_particle_densities(n_fractional_compositions))
+        allocate(soil_layer_depth(dim_nSoilLayers))
+        allocate(sediment_layer_depth(dim_nSedimentLayers))
+        allocate(nm_size_classes(dim_nSizeClassesNM))
+        allocate(spm_size_classes(dim_nSizeClassesSpm))
+        allocate(sediment_particle_densities(dim_nFracCompsSpm))
         ! Carry on reading in the different config groups
         read(iouConfig, nml=nanomaterial); rewind(iouConfig)
         read(iouConfig, nml=data); rewind(iouConfig)
@@ -300,10 +305,10 @@ module GlobalsModule
         
         ! Store this data in the Globals variable
         ! Nanomaterial
-        C%nSizeClassesNM = n_nm_size_classes
-        C%nFormsNM = n_nm_forms
-        C%nExtraStatesNM = n_nm_extra_states
-        allocate(C%d_nm, source=nm_size_classes)
+        C%nSizeClassesNM = dim_nSizeClassesNM
+        C%nFormsNM = dim_nFormsNM
+        C%nExtraStatesNM = dim_nExtraStatesNM
+        allocate(C%d_nm, source=dim_d_nm)
         ! Data
         C%inputFile = input_file
         C%constantsFile = constants_file
@@ -357,14 +362,14 @@ module GlobalsModule
         C%steadyStateDelta = delta
         ! Sediment
         C%sedimentLayerDepth = sediment_layer_depth
-        C%nSizeClassesSpm = n_spm_size_classes
+        C%nSizeClassesSpm = dim_nSizeClassesSpm
         C%includeBedSediment = include_bed_sediment
-        C%nSedimentLayers = n_sediment_layers
-        allocate(C%d_spm, source=spm_size_classes)
-        C%nFracCompsSpm = n_fractional_compositions
-        allocate(C%sedimentParticleDensities, source=sediment_particle_densities)
+        C%nSedimentLayers = dim_nSedimentLayers
+        allocate(C%d_spm, source=dim_d_spm)
+        C%nFracCompsSpm = dim_nFracCompsSpm
+        allocate(C%sedimentParticleDensities, source=dim_sedimentParticleDensities)
         ! Soil
-        C%nSoilLayers = n_soil_layers
+        C%nSoilLayers = dim_nSoilLayers
         C%soilLayerDepth = soil_layer_depth
         C%includeBioturbation = include_bioturbation
         C%includeAttachment = include_attachment
@@ -397,31 +402,15 @@ module GlobalsModule
             C%batchNTimesteps(1) = C%nTimeSteps
         end if
 
-        allocate(C%d_spm_low(C%nSizeClassesSpm))
-        allocate(C%d_spm_upp(C%nSizeClassesSpm))
-        ! Set the upper and lower bounds of each size class, if treated as a distribution
-        do n = 1, C%nSizeClassesSpm
-            ! Set the upper and lower limit of the size class's distributions
-            if (n == C%nSizeClassesSpm) then
-                C%d_spm_upp(n) = 1                                              ! failsafe overall upper size limit
-            else
-                C%d_spm_upp(n) = C%d_spm(n+1) - (C%d_spm(n+1)-C%d_spm(n))/2     ! Halfway between d_1 and d_2
-            end if                
-        end do
-        do n = 1, C%nSizeClassesSpm
-            if (n == 1) then
-                C%d_spm_low(n) = 0                                              ! Particles can be any size below d_upp,1
-            else
-                C%d_spm_low(n) = C%d_spm_upp(n-1)                               ! lower size boundary equals upper size boundary of lower size class
-            end if
-        end do        
+        allocate(C%d_spm_low, source=dim_d_spm_low)
+        allocate(C%d_spm_upp, source=dim_d_spm_upp)
 
         ! Array to store default NM and ionic array dimensions. NM:
         !   1: NP size class
         !   2: form (core, shell, coating, corona)
         !   3: state (free, bound, heteroaggregated)
         ! Ionic: Form (free ion, solution, adsorbed)
-        C%npDim = [C%nSizeClassesNM, C%nFormsNM, C%nSizeClassesSpm + C%nExtraStatesNM]
+        C%npDim = dim_npDim
         
         ! General
         errors(1) = ErrorInstance(code=110, message="Invalid object type index in data file.")

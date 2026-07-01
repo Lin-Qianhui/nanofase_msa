@@ -300,8 +300,10 @@ We cannot edit all call sites at once. Strategy:
 4. When the last domain is migrated, `C` has no remaining readers → **delete it**,
    and do the final error/log distribution pass.
 
-This means `CheckpointModule`, `LoggerModule`, and the error array keep reading `C%…`
-**unchanged** for the entire migration; they are only touched in the final cleanup.
+This means `LoggerModule`, the error array, and most checkpoint state keep reading
+`C%…` until their owning layers are migrated. The Phase 1 exception is deliberate:
+`CheckpointModule` may read dimension fields directly from `ModelDimensionsModule`,
+while keeping `C` for non-dimension state such as `epsilon`, `t0`, and error handling.
 
 ### Namelist read-order coupling (must preserve)
 Today `/allocatable_array_sizes/` is read first because its counts size the
@@ -312,6 +314,13 @@ its init; the bootstrap calls model-dimensions init before any domain init; each
 queries model-dimensions for the count it needs, allocates, then reads its own group.
 Each module opens `config.nml` with `open(newunit=…)` so there is no shared IO-unit
 registry and no ordering coupling between domain reads.
+
+Fortran namelist reads are group-wide, not partial. Any module that reads a shared
+group such as `/sediment/` must declare every variable that can appear in that group,
+even if some variables are only local dummies. In Phase 1, `ModelDimensionsModule`
+therefore declares dummy `include_bed_sediment` and `sediment_layer_depth` variables
+when reading `/sediment/`, while storing only the SPM size classes and sediment
+particle densities.
 
 ---
 
@@ -431,9 +440,11 @@ end module
   and the `/allocatable_array_sizes/` + `/nanomaterial/` reads + `d_spm_*` derivation.
 - `GLOBALS_INIT` delegates dimension setup to it, then **copies** values back into `C`
   (facade) so the 490 `C%npDim` readers are untouched.
-- Repoint `CheckpointModule` dimension reads to `use ModelDimensionsModule` (it reads
-  only dimensions — clean, isolated change).
-- **Verify:** build + reference run identical; checkpoint save/reinstate round-trips.
+- Repoint only `CheckpointModule`'s dimension-shaped reads to `use ModelDimensionsModule`;
+  it keeps `C` for non-dimension state such as `epsilon`, `t0`, and error handling.
+- **Verify:** build + reference run identical; checkpoint save/reinstate smoke test
+  runs, with exact round-trip comparison deferred until the existing warm-up/reinstate
+  run-control semantics are separated.
 
 ### Phase 2 — Slim model module + facade wiring
 - Create `ModelConfigModule` owning run/output/checkpoint/steady-state/batch/data-path

@@ -1,8 +1,10 @@
 module CheckpointModule
     use AbstractEnvironmentModule, only: EnvironmentPointer
     use EnvironmentModule
+    use KernelModule, only: dp, COLOR_GREEN, COLOR_RESET
     use DefaultsModule, only: iouCheckpoint
-    use GlobalsModule, only: dp, C, ERROR_HANDLER
+    use GlobalsModule, only: C, ERROR_HANDLER
+    use ModelDimensionsModule, only: npDim, nSoilLayers, nSedimentLayers, nSizeClassesSpm, nFracCompsSpm
     use DataInputModule, only: DATASET
     use LoggerModule, only: LOGR
     use FlowModule
@@ -46,52 +48,52 @@ module CheckpointModule
         ! Variables to save
         ! TODO allow multiple soil profiles
         ! Soil profile
-        real(dp) :: soilProfile_m_np(DATASET%gridShape(1), DATASET%gridShape(2), 1, C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp) :: soilProfile_m_transformed(DATASET%gridShape(1), DATASET%gridShape(2), 1, C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: soilProfile_m_np(DATASET%gridShape(1), DATASET%gridShape(2), 1, npDim(1), npDim(2), npDim(3))
+        real(dp) :: soilProfile_m_transformed(DATASET%gridShape(1), DATASET%gridShape(2), 1, npDim(1), npDim(2), npDim(3))
         real(dp) :: soilProfile_m_dissolved(DATASET%gridShape(1), DATASET%gridShape(2), 1)
         ! Soil layers
-        real(dp) :: soilLayer_m_np(DATASET%gridShape(1), DATASET%gridShape(2), 1, C%nSoilLayers, C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: soilLayer_m_np(DATASET%gridShape(1), DATASET%gridShape(2), 1, nSoilLayers, npDim(1), npDim(2), npDim(3))
         real(dp) :: soilLayer_m_transformed(DATASET%gridShape(1), DATASET%gridShape(2), 1, &
-            C%nSoilLayers, C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp) :: soilLayer_m_dissolved(DATASET%gridShape(1), DATASET%gridShape(2), 1, C%nSoilLayers)
-        real(dp) :: soilLayer_V_w(DATASET%gridShape(1), DATASET%gridShape(2), 1, C%nSoilLayers)
+            nSoilLayers, npDim(1), npDim(2), npDim(3))
+        real(dp) :: soilLayer_m_dissolved(DATASET%gridShape(1), DATASET%gridShape(2), 1, nSoilLayers)
+        real(dp) :: soilLayer_V_w(DATASET%gridShape(1), DATASET%gridShape(2), 1, nSoilLayers)
         ! Waterbodies
         real(dp) :: water_volume(DATASET%gridShape(1), DATASET%gridShape(2), maxval(DATASET%nWaterbodies))
         real(dp) :: water_bedArea(DATASET%gridShape(1), DATASET%gridShape(2), maxval(DATASET%nWaterbodies)) 
         real(dp) :: water_Q(5, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
         real(dp) :: water_Q_final(5, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_spm(8, C%nSizeClassesSPM, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_spm_final(8, C%nSizeClassesSPM, maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_spm(8, nSizeClassesSpm, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
+        real(dp) :: water_j_spm_final(8, nSizeClassesSpm, maxval(DATASET%nWaterbodies), &
                                       DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_np(10, C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_np(10, npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_np_final(10, C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_np_final(10, npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                      DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_transformed(10, C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_transformed(10, npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                         DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_transformed_final(10, C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_transformed_final(10, npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                               DATASET%gridShape(1), DATASET%gridShape(2))
         real(dp) :: water_j_dissolved(6, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
         real(dp) :: water_j_dissolved_final(6, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_m_spm(C%nSizeClassesSpm, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_m_np(C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_m_spm(nSizeClassesSpm, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
+        real(dp) :: water_m_np(npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_m_transformed(C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_m_transformed(npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                         DATASET%gridShape(1), DATASET%gridShape(2))
         real(dp) :: water_m_dissolved(maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
         ! Sediment
         real(dp) :: sediment_m_np(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers + 3, C%npDim(1), C%npDim(2), C%npDim(3))
+            maxval(DATASET%nWaterbodies), nSedimentLayers + 3, npDim(1), npDim(2), npDim(3))
         real(dp) :: sedimentLayer_M_f(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers, C%nSizeClassesSpm)
+            maxval(DATASET%nWaterbodies), nSedimentLayers, nSizeClassesSpm)
         real(dp) :: sedimentLayer_M_f_backup(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers, C%nSizeClassesSpm)
+            maxval(DATASET%nWaterbodies), nSedimentLayers, nSizeClassesSpm)
         real(dp) :: sedimentLayer_V_w(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers, C%nSizeClassesSpm)
+            maxval(DATASET%nWaterbodies), nSedimentLayers, nSizeClassesSpm)
         real(dp) :: sedimentLayer_f_comp(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers, C%nSizeClassesSpm, C%nFracCompsSpm)
+            maxval(DATASET%nWaterbodies), nSedimentLayers, nSizeClassesSpm, nFracCompsSpm)
         real(dp) :: sedimentLayer_pd_comp(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers, C%nSizeClassesSpm, C%nFracCompsSpm)
+            maxval(DATASET%nWaterbodies), nSedimentLayers, nSizeClassesSpm, nFracCompsSpm)
 
         ! There will be empty elements in the water arrays, as the number of waterbodies, inflows and emissions
         ! varies between each grid cell. So, set to zero so we're at least storing a small number
@@ -132,7 +134,7 @@ module CheckpointModule
                             soilProfile_m_np(i,j,k,:,:,:) = profile%m_np
                             soilProfile_m_transformed(i,j,k,:,:,:) = profile%m_transformed
                             soilProfile_m_dissolved(i,j,k) = profile%m_dissolved
-                            do l = 1, C%nSoilLayers
+                            do l = 1, nSoilLayers
                                 associate (layer => profile%colSoilLayers(l)%item)
                                     ! Soil layer dynamic properties
                                     soilLayer_m_np(i,j,k,l,:,:,:) = layer%m_np
@@ -170,9 +172,9 @@ module CheckpointModule
                             associate (sediment => water%bedSediment)
                                 sediment_m_np(i,j,k,:,:,:,:) = sediment%M_np
                                 ! Sediment layers
-                                do l = 1, C%nSedimentLayers
+                                do l = 1, nSedimentLayers
                                     associate (layer => sediment%colBedSedimentLayers(l)%item)
-                                        do m = 1, C%nSizeClassesSpm
+                                        do m = 1, nSizeClassesSpm
                                             sedimentLayer_M_f(i,j,k,l,m) = layer%colFineSediment(m)%M_f()
                                             sedimentLayer_M_f_backup(i,j,k,l,m) = layer%colFineSediment(m)%M_f_backup()
                                             sedimentLayer_V_w(i,j,k,l,m) = layer%colFineSediment(m)%V_w()
@@ -219,54 +221,52 @@ module CheckpointModule
         integer                 :: t                                    ! Timestep
         real                    :: gridRes(2), gridBounds(4)            ! Grid properties, for checking the checkpoint is compatible with this model run
         ! Soil profile
-        real(dp) :: soilProfile_m_np(DATASET%gridShape(1), DATASET%gridShape(2), 1, C%npDim(1), C%npDim(2), C%npDim(3))       ! TODO allow multiple soil profiles
-        real(dp) :: soilProfile_m_transformed(DATASET%gridShape(1), DATASET%gridShape(2), 1, C%npDim(1), C%npDim(2), C%npDim(3))       ! TODO allow multiple soil profiles
+        real(dp) :: soilProfile_m_np(DATASET%gridShape(1), DATASET%gridShape(2), 1, npDim(1), npDim(2), npDim(3))       ! TODO allow multiple soil profiles
+        real(dp) :: soilProfile_m_transformed(DATASET%gridShape(1), DATASET%gridShape(2), 1, npDim(1), npDim(2), npDim(3))       ! TODO allow multiple soil profiles
         real(dp) :: soilProfile_m_dissolved(DATASET%gridShape(1), DATASET%gridShape(2), 1)       ! TODO allow multiple soil profiles
         ! Soil layers
-        real(dp) :: soilLayer_m_np(DATASET%gridShape(1), DATASET%gridShape(2), 1, C%nSoilLayers, C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: soilLayer_m_np(DATASET%gridShape(1), DATASET%gridShape(2), 1, nSoilLayers, npDim(1), npDim(2), npDim(3))
         real(dp) :: soilLayer_m_transformed(DATASET%gridShape(1), DATASET%gridShape(2), 1, &
-            C%nSoilLayers, C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp) :: soilLayer_m_dissolved(DATASET%gridShape(1), DATASET%gridShape(2), 1, C%nSoilLayers)
-        real(dp) :: soilLayer_V_w(DATASET%gridShape(1), DATASET%gridShape(2), 1, C%nSoilLayers)
+            nSoilLayers, npDim(1), npDim(2), npDim(3))
+        real(dp) :: soilLayer_m_dissolved(DATASET%gridShape(1), DATASET%gridShape(2), 1, nSoilLayers)
+        real(dp) :: soilLayer_V_w(DATASET%gridShape(1), DATASET%gridShape(2), 1, nSoilLayers)
         ! Water
         real(dp) :: water_volume(DATASET%gridShape(1), DATASET%gridShape(2), maxval(DATASET%nWaterbodies))
         real(dp) :: water_bedArea(DATASET%gridShape(1), DATASET%gridShape(2), maxval(DATASET%nWaterbodies)) 
         real(dp) :: water_Q(5, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
         real(dp) :: water_Q_final(5, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_spm(8, C%nSizeClassesSPM, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_spm_final(8, C%nSizeClassesSPM, maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_spm(8, nSizeClassesSpm, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
+        real(dp) :: water_j_spm_final(8, nSizeClassesSpm, maxval(DATASET%nWaterbodies), &
                                       DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_np(10, C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_np(10, npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_np_final(10, C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_np_final(10, npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                      DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_transformed(10, C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_transformed(10, npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                         DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_transformed_final(10, C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_transformed_final(10, npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                               DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_j_dissolved(DATASET%gridShape(1), DATASET%gridShape(2), &
-                                      maxval(DATASET%nWaterbodies), 6)
-        real(dp) :: water_j_dissolved_final(DATASET%gridShape(1), DATASET%gridShape(2), &
-                                            maxval(DATASET%nWaterbodies), 6)
-        real(dp) :: water_m_spm(C%nSizeClassesSPM, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_m_np(C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_j_dissolved(6, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
+        real(dp) :: water_j_dissolved_final(6, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
+        real(dp) :: water_m_spm(nSizeClassesSpm, maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
+        real(dp) :: water_m_np(npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                DATASET%gridShape(1), DATASET%gridShape(2))
-        real(dp) :: water_m_transformed(C%npDim(1), C%npDim(2), C%npDim(3), maxval(DATASET%nWaterbodies), &
+        real(dp) :: water_m_transformed(npDim(1), npDim(2), npDim(3), maxval(DATASET%nWaterbodies), &
                                         DATASET%gridShape(1), DATASET%gridShape(2))
         real(dp) :: water_m_dissolved(maxval(DATASET%nWaterbodies), DATASET%gridShape(1), DATASET%gridShape(2))
         ! Sediment
         real(dp) :: sediment_m_np(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers + 3, C%npDim(1), C%npDim(2), C%npDim(3))
+            maxval(DATASET%nWaterbodies), nSedimentLayers + 3, npDim(1), npDim(2), npDim(3))
         real(dp) :: sedimentLayer_M_f(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers, C%nSizeClassesSpm)
+            maxval(DATASET%nWaterbodies), nSedimentLayers, nSizeClassesSpm)
         real(dp) :: sedimentLayer_M_f_backup(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers, C%nSizeClassesSpm)
+            maxval(DATASET%nWaterbodies), nSedimentLayers, nSizeClassesSpm)
         real(dp) :: sedimentLayer_V_w(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers, C%nSizeClassesSpm)
+            maxval(DATASET%nWaterbodies), nSedimentLayers, nSizeClassesSpm)
         real(dp) :: sedimentLayer_f_comp(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers, C%nSizeClassesSpm, C%nFracCompsSpm)
+            maxval(DATASET%nWaterbodies), nSedimentLayers, nSizeClassesSpm, nFracCompsSpm)
         real(dp) :: sedimentLayer_pd_comp(DATASET%gridShape(1), DATASET%gridShape(2), &
-            maxval(DATASET%nWaterbodies), C%nSedimentLayers, C%nSizeClassesSpm, C%nFracCompsSpm)
+            maxval(DATASET%nWaterbodies), nSedimentLayers, nSizeClassesSpm, nFracCompsSpm)
 
         ! If preserve timestep not present, then default to false
         if (.not. present(preserve_timestep)) preserve_timestep = .false.
@@ -328,7 +328,7 @@ module CheckpointModule
                             profile%m_transformed = soilProfile_m_transformed(i,j,k,:,:,:) 
                             profile%m_dissolved = soilProfile_m_dissolved(i,j,k) 
                             ! CHECK: m_np_eroded
-                            do l = 1, C%nSoilLayers
+                            do l = 1, nSoilLayers
                                 associate (layer => profile%colSoilLayers(l)%item)
                                     ! Soil layer dynamic properties
                                     layer%m_np = soilLayer_m_np(i,j,k,l,:,:,:) 
@@ -366,9 +366,9 @@ module CheckpointModule
                             associate (sediment => water%bedSediment)
                                 sediment%M_np = sediment_m_np(i,j,k,:,:,:,:) 
                                 ! Sediment layers
-                                do l = 1, C%nSedimentLayers
+                                do l = 1, nSedimentLayers
                                     associate (layer => sediment%colBedSedimentLayers(l)%item)
-                                        do m = 1, C%nSizeClassesSpm
+                                        do m = 1, nSizeClassesSpm
                                             call layer%colFineSediment(m)%set( &
                                                 Mf_in = sedimentLayer_M_f(i,j,k,l,m), &
                                                 Vw_in = sedimentLayer_V_w(i,j,k,l,m) &
