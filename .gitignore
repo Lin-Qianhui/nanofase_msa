@@ -94,3 +94,6 @@ gprof
 
 # Docs
 docs/_build/
+
+# macOS
+.DS_Store
