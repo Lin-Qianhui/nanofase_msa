@@ -3,8 +3,9 @@ module CheckpointModule
     use EnvironmentModule
     use KernelModule, only: dp, COLOR_GREEN, COLOR_RESET
     use DefaultsModule, only: iouCheckpoint
-    use GlobalsModule, only: C, ERROR_HANDLER
+    use GlobalsModule, only: C, ERROR_HANDLER, syncRuntimeModelConfigToGlobals
     use ModelDimensionsModule, only: npDim, nSoilLayers, nSedimentLayers, nSizeClassesSpm, nFracCompsSpm
+    use ModelConfigModule, only: modelConfig
     use DataInputModule, only: DATASET
     use LoggerModule, only: LOGR
     use FlowModule
@@ -311,7 +312,8 @@ module CheckpointModule
         ! Now we've read in those variables, we need to reinstate them.
         ! First, should we reinstate the model timestep from the checkpoint?
         if (preserve_timestep) then
-            C%t0 = t
+            call modelConfig%setT0(t)
+            call syncRuntimeModelConfigToGlobals()
         end if
 
         ! Loop through all the grid cells and use the checkpoint data to set

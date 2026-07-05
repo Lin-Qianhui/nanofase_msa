@@ -19,7 +19,10 @@ module DefaultsModule
         real                :: minStreamSlope = 0.0001                  ! [m/m]
         integer             :: minEstuaryTimestep = 3600                ! 1 hour [s] 
         logical             :: writeToLog = .true.
+        real(dp)            :: epsilon = 1e-10_dp                       !! Used as proximity to check whether variable as equal
         integer             :: warmUpPeriod = 0                         ! How many time steps to warm the model up for
+        logical             :: triggerWarnings = .false.                ! Should non-critical warnings be printed to the console?
+        logical             :: errorOutput = .true.                     ! Should error handling be enabled?
         logical             :: bashColors = .true.                      ! Should we print colored output to the console?
         ! Output
         logical             :: writeCSV = .true.                        ! Should output data be written to CSV files?

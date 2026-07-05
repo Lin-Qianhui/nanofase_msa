@@ -235,8 +235,9 @@ than the facade `C`. See the builder phase in §7.
 
 ### Slim model module (`src/ModelConfig` — proposed; replaces the global parts of `C`)
 - Run: `timeStep`, `nTimeSteps`, `startDate`, `epsilon`, `warmUpPeriod`,
-  `triggerWarnings`, `runDescription`, `logFilePath`, `writeToLog`, `configFilePath`,
-  `hasSimulationMask`/`simulationMaskPath`, `ignoreNM`, `bashColors`, `modelVersion`
+  `triggerWarnings`, `errorOutput`, `runDescription`, `logFilePath`, `writeToLog`,
+  `configFilePath`, `hasSimulationMask`/`simulationMaskPath`, `ignoreNM`,
+  `bashColors`, `modelVersion`
 - Output: all `write*`/`include*` output flags, `soilPECUnits`, `sedimentPECUnits`,
   `netCDFWriteMode`
 - Checkpoint: `checkpointFile`, `saveCheckpoint`, `saveCheckpointAfterWarmUp`,
@@ -304,6 +305,10 @@ This means `LoggerModule`, the error array, and most checkpoint state keep readi
 `C%…` until their owning layers are migrated. The Phase 1 exception is deliberate:
 `CheckpointModule` may read dimension fields directly from `ModelDimensionsModule`,
 while keeping `C` for non-dimension state such as `epsilon`, `t0`, and error handling.
+Phase 2 adds `ModelConfigModule` as the source of truth for model-level config, while
+`C` remains a facade. Runtime-mutated model config (`inputFile`, `constantsFile`,
+`nTimeSteps`, `startDate`, `t0`) must be changed through `ModelConfigModule` helpers
+and mirrored back into `C` until all readers migrate.
 
 ### Namelist read-order coupling (must preserve)
 Today `/allocatable_array_sizes/` is read first because its counts size the
@@ -451,7 +456,12 @@ end module
   config and their namelist reads.
 - `GLOBALS_INIT` delegates these reads to it, copies back into `C` (facade).
 - Move model-level config audits ([src/GlobalsModule.f90:474-507](src/GlobalsModule.f90#L474-L507))
-  into `ModelConfig%audit`.
+  into `ModelConfig%audit`, returning a `Result` so `ModelConfigModule` does not
+  depend on `GlobalsModule`/`ERROR_HANDLER`.
+- Keep domain namelist reads (`/soil/`, `/sediment/`, `/water/`, `/sources/`) in
+  `GLOBALS_INIT` until the corresponding domain phases migrate them.
+- Route batch chunk selection and checkpoint-preserved `t0` through `ModelConfigModule`
+  and mirror those runtime values back into `C`.
 - **Verify:** build + reference run identical.
 
 ### Phase B — Builder extraction (parallel workstream, after Phases 1-2)

@@ -1,13 +1,12 @@
 module GlobalsModule
     use mo_netcdf
     use datetime_module
-    use mod_strptime, only: f_strptime
     use VersionModule, only: MODEL_VERSION
     use KernelModule, only: dp, ESC, COLOR_BLUE, COLOR_LIGHT_BLUE, COLOR_GREEN, &
         COLOR_YELLOW, COLOR_RED, COLOR_RESET, kernel_g => g, kernel_k_B => k_B, &
         kernel_pi => pi, kernel_n_river => n_river, kernel_rho_w => rho_w, &
         kernel_nu_w => nu_w, kernel_mu_w => mu_w
-    use DefaultsModule, only: iouConfig, iouBatchConfig, iouVersion, configDefaults
+    use DefaultsModule, only: iouConfig, configDefaults
     use ModelDimensionsModule, only: initModelDimensions, dim_nSoilLayers => nSoilLayers, &
         dim_nSedimentLayers => nSedimentLayers, dim_nSizeClassesSpm => nSizeClassesSpm, &
         dim_nSizeClassesNM => nSizeClassesNM, dim_nFracCompsSpm => nFracCompsSpm, &
@@ -15,6 +14,7 @@ module GlobalsModule
         dim_npDim => npDim, dim_d_spm => d_spm, dim_d_spm_low => d_spm_low, &
         dim_d_spm_upp => d_spm_upp, dim_d_nm => d_nm, &
         dim_sedimentParticleDensities => sedimentParticleDensities
+    use ModelConfigModule, only: modelConfig
     use ErrorCriteriaModule
     use ErrorInstanceModule
     use ResultModule, only: Result
@@ -59,6 +59,7 @@ module GlobalsModule
         real(dp)            :: epsilon = 1e-10                  !! Used as proximity to check whether variable as equal
         integer             :: warmUpPeriod                     !! How long before we start inputting NM (to give flows to reach steady state)?
         logical             :: triggerWarnings                  !! Should error warnings be printed to the console?
+        logical             :: errorOutput                      !! Should error handling be enabled?
         logical             :: hasSimulationMask = .false.      !! Are we meant to mask the simulation (i.e. only use a subset of the input dataset)?
         character(len=256)  :: simulationMaskPath = ""          !! Path to NetCDF simulation mask
         logical             :: ignoreNM                         !! If .true., miss out costly NM calculations. Useful for sediment calibration, NM PECs will be invalid
@@ -140,7 +141,6 @@ module GlobalsModule
         procedure :: rho_w      ! Density of water
         procedure :: nu_w       ! Kinematic viscosity of water
         procedure :: mu_w       ! Dynamic viscosity of water
-        procedure :: audit      ! Audit the config options
     end type
 
     type(GlobalsType) :: C
@@ -149,153 +149,55 @@ module GlobalsModule
 
     !> Initialise global variables, such as `ERROR_HANDLER`
     subroutine GLOBALS_INIT()
-        integer :: i                                        ! Iterators
         integer :: nmlIOStat                                ! IO status for namelist reading
         type(ErrorInstance) :: errors(17)                   ! ErrorInstances to be added to ErrorHandler
+        type(Result) :: auditResult                         ! Model-config audit result
         character(len=256) :: configFilePath, batchRunFilePath
         integer :: configFilePathLength, batchRunFilePathLength
-        ! Values from config file
-        character(len=256) :: input_file, constants_file, output_path, log_file_path, start_date, &
-            startDateStr, description, checkpoint_file, batch_description, simulation_mask
-        character(len=50) :: mode
-        character(len=256), allocatable :: input_files(:), constants_files(:), start_dates(:)
-        character(len=5) :: soil_pec_units, sediment_pec_units
-        character(len=3) :: netcdf_write_mode
-        character(len=32) :: output_hash
-        integer, allocatable :: n_timesteps_per_chunk(:)
-        integer :: n_nm_forms, n_nm_extra_states, warm_up_period, n_chunks
-        integer :: timestep, n_timesteps, min_estuary_timestep
+        integer :: min_estuary_timestep
         real :: min_stream_slope
-        real(dp) :: epsilon, delta
-        real, allocatable :: soil_layer_depth(:), nm_size_classes(:), spm_size_classes(:), &
+        real, allocatable :: soil_layer_depth(:), spm_size_classes(:), &
             sediment_particle_densities(:), sediment_layer_depth(:)
-        logical :: error_output, include_bioturbation, include_attachment, include_point_sources, include_bed_sediment, &
-            write_csv, write_netcdf, write_metadata_as_comment, include_sediment_layer_breakdown, &
-            include_soil_layer_breakdown, include_soil_state_breakdown, save_checkpoint, reinstate_checkpoint, &
-            preserve_timestep, trigger_warnings, run_to_steady_state, include_sediment_fluxes, include_soil_erosion_yields, &
-            write_to_log, include_spm_size_class_breakdown, include_clay_enrichment, include_waterbody_breakdown, &
-            write_compartment_stats, ignore_nm, include_estuary, bash_colors, save_checkpoint_after_warm_up, include_bank_erosion, &
-            include_soil_erosion
+        logical :: include_bioturbation, include_attachment, include_point_sources, include_bed_sediment, &
+            include_clay_enrichment, include_estuary, include_bank_erosion, include_soil_erosion
         
-        ! Config file namelists
-        namelist /nanomaterial/ n_nm_forms, n_nm_extra_states, nm_size_classes
-        namelist /data/ input_file, constants_file, output_path
-        namelist /output/ write_metadata_as_comment, include_sediment_layer_breakdown, include_soil_layer_breakdown, &
-            soil_pec_units, sediment_pec_units, include_soil_state_breakdown, write_csv, include_sediment_fluxes, &
-            include_soil_erosion_yields, include_spm_size_class_breakdown, include_waterbody_breakdown, write_compartment_stats, &
-            write_netcdf, netcdf_write_mode
-        namelist /run/ timestep, n_timesteps, epsilon, error_output, log_file_path, start_date, warm_up_period, &
-            description, trigger_warnings, simulation_mask, write_to_log, output_hash, ignore_nm, bash_colors
-        namelist /checkpoint/ checkpoint_file, save_checkpoint, reinstate_checkpoint, preserve_timestep, &
-            save_checkpoint_after_warm_up
-        namelist /steady_state/ run_to_steady_state, mode, delta
+        ! Domain config namelists still owned by Globals until their domain phases.
         namelist /soil/ soil_layer_depth, include_bioturbation, include_attachment, include_clay_enrichment, include_soil_erosion
         namelist /sediment/ spm_size_classes, include_bed_sediment, sediment_particle_densities, sediment_layer_depth
         namelist /water/ min_stream_slope, min_estuary_timestep, include_estuary, include_bank_erosion
         namelist /sources/ include_point_sources
 
-        ! Batch config namelists
-        namelist /batch_config/ n_chunks, batch_description
-        namelist /chunks/ input_files, constants_files, start_dates, n_timesteps_per_chunk
-
-        ! Defaults, which will be overwritten if present in config file
-        ! TODO move all defaults to DefaultsModule.f90
-        write_to_log = configDefaults%writeToLog                                ! True
-        write_csv = configDefaults%writeCSV                                     ! True
-        write_netcdf = configDefaults%writeNetCDF                               ! False
-        netcdf_write_mode = configDefaults%netCDFWriteMode                      ! 'end'
-        output_hash = configDefaults%outputHash                                 ! ''
-        description = configDefaults%description                                ! 'NanoFASE model run'
-        batch_description = configDefaults%description                          ! 'NanoFASE model run'
-        write_metadata_as_comment = configDefaults%writeMetadataAsComment       ! True
-        include_sediment_layer_breakdown = configDefaults%includeSedimentLayerBreakdown  ! True
-        include_soil_layer_breakdown = configDefaults%includeSoilLayerBreakdown  ! True
-        include_soil_state_breakdown = configDefaults%includeSoilStateBreakdown ! False
-        include_sediment_fluxes = configDefaults%includeSedimentFluxes          ! False
-        include_spm_size_class_breakdown = configDefaults%includeSpmSizeClassBreakdown  ! False
-        include_soil_erosion_yields = configDefaults%includeSoilErosionYields   ! False
-        include_clay_enrichment = configDefaults%includeClayEnrichment          ! False
-        soil_pec_units = configDefaults%soilPECUnits                            ! kg/kg
-        sediment_pec_units = configDefaults%sedimentPECUnits                    ! kg/kg
-        save_checkpoint = configDefaults%saveCheckpoint                         ! False
-        save_checkpoint_after_warm_up = configDefaults%saveCheckpointAfterWarmUp ! False
-        checkpoint_file = configDefaults%checkpointFile                         ! ./checkpoint.dat
-        reinstate_checkpoint = configDefaults%reinstateCheckpoint               ! False
-        preserve_timestep = configDefaults%preserveTimeStep                     ! False
-        run_to_steady_state = configDefaults%runToSteadyState                   ! False
-        delta = configDefaults%steadyStateDelta                                 ! 1e-5
-        mode = configDefaults%steadyStateMode                                   ! 'sediment_size_distribution'
-        simulation_mask = configDefaults%simulationMask                         ! ''
-        min_stream_slope = configDefaults%minStreamSlope                        ! 0.001
-        min_estuary_timestep = configDefaults%minEstuaryTimestep                ! 3600
-        include_waterbody_breakdown = configDefaults%includeWaterbodyBreakdown  ! True
-        write_compartment_stats = configDefaults%writeCompartmentStats          ! False
-        ignore_nm = configDefaults%ignoreNM                                     ! False
-        include_estuary = configDefaults%includeEstuary                         ! True
-        include_bank_erosion = configDefaults%includeBankErosion                ! True
-        warm_up_period = configDefaults%warmUpPeriod                            ! 0
-        bash_colors = configDefaults%bashColors                                 ! True
-        include_soil_erosion = configDefaults%includeSoilErosion                ! True
+        include_clay_enrichment = configDefaults%includeClayEnrichment
+        min_stream_slope = configDefaults%minStreamSlope
+        min_estuary_timestep = configDefaults%minEstuaryTimestep
+        include_estuary = configDefaults%includeEstuary
+        include_bank_erosion = configDefaults%includeBankErosion
+        include_soil_erosion = configDefaults%includeSoilErosion
 
         ! Has a path to the config path been provided as a command line argument?
         call get_command_argument(1, configFilePath, configFilePathLength)
         call get_command_argument(2, batchRunFilePath, batchRunFilePathLength)
 
         ! Resolve the config file, or try and find one at config/config.nml if it can't be found.
-        if (configFilePathLength > 0) then
-            C%configFilePath = configFilePath
-        else
-            C%configFilePath = "config/config.nml"
-        end if
+        if (configFilePathLength <= 0) configFilePath = "config/config.nml"
 
-        call initModelDimensions(trim(C%configFilePath))
-
-        open(iouConfig, file=trim(C%configFilePath), status="old")
-
-        ! If this is a batch run, then open the batch run config file and store the data from it
+        call initModelDimensions(trim(configFilePath))
         if (batchRunFilePathLength > 0) then
-            C%isBatchRun = .true.
-            ! Open and read the namelists
-            open(iouBatchConfig, file=trim(batchRunFilePath), status="old")
-            read(iouBatchConfig, nml=batch_config); rewind(iouBatchConfig)
-            C%nChunks = n_chunks
-            ! Allocate variables based on the number of batches
-            allocate(input_files(C%nChunks), &
-                constants_files(C%nChunks), &
-                start_dates(C%nChunks), &
-                n_timesteps_per_chunk(C%nChunks))
-            ! Now we can read the other variables in
-            read(iouBatchConfig, nml=chunks)
-            ! Store these in config variables
-            allocate(C%batchInputFiles, source=input_files)
-            allocate(C%batchConstantFiles, source=constants_files)
-            allocate(C%batchStartDates(C%nChunks))
-            allocate(C%batchNTimesteps, source=n_timesteps_per_chunk)
-            ! Turn the datetime string into a datetime object
-            do i = 1, C%nChunks
-                C%batchStartDates(i) = f_strptime(start_dates(i))
-            end do
-            ! Close the file
-            close(iouBatchConfig)
+            call modelConfig%init(trim(configFilePath), trim(batchRunFilePath))
+        else
+            call modelConfig%init(trim(configFilePath))
         end if
+        call syncModelConfigToGlobals()
+
+        open(iouConfig, file=trim(configFilePath), status="old")
 
         ! Use the allocatable array sizes to allocate those arrays (allocatable arrays
-        ! must be allocated before being read in to)
+        ! must be allocated before being read in to).
         allocate(soil_layer_depth(dim_nSoilLayers))
         allocate(sediment_layer_depth(dim_nSedimentLayers))
-        allocate(nm_size_classes(dim_nSizeClassesNM))
         allocate(spm_size_classes(dim_nSizeClassesSpm))
         allocate(sediment_particle_densities(dim_nFracCompsSpm))
-        ! Carry on reading in the different config groups
-        read(iouConfig, nml=nanomaterial); rewind(iouConfig)
-        read(iouConfig, nml=data); rewind(iouConfig)
-        read(iouConfig, nml=output); rewind(iouConfig)
-        read(iouConfig, nml=run); rewind(iouConfig)
-        ! Checkpoint and steady state - check if groups exist before reading
-        read(iouConfig, nml=checkpoint, iostat=nmlIOStat); rewind(iouConfig)
-        if (nmlIOStat .ge. 0) read(iouConfig, nml=checkpoint); rewind(iouConfig)
-        read(iouConfig, nml=steady_state, iostat=nmlIOStat); rewind(iouConfig)
-        if (nmlIOStat .ge. 0) read(iouConfig, nml=steady_state); rewind(iouConfig)
+
         read(iouConfig, nml=soil); rewind(iouConfig)
         read(iouConfig, nml=sediment); rewind(iouConfig)
         read(iouConfig, nml=water, iostat=nmlIOStat); rewind(iouConfig)
@@ -303,105 +205,39 @@ module GlobalsModule
         read(iouConfig, nml=sources)
         close(iouConfig)
         
-        ! Store this data in the Globals variable
-        ! Nanomaterial
+        ! Store dimension and domain data in the Globals facade.
         C%nSizeClassesNM = dim_nSizeClassesNM
         C%nFormsNM = dim_nFormsNM
         C%nExtraStatesNM = dim_nExtraStatesNM
+        if (allocated(C%d_nm)) deallocate(C%d_nm)
         allocate(C%d_nm, source=dim_d_nm)
-        ! Data
-        C%inputFile = input_file
-        C%constantsFile = constants_file
-        C%outputPath = output_path
-        C%outputHash = output_hash
-        ! Output
-        C%writeCSV = write_csv
-        C%writeNetCDF = write_netcdf
-        C%netCDFWriteMode = netcdf_write_mode
-        C%writeMetadataAsComment = write_metadata_as_comment
-        C%writeCompartmentStats = write_compartment_stats
-        C%includeWaterbodyBreakdown = include_waterbody_breakdown
-        C%includeSedimentLayerBreakdown = include_sediment_layer_breakdown
-        C%includeSoilLayerBreakdown = include_soil_layer_breakdown
-        C%soilPECUnits = soil_pec_units
-        C%sedimentPECUnits = sediment_pec_units
-        C%includeSoilStateBreakdown = include_soil_state_breakdown
-        C%includeSedimentFluxes = include_sediment_fluxes
-        C%includeSoilErosionYields = include_soil_erosion_yields
-        C%includeSpmSizeClassBreakdown = include_spm_size_class_breakdown
-        ! Run
-        if (.not. C%isBatchRun) then
-            C%runDescription = description
-        else
-            C%runDescription = batch_description
-        end if
-        C%logFilePath = log_file_path
-        C%writeToLog = write_to_log
-        C%timeStep = timestep
-        C%nTimeSteps = n_timesteps
-        C%epsilon = epsilon
-        startDateStr = start_date
-        C%startDate = f_strptime(startDateStr)
-        C%triggerWarnings = trigger_warnings
-        if (.not. trim(simulation_mask) == "") then
-            C%hasSimulationMask = .true.
-            C%simulationMaskPath = simulation_mask
-        end if
-        C%ignoreNM = ignore_nm
-        C%warmUpPeriod = warm_up_period
-        C%bashColors = bash_colors
-        ! Checkpointing
-        C%checkpointFile = checkpoint_file
-        C%saveCheckpoint = save_checkpoint
-        C%saveCheckpointAfterWarmUp = save_checkpoint_after_warm_up
-        C%reinstateCheckpoint = reinstate_checkpoint
-        C%preserveTimestep = preserve_timestep
-        ! Steady state
-        C%runToSteadyState = run_to_steady_state
-        C%steadyStateMode = mode
-        C%steadyStateDelta = delta
-        ! Sediment
+
         C%sedimentLayerDepth = sediment_layer_depth
         C%nSizeClassesSpm = dim_nSizeClassesSpm
         C%includeBedSediment = include_bed_sediment
         C%nSedimentLayers = dim_nSedimentLayers
+        if (allocated(C%d_spm)) deallocate(C%d_spm)
         allocate(C%d_spm, source=dim_d_spm)
         C%nFracCompsSpm = dim_nFracCompsSpm
+        if (allocated(C%sedimentParticleDensities)) deallocate(C%sedimentParticleDensities)
         allocate(C%sedimentParticleDensities, source=dim_sedimentParticleDensities)
-        ! Soil
+
         C%nSoilLayers = dim_nSoilLayers
         C%soilLayerDepth = soil_layer_depth
         C%includeBioturbation = include_bioturbation
         C%includeAttachment = include_attachment
         C%includeClayEnrichment = include_clay_enrichment
         C%includeSoilErosion = include_soil_erosion
-        ! Water
+
         C%minStreamSlope = min_stream_slope
         C%minEstuaryTimestep = min_estuary_timestep
         C%includeEstuary = include_estuary
         C%includeBankErosion = include_bank_erosion
-        ! Sources
+
         C%includePointSources = include_point_sources
 
-        ! If this is batch run, then use the config options in the batch config file
-        ! to override those given in the config file. Also set some variables about the
-        ! whole batch run
-        if (C%isBatchRun) then
-            C%inputFile = C%batchInputFiles(1)
-            C%constantsFile = C%batchConstantFiles(1)
-            C%startDate = C%batchStartDates(1)
-            C%nTimeSteps = C%batchNTimesteps(1)
-            C%nTimestepsInBatch = sum(C%batchNTimesteps)
-            C%batchStartDate = C%batchStartDates(1)
-            C%batchEndDate = C%batchStartDates(C%nChunks) + timedelta(C%batchNTimesteps(C%nChunks) - 1)
-        else
-            C%nTimestepsInBatch = C%nTimesteps
-            C%batchStartDate = C%startDate
-            C%batchEndDate = C%startDate + timedelta(C%nTimeSteps - 1)
-            allocate(C%batchNTimesteps(1))
-            C%batchNTimesteps(1) = C%nTimeSteps
-        end if
-
+        if (allocated(C%d_spm_low)) deallocate(C%d_spm_low)
+        if (allocated(C%d_spm_upp)) deallocate(C%d_spm_upp)
         allocate(C%d_spm_low, source=dim_d_spm_low)
         allocate(C%d_spm_upp, source=dim_d_spm_upp)
 
@@ -446,49 +282,91 @@ module GlobalsModule
         errors(16) = ErrorInstance(code=903, message="Invalid Reactor index provided.")
         errors(17) = ErrorInstance(code=904, message="Invalid BedSedimentLayer index provided.")
 
-        ! Add custom errors to the error handler
-        call ERROR_HANDLER%init(errors=errors, triggerWarnings=C%triggerWarnings, on=error_output)
+        ! Add custom errors to the error handler.
+        call ERROR_HANDLER%init(errors=errors, triggerWarnings=C%triggerWarnings, on=C%errorOutput)
         
-        ! Auditing the config. Must be done after error handler and logger
-        ! have been initialised
-        call C%audit()
+        ! Auditing the config. Must be done after error handler has been initialised.
+        auditResult = modelConfig%audit()
+        call ERROR_HANDLER%trigger(errors=.errors.auditResult)
 
     end subroutine
 
-    !> Audit the config file options
-    subroutine audit(me)
-        class(GlobalsType), intent(in)  :: me
-        type(Result)                    :: rslt
+    !> Copy all model-level config values into the compatibility facade.
+    subroutine syncModelConfigToGlobals()
+        C%modelVersion = modelConfig%modelVersion
 
-        ! Steady state mode
-        if (me%runToSteadyState) then
-            if (trim(me%steadyStateMode) /= 'sediment_size_distribution') then
-                call rslt%addError(ErrorInstance( &
-                    message='Invalid or non-present config file value for &steady_state > mode.' &
-                ))
-            end if
-        end if
-        ! NetCDF write mode must be itr or end
-        if (me%netCDFWriteMode /= 'itr' .and. me%netCDFWriteMode /= 'end') then
-            call rslt%addError(ErrorInstance( &
-                message='Invalid config file value for &output > netcdf_write_mode. Should be "itr" or "end"'))
-        end if
-        ! Warm up period must be smaller than number of time steps
-        if (me%warmUpPeriod > me%nTimeSteps) then
-            call rslt%addError(ErrorInstance(message='Warm up period must be less than or equal to the number of ' // &
-                'time steps in the model run (or first chunk).'))
-        end if
+        C%inputFile = modelConfig%inputFile
+        C%constantsFile = modelConfig%constantsFile
+        C%outputPath = modelConfig%outputPath
+        C%outputHash = modelConfig%outputHash
 
-        ! CHECKPOINT
-        ! Add warning if saving checkpoint at warm up and end of run
-        if (C%saveCheckpoint .and. C%saveCheckpointAfterWarmUp) then
-            call rslt%addError(ErrorInstance(message='You have specified to save a checkpoint after warm up ' // &
-                'and at the end of the model run. Only the latter will be saved to file.', isCritical=.false.))
-        end if
-        
-        ! Trigger the errors, if there were any
-        call rslt%addToTrace('Auditing config file')
-        call ERROR_HANDLER%trigger(errors=.errors.rslt)
+        C%writeCSV = modelConfig%writeCSV
+        C%writeNetCDF = modelConfig%writeNetCDF
+        C%netCDFWriteMode = modelConfig%netCDFWriteMode
+        C%writeMetadataAsComment = modelConfig%writeMetadataAsComment
+        C%writeCompartmentStats = modelConfig%writeCompartmentStats
+        C%includeWaterbodyBreakdown = modelConfig%includeWaterbodyBreakdown
+        C%includeSedimentLayerBreakdown = modelConfig%includeSedimentLayerBreakdown
+        C%includeSoilLayerBreakdown = modelConfig%includeSoilLayerBreakdown
+        C%soilPECUnits = modelConfig%soilPECUnits
+        C%sedimentPECUnits = modelConfig%sedimentPECUnits
+        C%includeSoilStateBreakdown = modelConfig%includeSoilStateBreakdown
+        C%includeSedimentFluxes = modelConfig%includeSedimentFluxes
+        C%includeSoilErosionYields = modelConfig%includeSoilErosionYields
+        C%includeSpmSizeClassBreakdown = modelConfig%includeSpmSizeClassBreakdown
+
+        C%runDescription = modelConfig%runDescription
+        C%logFilePath = modelConfig%logFilePath
+        C%writeToLog = modelConfig%writeToLog
+        C%configFilePath = modelConfig%configFilePath
+        C%timeStep = modelConfig%timeStep
+        C%nTimeSteps = modelConfig%nTimeSteps
+        C%epsilon = modelConfig%epsilon
+        C%startDate = modelConfig%startDate
+        C%triggerWarnings = modelConfig%triggerWarnings
+        C%errorOutput = modelConfig%errorOutput
+        C%hasSimulationMask = modelConfig%hasSimulationMask
+        C%simulationMaskPath = modelConfig%simulationMaskPath
+        C%ignoreNM = modelConfig%ignoreNM
+        C%warmUpPeriod = modelConfig%warmUpPeriod
+        C%bashColors = modelConfig%bashColors
+
+        C%checkpointFile = modelConfig%checkpointFile
+        C%saveCheckpoint = modelConfig%saveCheckpoint
+        C%saveCheckpointAfterWarmUp = modelConfig%saveCheckpointAfterWarmUp
+        C%reinstateCheckpoint = modelConfig%reinstateCheckpoint
+        C%preserveTimestep = modelConfig%preserveTimestep
+
+        C%runToSteadyState = modelConfig%runToSteadyState
+        C%steadyStateMode = modelConfig%steadyStateMode
+        C%steadyStateDelta = modelConfig%steadyStateDelta
+
+        C%nChunks = modelConfig%nChunks
+        C%isBatchRun = modelConfig%isBatchRun
+        if (allocated(C%batchInputFiles)) deallocate(C%batchInputFiles)
+        if (allocated(C%batchConstantFiles)) deallocate(C%batchConstantFiles)
+        if (allocated(C%batchStartDates)) deallocate(C%batchStartDates)
+        if (allocated(C%batchNTimesteps)) deallocate(C%batchNTimesteps)
+        if (allocated(C%batchConfigFiles)) deallocate(C%batchConfigFiles)
+        if (allocated(modelConfig%batchInputFiles)) allocate(C%batchInputFiles, source=modelConfig%batchInputFiles)
+        if (allocated(modelConfig%batchConstantFiles)) allocate(C%batchConstantFiles, source=modelConfig%batchConstantFiles)
+        if (allocated(modelConfig%batchStartDates)) allocate(C%batchStartDates, source=modelConfig%batchStartDates)
+        if (allocated(modelConfig%batchNTimesteps)) allocate(C%batchNTimesteps, source=modelConfig%batchNTimesteps)
+        if (allocated(modelConfig%batchConfigFiles)) allocate(C%batchConfigFiles, source=modelConfig%batchConfigFiles)
+        C%nTimestepsInBatch = modelConfig%nTimestepsInBatch
+        C%batchStartDate = modelConfig%batchStartDate
+        C%batchEndDate = modelConfig%batchEndDate
+
+        C%t0 = modelConfig%t0
+    end subroutine
+
+    !> Copy runtime-mutated model-config values into the compatibility facade.
+    subroutine syncRuntimeModelConfigToGlobals()
+        C%inputFile = modelConfig%inputFile
+        C%constantsFile = modelConfig%constantsFile
+        C%nTimeSteps = modelConfig%nTimeSteps
+        C%startDate = modelConfig%startDate
+        C%t0 = modelConfig%t0
     end subroutine
 
     !> Calculate the density of water at a given temperature \( T \):

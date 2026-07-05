@@ -6,6 +6,7 @@ module DataInputModule
     use mo_netcdf
     use DefaultsModule
     use GlobalsModule
+    use ModelConfigModule, only: modelConfig
     use ResultModule, only: Result
     use ErrorInstanceModule, only: ErrorInstance
     use LoggerModule, only: LOGR
@@ -326,11 +327,10 @@ module DataInputModule
         class(Database) :: me               !! This Database instance
         integer         :: k                !! The index of this chunk, used to access correct config options
 
-        ! Get the config options for this chunk
-        C%inputFile = C%batchInputFiles(k)
-        C%constantsFile = C%batchConstantFiles(k)
-        C%nTimeSteps = C%batchNTimesteps(k)
-        C%startDate = C%batchStartDates(k)
+        ! Get the config options for this chunk and mirror them into the
+        ! compatibility facade for unmigrated call sites.
+        call modelConfig%selectBatchChunk(k)
+        call syncRuntimeModelConfigToGlobals()
 
         ! Read in the new constants file
         call me%parseConstants(C%constantsFile)
