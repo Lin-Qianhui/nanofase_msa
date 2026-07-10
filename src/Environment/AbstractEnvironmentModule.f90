@@ -1,6 +1,6 @@
 !> Module container for the `AbstractEnvironment` abstract base class
 module AbstractEnvironmentModule
-    use GlobalsModule
+    use KernelModule, only: dp
     use ResultModule
     use AbstractGridCellModule
     use mo_netcdf
@@ -29,7 +29,6 @@ module AbstractEnvironmentModule
         procedure(createEnvironment), deferred :: create
         procedure(updateEnvironment), deferred :: update
         procedure(updateReachEnvironment), deferred :: updateReach
-        procedure(determineStreamOrderEnvironment), deferred :: determineStreamOrder
         procedure(parseNewBatchDataEnvironment), deferred :: parseNewBatchData
         ! Getters
         procedure(get_m_npEnvironment), deferred :: get_m_np
@@ -76,54 +75,49 @@ module AbstractEnvironmentModule
             type(Result) :: r
         end function
 
-        !> Determine the stream order of water bodies in the AbstractEnvironment
-        subroutine determineStreamOrderEnvironment(me)
-            import AbstractEnvironment
-            class(AbstractEnvironment) :: me
-        end subroutine
-
         subroutine parseNewBatchDataEnvironment(me)
             import AbstractEnvironment
             class(AbstractEnvironment) :: me
         end subroutine
         
         function get_m_npEnvironment(me) result(m_np)
-            use GlobalsModule
+            use KernelModule, only: dp
+            use ModelDimensionsModule, only: nSizeClassesNM, nSizeClassesSpm
             import AbstractEnvironment
             class(AbstractEnvironment) :: me
-            real(dp) :: m_np(C%nSizeClassesNM, 4, 2 + C%nSizeClassesSpm)
+            real(dp) :: m_np(nSizeClassesNM, 4, 2 + nSizeClassesSpm)
         end function
 
         function get_C_np_soilEnvironment(me) result(C_np_soil)
-            use GlobalsModule, only: C, dp
+            use KernelModule, only: dp
             import AbstractEnvironment
             class(AbstractEnvironment) :: me
             real(dp), allocatable :: C_np_soil(:,:,:)
         end function
 
         function get_C_np_waterEnvironment(me) result(C_np_water)
-            use GlobalsModule, only: C, dp
+            use KernelModule, only: dp
             import AbstractEnvironment
             class(AbstractEnvironment) :: me
             real(dp), allocatable :: C_np_water(:,:,:)
         end function
 
         function get_C_np_sedimentEnvironment(me) result(C_np_sediment)
-            use GlobalsModule, only: C, dp
+            use KernelModule, only: dp
             import AbstractEnvironment
             class(AbstractEnvironment) :: me
             real(dp), allocatable :: C_np_sediment(:,:,:)
         end function
 
         function getBedSedimentAreaEnvironment(me) result(bedArea)
-            use GlobalsModule, only: dp
+            use KernelModule, only: dp
             import AbstractEnvironment
             class(AbstractEnvironment) :: me
             real(dp) :: bedArea
         end function
 
         function get_m_sediment_byLayerEnvironment(me) result(m_sediment_byLayer)
-            use GlobalsModule, only: dp, C
+            use KernelModule, only: dp
             import AbstractEnvironment
             class(AbstractEnvironment)      :: me
             real(dp), allocatable   :: m_sediment_byLayer(:,:)

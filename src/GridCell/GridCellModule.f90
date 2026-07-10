@@ -1,13 +1,13 @@
 module GridCellModule
-    use GlobalsModule
+    use GlobalsModule, only: C, ERROR_HANDLER
+    use KernelModule, only: dp, kernel_n_river => n_river
     use UtilModule
     use DataInputModule, only: DATASET
     use LoggerModule, only: LOGR
     use ResultModule
     use AbstractGridCellModule
-    use SoilProfileModule
-    use RiverReachModule
-    use EstuaryReachModule
+    use ModelConfigModule, only: modelConfig
+    use ModelDimensionsModule, only: npDim, nSizeClassesSpm
     use CropModule
     implicit none
 
@@ -18,7 +18,6 @@ module GridCellModule
         ! Create/destroy
         procedure :: create => createGridCell
         procedure :: finaliseCreate => finaliseCreateGridCell
-        procedure, private :: createReaches
         procedure :: snapPointSourcesToReach => snapPointSourcesToReachGridCell
         ! Simulators
         procedure :: update => updateGridCell
@@ -76,11 +75,10 @@ module GridCellModule
         type(Result)            :: rslt                 !! The `Result` object to return.
         integer                 :: x, y                 !! Spatial index of the grid cell
         logical, optional       :: isEmpty              !! Is anything to be simulated in this `GridCell`?
-        type(SoilProfile)       :: soilProfile          ! The soil profile contained in this GridCell
 
         ! Allocate the object properties that need to be and set up defaults
         allocate(me%colSoilProfiles(1))
-        allocate(me%j_np_diffuseSource(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(me%j_np_diffuseSource(npDim(1), npDim(2), npDim(3)))
         me%q_runoff = 0
 
         ! Set the GridCell's position, whether it's empty and its name
@@ -89,55 +87,6 @@ module GridCellModule
         if (present(isEmpty)) me%isEmpty = isEmpty      ! isEmpty defaults to false if not present
         me%ref = trim(ref("GridCell", x, y))            ! ref() interface is from the Util module
         me%nSoilProfiles = 0                            ! Default to no soil profiles
-        
-        ! Only carry on if there's stuff to be simulated for this GridCell
-        if (.not. me%isEmpty) then
-
-            ! If cell not empty, then create just one soil profile
-            me%nSoilProfiles = 1
-            
-            ! Parse the input data for this cell
-            call me%parseInputData()
-
-            ! Create two diffuse sources, atmospheric and soil. Water will be
-            ! dealt with separately by waterbody classes
-            allocate(me%diffuseSources(2))
-            call me%diffuseSources(1)%create(me%x, me%y, 1, 'soil')
-            call me%diffuseSources(2)%create(me%x, me%y, 2, 'atmospheric')
-
-            ! Create a soil profile and add to this GridCell
-            call rslt%addErrors(.errors. &
-                soilProfile%create( &
-                    me%x, &
-                    me%y, &
-                    1, &
-                    me%n_river, &
-                    me%area, &
-                    me%q_precip_timeseries, &
-                    me%q_evap_timeseries &
-                ) &
-            )
-            allocate(me%colsoilprofiles(1)%item, source=soilprofile)
-            allocate(me%distributionsediment, source=me%colsoilprofiles(1)%item%distributionsediment)
-
-            ! only proceed if there are no critical errors (which might be caused by parseinputdata())
-            if (.not. rslt%hascriticalerror()) then
-                ! add riverreaches to the gridcell (if any are present in the data file)
-                call rslt%adderrors(.errors. me%createreaches())
-            end if
-        end if
-
-        call rslt%addToTrace("Creating " // trim(me%ref))
-        call LOGR%toFile(errors = .errors. rslt)
-        call ERROR_HANDLER%trigger(errors = .errors. rslt)
-        call rslt%clear()                  ! Clear errors from the Result object so they're not reported twice
-        if (.not. me%isEmpty) then
-            call LOGR%toConsole(" > Creating " // trim(me%ref) // ": "//COLOR_GREEN//"success"//COLOR_RESET)
-            call LOGR%toFile("Creating " // trim(me%ref) // ": success")
-        else
-            call LOGR%toConsole(" > Creating " // trim(me%ref) // ": "//COLOR_GREEN//"empty"//COLOR_RESET)
-            call LOGR%toFile("Creating " // trim(me%ref) // ": empty")
-        end if
     end function
 
     !> Finalise creation should be done after routing is complete, and is meant for
@@ -208,30 +157,6 @@ module GridCellModule
         end if
     end subroutine
 
-    !> Create the reaches within this grid cell
-    function createReaches(me) result(rslt)
-        class(GridCell), target :: me           !! This GridCell instance
-        type(Result) :: rslt                    !! The Result object to return any errors in
-        integer :: i
-        ! Loop through waterbodies and create them
-        do i = 1, me%nReaches
-            ! What type of waterbody is this?
-            if (me%reachTypes(i) == 'riv') then
-                allocate(RiverReach::me%colRiverReaches(i)%item)
-            else if (me%reachTypes(i) == 'est') then
-                allocate(EstuaryReach::me%colRiverReaches(i)%item)
-            else
-                call rslt%addError(ErrorInstance( &
-                    message="Trying to create waterbody of unknown type " // trim(me%reachTypes(i)) // "." &
-                ))
-            end if
-            ! Call creation method
-            call rslt%addErrors(.errors. &
-                me%colRiverReaches(i)%item%create(me%x, me%y, i, me%distributionSediment) &
-            )
-        end do
-    end function
-
     !> Perform the simulations required for an individual time step
     subroutine updateGridCell(me, t, isWarmUp)
         class(GridCell) :: me               !! The GridCell instance
@@ -239,7 +164,7 @@ module GridCellModule
         logical         :: isWarmUp         !! Are we in a warm up period?
         type(Result)    :: r                ! Result object
         integer         :: i                ! Iterator
-        real(dp)        :: j_transformed_diffuseSource(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp)        :: j_transformed_diffuseSource(npDim(1), npDim(2), npDim(3))
         real(dp)        :: j_dissolved_diffuseSource
 
         ! Check that the GridCell is not empty before simulating anything
@@ -345,10 +270,10 @@ module GridCellModule
         class(GridCell)         :: me                   !! This `GridCell` object
 
         ! Allocate arrays to store flows in
-        allocate(me%q_runoff_timeSeries(C%nTimeSteps))
-        allocate(me%q_evap_timeSeries(C%nTimeSteps))
-        allocate(me%q_precip_timeSeries(C%nTimeSteps))
-        allocate(me%T_water_timeSeries(C%nTimeSteps))
+        allocate(me%q_runoff_timeSeries(modelConfig%nTimeSteps))
+        allocate(me%q_evap_timeSeries(modelConfig%nTimeSteps))
+        allocate(me%q_precip_timeSeries(modelConfig%nTimeSteps))
+        allocate(me%T_water_timeSeries(modelConfig%nTimeSteps))
 
         ! Get grid cell size from grid resolution
         me%dx = DATASET%gridRes(1)
@@ -371,7 +296,7 @@ module GridCellModule
         end if
 
         ! TODO get the following from data
-        me%n_river = 0.035_dp
+        me%n_river = kernel_n_river
         me%T_water_timeSeries = 10.0_dp
         
         me%q_runoff_timeSeries = DATASET%runoff(me%x, me%y, :)
@@ -430,12 +355,12 @@ module GridCellModule
                     me%q_evap_timeSeries, &
                     me%q_precip_timeSeries, &
                     me%T_water_timeSeries)
-                allocate(me%q_runoff_timeSeries(C%nTimeSteps))
-                allocate(me%q_evap_timeSeries(C%nTimeSteps))
-                allocate(me%q_precip_timeSeries(C%nTimeSteps))
-                allocate(me%T_water_timeSeries(C%nTimeSteps))
+                allocate(me%q_runoff_timeSeries(modelConfig%nTimeSteps))
+                allocate(me%q_evap_timeSeries(modelConfig%nTimeSteps))
+                allocate(me%q_precip_timeSeries(modelConfig%nTimeSteps))
+                allocate(me%T_water_timeSeries(modelConfig%nTimeSteps))
 
-            me%n_river = 0.035_dp
+            me%n_river = kernel_n_river
             me%T_water_timeSeries = 10.0_dp
             me%q_runoff_timeSeries = DATASET%runoff(me%x, me%y, :)
             me%q_precip_timeSeries = DATASET%precip(me%x, me%y, :)
@@ -480,7 +405,7 @@ module GridCellModule
     !> Get the outflow of SPM from this grid cell
     function get_j_spm_outflowGridCell(me) result(j_spm_outflow)
         class(GridCell)     :: me                       !! This `GridCell` instance
-        real(dp)            :: j_spm_outflow(C%nSizeClassesSpm) !! Outflow from this grid cell [kg/timestep]
+        real(dp)            :: j_spm_outflow(nSizeClassesSpm) !! Outflow from this grid cell [kg/timestep]
         integer             :: i                        ! Iterator
         j_spm_outflow = 0.0_dp
         ! Loop through reaches and sum the SPM outflow for the grid cell outflows
@@ -494,7 +419,7 @@ module GridCellModule
     !> Get the total mass of SPM currently in the GridCell
     function get_m_spmGridCell(me) result(m_spm)
         class(GridCell)     :: me                   !! This `GridCell` instance
-        real(dp)            :: m_spm(C%nSizeClassesSpm) !! SPM mass in this reach
+        real(dp)            :: m_spm(nSizeClassesSpm) !! SPM mass in this reach
         integer             :: i                ! Iterator
         m_spm = 0.0_dp
         ! Loop through the reaches and sum the SPM masses
@@ -506,7 +431,7 @@ module GridCellModule
     !> Get the mass of SPM inflowing to this grid cell
     function get_j_spm_inflowGridCell(me) result(j_spm_inflow)
         class(GridCell)     :: me               !! This grid cell instance
-        real(dp)            :: j_spm_inflow(C%nSizeClassesSpm) ! Total mass of SPM inflowing [kg/timestep]
+        real(dp)            :: j_spm_inflow(nSizeClassesSpm) ! Total mass of SPM inflowing [kg/timestep]
         integer             :: i                ! Iterator
         j_spm_inflow = 0.0_dp
         ! Loop through the inflows and sum the inflowing SPM
@@ -522,7 +447,7 @@ module GridCellModule
     !! sediment transport capacity limited inputs to water bodies
     function get_j_spm_soilErosionGridCell(me) result(j_spm_soilErosion)
         class(GridCell)     :: me               !! This grid cell instance
-        real(dp)            :: j_spm_soilErosion(C%nSizeClassesSpm) ! Total mass of soil erosion [kg/timestep]
+        real(dp)            :: j_spm_soilErosion(nSizeClassesSpm) ! Total mass of soil erosion [kg/timestep]
         integer             :: i                ! Iterator
         j_spm_soilErosion = 0.0_dp
         ! Loop through water bodies and sum the eroded soil
@@ -534,7 +459,7 @@ module GridCellModule
     !> Get the total mass of bank erosion into water bodies in this grid cell
     function get_j_spm_bankErosionGridCell(me) result(j_spm_bankErosion)
         class(GridCell)     :: me               !! This grid cell instance
-        real(dp)            :: j_spm_bankErosion(C%nSizeClassesSpm) ! Total mass of bank erosion [kg/timestep]
+        real(dp)            :: j_spm_bankErosion(nSizeClassesSpm) ! Total mass of bank erosion [kg/timestep]
         integer             :: i                ! Iterator
         j_spm_bankErosion = 0.0_dp
         ! Loop through water bodies and sum the bank erosion
@@ -546,7 +471,7 @@ module GridCellModule
     !> Get the total mass of deposited SPM in this cell
     function get_j_spm_depositionGridCell(me) result(j_spm_deposition)
         class(GridCell)     :: me               !! This grid cell instance
-        real(dp)            :: j_spm_deposition(C%nSizeClassesSpm) ! Total mass of deposited SPM [kg/timestep]
+        real(dp)            :: j_spm_deposition(nSizeClassesSpm) ! Total mass of deposited SPM [kg/timestep]
         integer             :: i                ! Iterator
         j_spm_deposition = 0.0_dp
         ! Loop through water bodies and sum the deposited SPM 
@@ -558,7 +483,7 @@ module GridCellModule
     !> Get the total mass of resuspended SPM in this cell
     function get_j_spm_resuspensionGridCell(me) result(j_spm_resuspension)
         class(GridCell)     :: me               !! This grid cell instance
-        real(dp)            :: j_spm_resuspension(C%nSizeClassesSpm) ! Total mass of resuspended SPM [kg/timestep]
+        real(dp)            :: j_spm_resuspension(nSizeClassesSpm) ! Total mass of resuspended SPM [kg/timestep]
         integer             :: i                ! Iterator
         j_spm_resuspension = 0.0_dp
         ! Loop through water bodies and sum the resuspended SPM 
@@ -572,7 +497,7 @@ module GridCellModule
         class(GridCell)         :: me                      !! This `GridCell` instance
         real(dp), allocatable   :: m_np(:,:,:)
         integer                 :: w
-        allocate(m_np(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(m_np(npDim(1), npDim(2), npDim(3)))
         m_np = 0.0_dp
         do w = 1, me%nReaches
             m_np = m_np + me%colRiverReaches(w)%item%m_np
@@ -584,7 +509,7 @@ module GridCellModule
         class(GridCell)         :: me                      !! This `GridCell` instance
         real(dp), allocatable   :: m_transformed(:,:,:)
         integer                 :: w
-        allocate(m_transformed(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(m_transformed(npDim(1), npDim(2), npDim(3)))
         m_transformed = 0.0_dp
         do w = 1, me%nReaches
             m_transformed = m_transformed + me%colRiverReaches(w)%item%m_transformed
@@ -607,7 +532,7 @@ module GridCellModule
         class(GridCell)     :: me                       !! This `GridCell` instance
         real(dp), allocatable :: m_np(:,:,:)
         integer             :: w                        ! Waterbody iterator
-        allocate(m_np(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(m_np(npDim(1), npDim(2), npDim(3)))
         m_np = 0.0_dp
         do w = 1, me%nReaches
             associate (reach => me%colRiverReaches(w)%item) 
@@ -633,10 +558,10 @@ module GridCellModule
     function get_C_spmGridCell(me) result(C_spm)
         class(GridCell)         :: me                       !! This grid cell
         real(dp), allocatable   :: C_spm(:)                 !! Average SPM concentration in grid cell
-        real(dp)                :: C_spm_w(me%nReaches,C%nSizeClassesSpm)
+        real(dp)                :: C_spm_w(me%nReaches,nSizeClassesSpm)
         real(dp)                :: volumes(me%nReaches)
         integer                 :: i                        !! Iterator for water bodies
-        allocate(C_spm(C%nSizeClassesSpm))
+        allocate(C_spm(nSizeClassesSpm))
         ! Loop over the water bodies in this cell and get SPM and volume
         do i = 1, me%nReaches
             associate (reach => me%colRiverReaches(i)%item)
@@ -694,9 +619,9 @@ module GridCellModule
     function get_C_np_soilGridCell(me) result(C_np_soil)
         class(GridCell)     :: me                                               !! This GridCell instance
         real(dp), allocatable :: C_np_soil(:,:,:)                               !! Mass concentration of NM in this GridCell [kg/kg soil]
-        real(dp)            :: C_np_soil_p(me%nSoilProfiles, C%npDim(1), C%npDim(2), C%npDim(3)) ! Per profile NM concentration [kg/kg soil]
+        real(dp)            :: C_np_soil_p(me%nSoilProfiles, npDim(1), npDim(2), npDim(3)) ! Per profile NM concentration [kg/kg soil]
         integer             :: i                                                ! Iterator 
-        allocate(C_np_soil(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(C_np_soil(npDim(1), npDim(2), npDim(3)))
         ! Loop over the soil profiles and get soil PEC
         ! TODO when multiple soil profiles implemented, make sure this gets the weighted average
         do i = 1, me%nSoilProfiles
@@ -712,10 +637,10 @@ module GridCellModule
     function get_C_np_waterGridCell(me) result(C_np_water)
         class(GridCell)         :: me                                               !! This GridCell instance
         real(dp), allocatable   :: C_np_water(:,:,:)                                !! Mass concentration of NM in this GridCell [kg/m3]
-        real(dp)                :: C_np_water_w(me%nReaches, C%npDim(1), C%npDim(2), C%npDim(3)) ! Per waterbody NM concentration [kg/m3]
+        real(dp)                :: C_np_water_w(me%nReaches, npDim(1), npDim(2), npDim(3)) ! Per waterbody NM concentration [kg/m3]
         real(dp)                :: volumes(me%nReaches)                             ! Volumes [m3] of each reach, used for weighting
         integer                 :: i                                                ! Iterator 
-        allocate(C_np_water(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(C_np_water(npDim(1), npDim(2), npDim(3)))
         ! Loop over the water bodies in this cell and get water PEC and volume
         do i = 1, me%nReaches
             associate (reach => me%colRiverReaches(i)%item)
@@ -732,10 +657,10 @@ module GridCellModule
     function get_C_np_sedimentGridCell(me) result(C_np_sediment)
         class(GridCell)         :: me                                                   !! This GridCell instance
         real(dp), allocatable   :: C_np_sediment(:,:,:)                                 !! Mass concentration of NM in this GridCell's sediment [kg/kg]
-        real(dp)                :: C_np_sediment_b(me%nReaches, C%npDim(1), C%npDim(2), C%npDim(3)) ! Per sediment NM concentration [kg/kg]
+        real(dp)                :: C_np_sediment_b(me%nReaches, npDim(1), npDim(2), npDim(3)) ! Per sediment NM concentration [kg/kg]
         real(dp)                :: sedimentMasses(me%nReaches)                          ! Mass of sediment in each reach, used to weight average [kg]
         integer                 :: i                                                    ! Iterator
-        allocate(C_np_sediment(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(C_np_sediment(npDim(1), npDim(2), npDim(3)))
         ! Loop over the water bodies in this cell and get sediment PEC and bed area
         do i = 1, me%nReaches
             associate (bedSediment => me%colRiverReaches(i)%item%bedSediment)
@@ -754,10 +679,10 @@ module GridCellModule
     function get_C_np_sediment_byVolumeGridCell(me) result(C_np_sediment)
         class(GridCell)         :: me                                                   !! This GridCell instance
         real(dp), allocatable   :: C_np_sediment(:,:,:)                                 !! Volume concentration of NM in this GridCell's sediment [kg/m3]
-        real(dp)                :: C_np_sediment_b(me%nReaches, C%npDim(1), C%npDim(2), C%npDim(3)) ! Per sediment NM concentration [kg/m3]
+        real(dp)                :: C_np_sediment_b(me%nReaches, npDim(1), npDim(2), npDim(3)) ! Per sediment NM concentration [kg/m3]
         real(dp)                :: sedimentVolumes(me%nReaches)                         ! Volume of sediment in each reach, used to weight average [m3]
         integer                 :: i                                                    ! Iterator
-        allocate(C_np_sediment(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(C_np_sediment(npDim(1), npDim(2), npDim(3)))
         ! Loop over the water bodies in this cell and get sediment PEC and bed area
         do i = 1, me%nReaches
             associate (bedSediment => me%colRiverReaches(i)%item%bedSediment)
@@ -777,10 +702,10 @@ module GridCellModule
         class(GridCell)         :: me                                                   !! This GridCell instance
         integer                 :: l                                                    !! Sediment layer index
         real(dp), allocatable   :: C_np_sediment(:,:,:)                                 !! Volume concentration of NM in this GridCell's sediment [kg/m3]
-        real(dp)                :: C_np_sediment_b(me%nReaches, C%npDim(1), C%npDim(2), C%npDim(3)) ! Per sediment NM concentration [kg/m3]
+        real(dp)                :: C_np_sediment_b(me%nReaches, npDim(1), npDim(2), npDim(3)) ! Per sediment NM concentration [kg/m3]
         real(dp)                :: sedimentVolumes(me%nReaches)                         ! Volume of sediment in each reach, used to weight average [m3]
         integer                 :: i                                                    ! Iterator
-        allocate(C_np_sediment(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(C_np_sediment(npDim(1), npDim(2), npDim(3)))
         ! Loop over the water bodies in this cell and get sediment PEC and bed area for layer l
         do i = 1, me%nReaches
             associate (bedSediment => me%colRiverReaches(i)%item%bedSediment)
@@ -800,10 +725,10 @@ module GridCellModule
         class(GridCell)         :: me                                                   !! This GridCell instance
         integer                 :: l                                                    !! Sediment layer index
         real(dp), allocatable   :: C_np_sediment(:,:,:)                                 !! Mass concentration of NM in this GridCell's sediment [kg/kg]
-        real(dp)                :: C_np_sediment_b(me%nReaches, C%npDim(1), C%npDim(2), C%npDim(3)) ! Per sediment NM concentration [kg/kg]
+        real(dp)                :: C_np_sediment_b(me%nReaches, npDim(1), npDim(2), npDim(3)) ! Per sediment NM concentration [kg/kg]
         real(dp)                :: sedimentMasses(me%nReaches)                          ! Mass of sediment layer l in each reach, used to weight average [kg]
         integer                 :: i                                                    ! Iterator
-        allocate(C_np_sediment(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(C_np_sediment(npDim(1), npDim(2), npDim(3)))
         ! Loop over the water bodies in this cell and get sediment PEC and bed area for layer l
         do i = 1, me%nReaches
             associate (bedSediment => me%colRiverReaches(i)%item%bedSediment)
@@ -822,10 +747,10 @@ module GridCellModule
     function get_C_transformed_waterGridCell(me) result(C_transformed_water)
         class(GridCell)         :: me                                               !! This GridCell instance
         real(dp), allocatable   :: C_transformed_water(:,:,:)                       !! Mass concentration of NM in this GridCell [kg/m3]
-        real(dp)                :: C_transformed_water_w(me%nReaches, C%npDim(1), C%npDim(2), C%npDim(3)) ! Per waterbody NM concentration [kg/m3]
+        real(dp)                :: C_transformed_water_w(me%nReaches, npDim(1), npDim(2), npDim(3)) ! Per waterbody NM concentration [kg/m3]
         real(dp)                :: volumes(me%nReaches)                             ! Volumes [m3] of each reach, used for weighting
         integer                 :: i                                                ! Iterator 
-        allocate(C_transformed_water(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(C_transformed_water(npDim(1), npDim(2), npDim(3)))
         ! Loop over the water bodies in this cell and get water PEC and volume
         do i = 1, me%nReaches
             associate (reach => me%colRiverReaches(i)%item)
@@ -861,7 +786,7 @@ module GridCellModule
         class(GridCell)         :: me                   ! This GridCell instance
         real(dp), allocatable   :: m_np_buried(:,:,:)   ! Mass of NM buried [kg]
         integer                 :: i                    ! Iterator
-        allocate(m_np_buried(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(m_np_buried(npDim(1), npDim(2), npDim(3)))
         m_np_buried = 0.0_dp
         ! Loop over the waterbodies in this cell and get mass of sediment buried
         do i = 1, me%nReaches
@@ -877,7 +802,7 @@ module GridCellModule
         class(GridCell)         :: me                       !! This GridCell instance
         real(dp), allocatable   :: j_nm_deposition(:,:,:)   !! The NM deposited
         integer                 :: i                        ! Iterator
-        allocate(j_nm_deposition(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(j_nm_deposition(npDim(1), npDim(2), npDim(3)))
         j_nm_deposition = 0.0_dp
         ! Loop over the water bodies and sum up the deposited NM 
         do i = 1, me%nReaches
@@ -890,7 +815,7 @@ module GridCellModule
         class(GridCell)         :: me                       !! This GridCell instance
         real(dp), allocatable   :: j_transformed_deposition(:,:,:)   !! The transformed NM deposited
         integer                 :: i                        ! Iterator
-        allocate(j_transformed_deposition(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(j_transformed_deposition(npDim(1), npDim(2), npDim(3)))
         j_transformed_deposition = 0.0_dp
         ! Loop over the water bodies and sum up the deposited transformed NM 
         do i = 1, me%nReaches
@@ -903,7 +828,7 @@ module GridCellModule
         class(GridCell)         :: me                       !! This GridCell instance
         real(dp), allocatable   :: j_nm_resuspension(:,:,:) !! The NM resuspended
         integer                 :: i                        ! Iterator
-        allocate(j_nm_resuspension(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(j_nm_resuspension(npDim(1), npDim(2), npDim(3)))
         j_nm_resuspension = 0.0_dp
         ! Loop over the water bodies in this cell sum the resuspended NM 
         do i = 1, me%nReaches
@@ -916,7 +841,7 @@ module GridCellModule
         class(GridCell)         :: me                       !! This GridCell instance
         real(dp), allocatable   :: j_transformed_resuspension(:,:,:) !! The NM resuspended
         integer                 :: i                        ! Iterator
-        allocate(j_transformed_resuspension(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(j_transformed_resuspension(npDim(1), npDim(2), npDim(3)))
         j_transformed_resuspension = 0.0_dp
         ! Loop over the water bodies in this cell sum the resuspended transformed NM 
         do i = 1, me%nReaches
@@ -929,7 +854,7 @@ module GridCellModule
         class(GridCell)         :: me                       !! This GridCell instance
         real(dp), allocatable   :: j_nm_outflow(:,:,:)      !! The NM outflowing
         integer                 :: i                        ! Iterator
-        allocate(j_nm_outflow(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(j_nm_outflow(npDim(1), npDim(2), npDim(3)))
         j_nm_outflow = 0.0_dp
         ! Loop over the water bodies in this cell and sum outflows if they are grid cell outflows 
         do i = 1, me%nReaches
@@ -946,7 +871,7 @@ module GridCellModule
         class(GridCell)         :: me                       !! This GridCell instance
         real(dp), allocatable   :: j_transformed_outflow(:,:,:) !! The transformed NM outflowing
         integer                 :: i                        ! Iterator
-        allocate(j_transformed_outflow(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(j_transformed_outflow(npDim(1), npDim(2), npDim(3)))
         j_transformed_outflow = 0.0_dp
         ! Loop over the water bodies in this cell and sum outflows if they are grid cell outflows 
         do i = 1, me%nReaches

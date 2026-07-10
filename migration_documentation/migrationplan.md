@@ -470,13 +470,27 @@ phases below. It can run in parallel once `ModelDimensions` + `ModelConfig` exis
 - Create `ModelAssemblyModule` with `buildEnvironment(env)`.
 - **Move** (don't rewrite) the construction + topology code out of `createEnvironment`
   and `createGridCell`/`createReaches` into the builder: grid/cell/reach/soil
-  instantiation, inflow/outflow wiring, headwater & tidal-limit detection, point-source
-  snapping, `determineStreamOrder`, `routedReaches`/`headwaters` allocation (see §4
+  instantiation, inflow/outflow wiring, headwater & tidal-limit detection,
+  `determineStreamOrder`, `routedReaches`/`headwaters` allocation (see §4
   "Model assembly / builder" for exact line ranges).
+- `ModelAssemblyModule` owns the startup call order for point-source snapping by calling
+  `GridCell%finaliseCreate()` after topology wiring, but `snapPointSourcesToReach`
+  stays on `GridCell` because batch updates re-snap point sources after input data
+  changes.
 - **Keep** thin per-object self-`init` on each type (own-array allocation, own
-  defaults). Do not over-split trivial allocation.
+  defaults). Do not over-split trivial allocation. `Environment%create` and
+  `GridCell%create` stay as compatibility methods for the existing abstract contracts.
+- **Preserve legacy construction error handling in Phase B.** Builder helpers that
+  move code out of `create` methods may still log, trigger, and clear their local
+  `Result` objects before returning, matching the old behavior where construction
+  errors were reported locally and not propagated back to `main`. Do not treat
+  `buildEnvironment`'s returned `Result` as a complete aggregate of every child
+  construction error until the later error/log ownership migration removes those
+  local trigger/clear side effects.
 - `main.f90` calls `buildEnvironment(env)` after config init instead of `env%create()`;
-  `createEnvironment` shrinks to (or is replaced by) the thin self-init.
+  `createEnvironment` shrinks to environment-owned summary-array initialisation.
+- Remove `determineStreamOrder` from the `AbstractEnvironment`/`Environment`
+  type-bound interface once it becomes a private builder helper.
 - Optional: use submodules to split a type's setup vs science methods into separate
   files where it aids readability.
 - **Verify:** build + reference run identical — construction is behaviour-preserving;
@@ -519,6 +533,10 @@ For domain `X`:
 5. **Register errors:** in `XConfig%init`, call
    `ERROR_HANDLER%add(ErrorInstance(code=…, …))` for the domain's codes; remove them
    from the global `errors(…)` array.
+   While doing this, audit any construction helpers moved during Phase B: once the
+   domain owns its error/log registration, replace local construction-time
+   trigger/clear side effects with returned `Result` propagation where behavior can
+   remain identical.
 6. **Repoint science code:** in `src/X/*Module.f90`, change `use GlobalsModule` →
    `use KernelModule` + `use ModelDimensionsModule` + `use XConfigModule`; rewrite
    `C%foo` → `xConfig%foo` (or `ModelDimensions`/kernel for dims/constants).
