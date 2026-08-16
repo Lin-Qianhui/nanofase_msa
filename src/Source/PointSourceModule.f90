@@ -1,6 +1,9 @@
 module PointSourceModule
-    use GlobalsModule
-    use ResultModule
+    use KernelModule, only: dp
+    use ModelDimensionsModule, only: npDim, nSizeClassesNM
+    use ModelConfigModule, only: modelConfig
+    use SourceConfigModule, only: sourceConfig
+    use netcdf, only: nf90_fill_double
     use DataInputModule, only: DATASET
     implicit none
    
@@ -34,8 +37,8 @@ module PointSourceModule
         me%y = y
         me%s = s
         me%compartment = compartment
-        allocate(me%j_np_pointSource(C%npDim(1), C%npDim(2), C%npDim(3)), &
-            me%j_transformed_pointSource(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(me%j_np_pointSource(npDim(1), npDim(2), npDim(3)), &
+            me%j_transformed_pointSource(npDim(1), npDim(2), npDim(3)))
         ! Get the exact coordinates of this point source
         if (.not. DATASET%emissionsPointWaterCoords(me%x, me%y, me%s, 1) == nf90_fill_double) then
             me%x_coord = DATASET%emissionsPointWaterCoords(me%x, me%y, me%s, 1)
@@ -54,7 +57,7 @@ module PointSourceModule
         me%j_transformed_pointSource = 0
         ! Only include point sources if config says we're meant to, and we're not in the
         ! warm up period
-        if (C%includePointSources .and. t .ge. C%warmUpPeriod) then
+        if (sourceConfig%includePointSources .and. t .ge. modelConfig%warmUpPeriod) then
             ! There are only point sources to water (for the moment)
             if (trim(me%compartment) == 'water') then
                 ! Pristine - assumed to be core (form index = 1)
@@ -64,7 +67,7 @@ module PointSourceModule
                 end if
                 ! Matrix-embedded
                 if (.not. DATASET%emissionsPointWaterMatrixEmbedded(me%x, me%y, t, me%s) == nf90_fill_double) then
-                    do i = 1, C%nSizeClassesNM
+                    do i = 1, nSizeClassesNM
                         me%j_np_pointSource(i,1,3:) = DATASET%emissionsPointWaterMatrixEmbedded(me%x, me%y, t, me%s) &
                             * DATASET%defaultMatrixEmbeddedDistributionToSpm * DATASET%defaultNMSizeDistribution(i)
                     end do

@@ -81,7 +81,6 @@ module GlobalsModule
         real, allocatable   :: soilLayerDepth(:)                !! Soil layer depth [m]
         real, allocatable   :: sedimentLayerDepth(:)            !! Sediment layer depth [m]
         logical             :: includeBioturbation              !! Should bioturbation be modelled?
-        logical             :: includePointSources              !! Should point sources be included?
         logical             :: includeBedSediment               !! Should the bed sediment be included?
         logical             :: includeAttachment                !! Should attachment to soil be included?
         logical             :: includeSoilErosion               !! Should soil erosion be included?
@@ -158,14 +157,13 @@ module GlobalsModule
         real :: min_stream_slope
         real, allocatable :: soil_layer_depth(:), spm_size_classes(:), &
             sediment_particle_densities(:), sediment_layer_depth(:)
-        logical :: include_bioturbation, include_attachment, include_point_sources, include_bed_sediment, &
+        logical :: include_bioturbation, include_attachment, include_bed_sediment, &
             include_clay_enrichment, include_estuary, include_bank_erosion, include_soil_erosion
         
         ! Domain config namelists still owned by Globals until their domain phases.
         namelist /soil/ soil_layer_depth, include_bioturbation, include_attachment, include_clay_enrichment, include_soil_erosion
         namelist /sediment/ spm_size_classes, include_bed_sediment, sediment_particle_densities, sediment_layer_depth
         namelist /water/ min_stream_slope, min_estuary_timestep, include_estuary, include_bank_erosion
-        namelist /sources/ include_point_sources
 
         include_clay_enrichment = configDefaults%includeClayEnrichment
         min_stream_slope = configDefaults%minStreamSlope
@@ -202,7 +200,6 @@ module GlobalsModule
         read(iouConfig, nml=sediment); rewind(iouConfig)
         read(iouConfig, nml=water, iostat=nmlIOStat); rewind(iouConfig)
         if (nmlIOStat .ge. 0) read(iouConfig, nml=water); rewind(iouConfig)
-        read(iouConfig, nml=sources)
         close(iouConfig)
         
         ! Store dimension and domain data in the Globals facade.
@@ -233,8 +230,6 @@ module GlobalsModule
         C%minEstuaryTimestep = min_estuary_timestep
         C%includeEstuary = include_estuary
         C%includeBankErosion = include_bank_erosion
-
-        C%includePointSources = include_point_sources
 
         if (allocated(C%d_spm_low)) deallocate(C%d_spm_low)
         if (allocated(C%d_spm_upp)) deallocate(C%d_spm_upp)

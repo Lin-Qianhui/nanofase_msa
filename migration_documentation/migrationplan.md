@@ -11,10 +11,13 @@ domain is self-contained and different teams can work in parallel without collid
 1. **Config** — its own config module that reads *its own* namelist group directly
    from `config.nml` (declares `namelist /soil/ …` and does the `read` itself).
 2. **Defaults** — default config values and science constants live with the domain.
-3. **Errors & logging** — error definitions and log messages belong to the domain
-   that raises them.
-4. **Science code** behind the existing `Abstract*Module` interface — the contract
-   other teams code against.
+3. **Errors & logging** — where a domain owns registered errors, their definitions
+   and log messages belong to the domain that raises them. A domain with no assigned
+   error codes does not need to invent an error registry merely to fit the template.
+4. **Science code** behind an existing `Abstract*Module` interface, where that
+   interface already exists — the contract other teams code against. Do not create an
+   artificial `Abstract*` layer solely for this migration; Source currently has no
+   abstract contract.
 
 **What stays global:**
 
@@ -22,8 +25,11 @@ domain is self-contained and different teams can work in parallel without collid
   nTimesteps, start date, warm-up), output options, checkpointing, steady-state,
   batch-run state, data paths.
 - A small shared **kernel** — precision `dp`, cross-domain physical constants
-  (`g`/`k_B`/`rho_w`), and IO infrastructure. Depends on nothing; everything may
-  depend on it. This breaks circular `use` dependencies.
+  (`g`/`k_B`/`rho_w`), and dependency-free IO/color utilities. It depends on
+  nothing; everything may depend on it. This breaks circular `use` dependencies.
+- A shared **error-handling module** above the kernel — owns the single
+  `ERROR_HANDLER` instance and FEH integration. It is deliberately not part of the
+  pure kernel.
 
 **Constraints:**
 
@@ -44,9 +50,12 @@ domain is self-contained and different teams can work in parallel without collid
 
 ---
 
-## 2. Current state (measured from the codebase)
+## 2. Pre-migration baseline and known current debt
 
-The blockers are real and quantified:
+The measurements below capture the baseline that motivated this migration. Completed
+phase status and the authoritative per-phase records are listed in §7; baseline items
+already addressed by those phases are retained here as design context. Registry and
+other explicitly deferred defects remain current until their named follow-up phase.
 
 - **`GlobalsModule.f90` is a god-object.** `type(GlobalsType) :: C` holds ~100 fields
   spanning every domain, jumbled with physical constants and run control.
@@ -65,21 +74,33 @@ The blockers are real and quantified:
   (`defaultSedimentTransport_a`, `defaultBankErosionAlpha`, soil attachment
   efficiency, …) that are all domain-specific.
 - **`dp` is duplicated** in `GlobalsModule.f90:13` and `DefaultsModule.f90:7`.
-- The flat error array has a **latent bug**: `errors(11)` is assigned twice
-  ([src/GlobalsModule.f90:448](src/GlobalsModule.f90#L448) and
-  [:452](src/GlobalsModule.f90#L452)), silently dropping code 405.
+- The flat error registry has several existing defects that this behaviour-preserving
+  migration must record but not silently repair:
+  - `errors(4)` and `errors(5)` are never assigned and therefore behave as blank
+    code-1 `ErrorInstance`s.
+  - `errors(11)` is assigned twice, silently dropping code 405.
+  - code 901 is listed with BedSediment even though its message describes an invalid
+    RiverReach type.
+  - codes 110, 200, 201, and 300 do not yet have explicit target owners.
+  These require a separate, explicitly tested behaviour-change phase.
 - `CheckpointModule.f90` reads **only dimension fields** (`npDim` ×66,
   `nSedimentLayers` ×14, `nSizeClassesSpm` ×18, `nSoilLayers` ×10, `nFracCompsSpm` ×4)
   — i.e. the foundation layer, **no per-domain config flags**.
-- The error API already supports incremental registration:
-  `ERROR_HANDLER%addErrorInstance` / `addMultipleErrorInstancesFromErrors`
-  ([vendor/feh/src/ErrorHandler.f90:32-34](vendor/feh/src/ErrorHandler.f90#L32-L34)).
+- The FEH generic already supports incremental registration. The unambiguous form for
+  one domain error is
+  `call ERROR_HANDLER%add(error=ErrorInstance(code=..., ...))`
+  ([vendor/feh/src/ErrorHandler.f90:31-34](vendor/feh/src/ErrorHandler.f90#L31-L34)).
 
 ---
 
 ## 3. Target architecture (layered, not flat)
 
-Dependencies point downward only. Domains never `use` each other.
+Dependencies point downward only and must remain acyclic. Domains are not required to
+be mutually isolated peers: a higher-level domain may explicitly `use` a lower-level
+domain when the model relationship requires it. In particular, Source is a lower-level
+domain consumed by GridCell and WaterBody. The reverse dependency is forbidden, and
+introducing `AbstractSource` interfaces or dependency injection is deferred until it
+has a demonstrated design need.
 
 > **Terminology — two different "setups".** This plan distinguishes two concerns that
 > both get loosely called "model setup":
@@ -116,20 +137,30 @@ Dependencies point downward only. Domains never `use` each other.
 │  Reactor, Biota  │        │ uses
 │  (config +       │        ▼
 │   defaults +     │   ┌─────────────────────────────────────┐
-│   errors +       │   │  Model-dimensions (ModelDimensions) │
+│   owned errors + │   │  Model-dimensions (ModelDimensions) │
 │   science behind │──▶│  npDim, ionicDim, size classes,     │
 │   Abstract*)     │   │  layer counts, NM/SPM dimensions    │
 └──────────────────┘   └─────────────────────────────────────┘
         │ uses                  │ uses
         ▼                       ▼
 ┌─────────────────────────────────────────────────────────────┐
+│  Shared diagnostics (ErrorHandlingModule)                   │
+│  owns ERROR_HANDLER and FEH integration; depends on kernel  │
+└─────────────────────────────────────────────────────────────┘
+        │ uses
+        ▼
+┌─────────────────────────────────────────────────────────────┐
 │  Kernel (depends on NOTHING)                                 │
 │  dp · physical constants (g, k_B, pi, n_river) ·            │
 │  water physics (rho_w, nu_w, mu_w) ·                        │
-│  IO infra (iou units / newunit, ANSI colors,               │
-│  ERROR_HANDLER, LOGR) · Result/ErrorInstance re-exports     │
+│  dependency-free IO-unit policy and ANSI color constants    │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+The stacked diagram shows dependency level, not an assertion that every box imports
+every intermediate module. `ModelConfig` remains independent of `ErrorHandlingModule`;
+bootstrap reads its controls and passes them into handler initialisation. Only domain
+configs that register owned errors import the shared diagnostics module.
 
 **Why model-dimensions is its own layer and not a domain:** `npDim` etc. are read 490×
 across all domains. If modelled as a peer domain, everyone would `use` it and we'd
@@ -218,9 +249,18 @@ than the facade `C`. See the builder phase in §7.
 - Physical constants: `g`, `k_B`, `pi`, `n_river`
 - Water physics functions: `rho_w`, `nu_w`, `mu_w` (currently methods on `C`;
   become free functions in the kernel — call sites change `C%rho_w(T)` → `rho_w(T)`)
-- IO infra: IO unit policy (prefer `open(newunit=…)`), ANSI color constants,
-  `ERROR_HANDLER` object, `LOGR` object
-- Re-exports: `Result`, `ErrorInstance`, `ErrorCriteria`
+- Dependency-free IO-unit policy (prefer `open(newunit=…)`) and ANSI color constants.
+  The kernel does not own `ERROR_HANDLER`, FEH re-exports, or logging state.
+
+### Shared diagnostics (`src/ErrorHandling/` — proposed)
+- `ErrorHandlingModule` owns the single `ERROR_HANDLER` object and FEH integration.
+- Bootstrap initialises it from already-loaded `ModelConfig` controls before any
+  domain config attempts error registration.
+- During migration, `GlobalsModule` temporarily imports and publicly re-exports the
+  same object so untouched consumers do not create a second handler instance.
+- The legacy flat registry remains temporarily available and shrinks only when a
+  domain with assigned codes takes ownership. Its known malformed/unowned entries are
+  preserved until the separate registry-correction phase.
 
 ### Model-dimensions (`src/ModelDimensions/` — proposed)
 - `npDim`, `ionicDim`
@@ -255,8 +295,8 @@ than the facade `C`. See the builder phase in §7.
 |---|---|---|---|---|
 | **Soil** (`src/Soil/`) | `soilLayerDepth`, `includeBioturbation`, `includeAttachment`, `includeSoilErosion`, `includeClayEnrichment` | `defaultSoilAttachmentEfficiency`, `defaultSoilDarcyVelocity` | 600 | `/soil/` |
 | **Source** (`src/Source/`) | `includePointSources` | — | — | `/sources/` |
-| **WaterBody** (`src/WaterBody/`) | `minStreamSlope`, `minEstuaryTimestep`, `includeEstuary`, `includeBankErosion` | `defaultSlope`, `defaultBankErosionAlpha/Beta`, `defaultMin/MaxWaterTemperature`, `defaultMinWaterTemperatureDayOfYear` | 401–405, 500–501 | `/water/` |
-| **BedSediment** (`src/BedSediment/`) | `includeBedSediment`, `sedimentLayerDepth` | `defaultDepositionAlpha/Beta`, `defaultSedimentTransport_a/b/c`, `defaultSedimentEnrichment_k/a` | 904, 901 | `/sediment/` (non-dimension part) |
+| **WaterBody** (`src/WaterBody/`) | `minStreamSlope`, `minEstuaryTimestep`, `includeEstuary`, `includeBankErosion` | `defaultSlope`, `defaultBankErosionAlpha/Beta`, `defaultMin/MaxWaterTemperature`, `defaultMinWaterTemperatureDayOfYear` | 401–404, 500–501; 405 intended but currently dropped | `/water/` |
+| **BedSediment** (`src/BedSediment/`) | `includeBedSediment`, `sedimentLayerDepth` | `defaultDepositionAlpha/Beta`, `defaultSedimentTransport_a/b/c`, `defaultSedimentEnrichment_k/a` | 904 | `/sediment/` (non-dimension part) |
 | **Reactor** (`src/Reactor/`) | — | `default_k_diss_pristine/transformed`, `default_k_transform_pristine`, `defaultShearRate`, `T` | 903 | (none yet) |
 | **Biota** (`src/Biota/`) | — | — | 902 | (none yet) |
 
@@ -264,6 +304,12 @@ than the facade `C`. See the builder phase in §7.
 > because they shape arrays across domains and in checkpoint; the *depths*
 > (`soilLayerDepth`, `sedimentLayerDepth`) belong to the owning domain, which reads
 > the count from model-dimensions to allocate.
+>
+> Error ownership in this table is conditional and provisional. Restoring code 405 to
+> WaterBody would change current diagnostic behaviour and is therefore deferred. Code
+> 901 must not be moved into BedSediment merely because the legacy array places it
+> nearby; its message refers to RiverReach. Codes 110, 200, 201, and 300 also need
+> explicit ownership decisions in the separately tested registry-correction phase.
 
 ### Model assembly / builder (`src/ModelAssembly/` — proposed)
 
@@ -298,8 +344,10 @@ We cannot edit all call sites at once. Strategy:
    populate the old `C%…` fields *from* the new modules (or make them pointers).
 3. Migrate call sites **one domain at a time** from `C%foo` to the new module's
    accessor. Untouched domains keep reading `C%foo` and keep compiling.
-4. When the last domain is migrated, `C` has no remaining readers → **delete it**,
-   and do the final error/log distribution pass.
+4. After domain phases, migrate the remaining cross-cutting facade readers. When `C`
+   has no remaining readers, **delete it**. By then every error with an agreed owner
+   has already moved during that owner's phase; final cleanup only removes an empty
+   legacy registry and must not be used to change diagnostic behaviour.
 
 This means `LoggerModule`, the error array, and most checkpoint state keep reading
 `C%…` until their owning layers are migrated. The Phase 1 exception is deliberate:
@@ -309,6 +357,14 @@ Phase 2 adds `ModelConfigModule` as the source of truth for model-level config, 
 `C` remains a facade. Runtime-mutated model config (`inputFile`, `constantsFile`,
 `nTimeSteps`, `startDate`, `t0`) must be changed through `ModelConfigModule` helpers
 and mirrored back into `C` until all readers migrate.
+
+Before any error-owning domain phase, introduce `ErrorHandlingModule` and make it the
+sole owner of `ERROR_HANDLER`. `GlobalsModule` temporarily re-exports that singleton
+for untouched consumers. The bootstrap order is: initialise model dimensions as
+needed for allocation, initialise `ModelConfig`, initialise the shared handler from
+the model-level diagnostics controls, then initialise domain configs and register
+their owned errors. There must never be both a Globals-owned and diagnostics-owned
+handler.
 
 ### Namelist read-order coupling (must preserve)
 Today `/allocatable_array_sizes/` is read first because its counts size the
@@ -340,7 +396,7 @@ module KernelModule
     real(dp), parameter :: k_B = 1.38064852e-23_dp
     real(dp), parameter :: pi = 4*atan(1.0_dp)
     real(dp), parameter :: n_river = 0.035_dp
-    ! ANSI colors, IO unit policy, ERROR_HANDLER, LOGR live here too
+    ! Dependency-free ANSI colors and IO-unit policy live here too.
 contains
     pure function rho_w(T, S) result(r) ... end function   ! was C%rho_w
     pure function nu_w(T, S) result(r) ... end function
@@ -386,21 +442,23 @@ contains
         ! …
         call me%audit()
     end subroutine
-    ! initSoilConfig also registers domain errors:
-    !   call ERROR_HANDLER%add(ErrorInstance(code=600, message="All water removed from SoilLayer.", isCritical=.false.))
+    ! If this domain owns registered errors, initSoilConfig adds them after
+    ! ErrorHandlingModule has initialised the shared handler:
+    !   call ERROR_HANDLER%add(error=ErrorInstance(code=600, message="All water removed from SoilLayer.", isCritical=.false.))
 end module
 ```
 
 ### Bootstrap (orchestration only)
 ```fortran
 subroutine bootstrap(configFilePath)
-    call ERROR_HANDLER%init(...)           ! kernel: handler exists, defaults only
     call modelDimensions%init(configFilePath) ! reads /allocatable_array_sizes/, /nanomaterial/ first
     call modelConfig%init(configFilePath)  ! run/output/checkpoint/steady/batch
-    call soilConfig%init(configFilePath)   ! each domain reads its own group + registers its errors
+    call initErrorHandling(modelConfig)    ! shared handler exists before domain registration
     call sourceConfig%init(configFilePath)
-    call waterConfig%init(configFilePath)
-    ! … bed sediment, reactor, biota
+    call soilConfig%init(configFilePath)   ! domain reads its group + registers owned errors
+    call bedSedimentConfig%init(configFilePath)
+    call waterConfig%init(configFilePath)  ! may consume BedSediment configuration
+    ! … reactor, biota
     ! Only AFTER all config is loaded: build and wire the object graph
     call buildEnvironment(env)             ! ModelAssembly: instantiate + wire, reads DATASET
 end subroutine
@@ -431,14 +489,24 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
+Implementation status: Phases 0, 1, 2, B, and 3 are complete. Their authoritative
+records are [phase0_kernel.md](phase0_kernel.md),
+[phase1_model_dimensions.md](phase1_model_dimensions.md),
+[phase2_model_config.md](phase2_model_config.md), and
+[phaseB_builder_extraction.md](phaseB_builder_extraction.md), plus
+[phase3_source.md](phase3_source.md). Remaining execution starts with the Phase 4
+bootstrap and diagnostics infrastructure gate.
+
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
-  IO/color/handler/logger infra.
+  and dependency-free IO/color utilities.
 - Replace the duplicate `dp` in `DefaultsModule.f90:7` and `GlobalsModule.f90:13`
   with `use KernelModule, only: dp`.
 - Leave `C%rho_w` etc. as thin forwarders to kernel functions (don't touch call
   sites yet).
-- **Verify:** full build + a reference run produces byte-identical output.
+- Keep `ERROR_HANDLER` and logger state in their existing locations; they are not
+  pure-kernel responsibilities.
+- **Verify:** full build + `verify_refactor.py --exact`.
 
 ### Phase 1 — Model-dimensions
 - Create `ModelDimensionsModule` owning `npDim`, size classes, counts, distributions,
@@ -447,7 +515,7 @@ end module
   (facade) so the 490 `C%npDim` readers are untouched.
 - Repoint only `CheckpointModule`'s dimension-shaped reads to `use ModelDimensionsModule`;
   it keeps `C` for non-dimension state such as `epsilon`, `t0`, and error handling.
-- **Verify:** build + reference run identical; checkpoint save/reinstate smoke test
+- **Verify:** build + `verify_refactor.py --exact`; checkpoint save/reinstate smoke test
   runs, with exact round-trip comparison deferred until the existing warm-up/reinstate
   run-control semantics are separated.
 
@@ -462,7 +530,7 @@ end module
   `GLOBALS_INIT` until the corresponding domain phases migrate them.
 - Route batch chunk selection and checkpoint-preserved `t0` through `ModelConfigModule`
   and mirror those runtime values back into `C`.
-- **Verify:** build + reference run identical.
+- **Verify:** build + `verify_refactor.py --exact`.
 
 ### Phase B — Builder extraction (parallel workstream, after Phases 1-2)
 This is the §3b construction-vs-behaviour axis, independent of the per-domain config
@@ -493,29 +561,93 @@ phases below. It can run in parallel once `ModelDimensions` + `ModelConfig` exis
   type-bound interface once it becomes a private builder helper.
 - Optional: use submodules to split a type's setup vs science methods into separate
   files where it aids readability.
-- **Verify:** build + reference run identical — construction is behaviour-preserving;
-  only the *location* of the code changes, not the order of operations.
+- **Verify:** build + `verify_refactor.py --exact` — construction is
+  behaviour-preserving; only the *location* of the code changes, not the order of
+  operations.
 
-### Phase 3 → N — One domain at a time (start smallest)
-Order by blast radius (smallest first to prove the recipe):
-1. **Source** — only `includePointSources`, 2 files, no science defaults. Smallest;
-   proves config+errors ownership end-to-end.
-2. **Soil**
-3. **WaterBody** (river + estuary)
-4. **BedSediment** (suspended + bed sediment dynamics)
-5. **Reactor** (water-column reactor)
-6. **Biota**
+### Phase 3 — Source (smallest domain slice; complete)
+- Create `SourceConfigModule`, move ownership of `/sources/` and
+  `includePointSources`, and initialise it from the transitional bootstrap in
+  `main.f90` after `GLOBALS_INIT`.
+- Relocate the existing `!! Should point sources be included?` comment with the field
+  verbatim; preserve all other Source comments and TODOs.
+- Remove the Source facade field and migrate every repo-wide consumer of that field,
+  not only files physically under `src/Source/`.
+- Repoint Source's dimension, precision, run-control, NetCDF-fill, and dataset imports
+  to their explicit owning modules without changing parsing, construction, snapping,
+  warm-up, or flux behaviour.
+- Source has no assigned error codes. This phase proves namelist ownership, facade
+  field removal, and explicit one-way dependency wiring; it does **not** prove error
+  ownership end-to-end and does not add an artificial `AbstractSource` interface.
+- **Verify:** enabled- and disabled-point-source comparisons with
+  `verify_refactor.py --exact`, plus the existing batch and checkpoint
+  save/reinstate smoke tests.
 
-Each domain phase follows the **per-domain checklist** (§8).
+### Phase 4 — Bootstrap and diagnostics infrastructure gate
+- Introduce `BootstrapModule` with one public startup routine and make `main.f90` call
+  it instead of invoking `GLOBALS_INIT` and individual domain config initialisers.
+  Bootstrap owns command-line config-path resolution and the complete initialisation
+  order; remaining facade synchronisation and legacy namelist reads become private
+  transitional helpers until their owner phases remove them.
+- Introduce `ErrorHandlingModule` as the sole owner of `ERROR_HANDLER`; keep the
+  dependency-free kernel free of FEH state.
+- Temporarily import and publicly re-export that singleton from `GlobalsModule` for
+  untouched consumers.
+- Establish the bootstrap order: model dimensions where allocation requires them →
+  `ModelConfig` → shared handler initialisation → domain config/error registration →
+  object assembly.
+- Preserve the remaining legacy error registry exactly during this infrastructure
+  move. Domain registration uses the valid FEH generic form
+  `call ERROR_HANDLER%add(error=ErrorInstance(...))`.
+- **Verify:** build, `verify_refactor.py --exact`, and diagnostic startup/error smoke
+  tests. This gate must pass before Soil starts.
+
+### Phase 5 → N — Remaining domains, one at a time
+Order by dependency and blast radius:
+1. **Soil**
+2. **BedSediment** (suspended + bed sediment dynamics)
+3. **WaterBody** (river + estuary; consumes `includeBedSediment`)
+4. **Reactor** (water-column reactor)
+5. **Biota**
+
+Each domain phase follows the **per-domain checklist** (§8), including migration of
+all repo-wide consumers of the domain's fields. Errors move only when that domain has
+assigned codes; a domain without assigned errors skips error registration.
+
+### Cross-cutting facade-consumer phase
+- Migrate the remaining `ModelConfig` and `ModelDimensions` facade readers in
+  GridCell, Data, Output, Logger, Util, Checkpoint, and any other repo-wide consumer.
+- Input/output algorithms remain unchanged, but their imports of configuration and
+  dimensions are in scope and must point to the owning modules.
+- Verify that only the intentionally retained legacy registry/bootstrap shim still
+  requires `GlobalsModule`.
+
+### Separate diagnostic-registry correction phase (behaviour change)
+- Add focused tests that capture the intended diagnostics, then correct the two
+  unassigned `errors(4:5)` entries, the overwritten code 405 at `errors(11)`, and the
+  incorrect association of code 901 with BedSediment.
+- Determine explicit owners for codes 110, 200, 201, and 300 from their raising sites,
+  then move them to those owners. Do not bundle these behaviour changes into a pure
+  config/domain refactor.
+- Re-run exact valid-config regression tests and dedicated error-path assertions;
+  valid scientific output remains unchanged while the corrected diagnostics are
+  intentionally different.
 
 ### Final phase — Cleanup
-- Move the flat `errors(17)` definitions into their owning domains' init (fixing the
-  `errors(11)` duplicate bug → restore code 405).
+- Remove the legacy flat registry only after all of its valid entries have moved in
+  their owning phases and the separate registry-correction phase has resolved the
+  malformed/unowned entries. Final cleanup must see an empty registry and must not
+  change error behaviour.
 - Move remaining log messages to domain code (most are already inline).
 - Delete `type(GlobalsType) :: C` and `GLOBALS_INIT` once no readers remain.
 - Delete migrated parameters from `DefaultsModule` (keep only IO units there, or fold
   into kernel).
-- **Verify:** build + reference run identical; grep confirms zero `C%` / `use GlobalsModule`.
+- **Verify:** build + `verify_refactor.py --exact`; grep confirms zero `C%` /
+  `use GlobalsModule`.
+
+Every phase adds or updates a file in `migration_documentation/` recording what was
+implemented, exact verification commands/results, preserved public behaviour and
+original comments, and the remaining migration debt.
 
 ---
 
@@ -530,20 +662,27 @@ For domain `X`:
 3. **Own the namelist:** declare `namelist /x/ …` inside `XConfig%init`, open
    `config.nml` with `newunit`, read, populate, `close`.
 4. **Move audits:** domain-specific checks from `C%audit` into `XConfig%audit`.
-5. **Register errors:** in `XConfig%init`, call
-   `ERROR_HANDLER%add(ErrorInstance(code=…, …))` for the domain's codes; remove them
-   from the global `errors(…)` array.
-   While doing this, audit any construction helpers moved during Phase B: once the
-   domain owns its error/log registration, replace local construction-time
-   trigger/clear side effects with returned `Result` propagation where behavior can
-   remain identical.
-6. **Repoint science code:** in `src/X/*Module.f90`, change `use GlobalsModule` →
-   `use KernelModule` + `use ModelDimensionsModule` + `use XConfigModule`; rewrite
-   `C%foo` → `xConfig%foo` (or `ModelDimensions`/kernel for dims/constants).
+5. **Register errors conditionally:** only if X has assigned codes, call
+   `ERROR_HANDLER%add(error=ErrorInstance(code=…, …))` in `XConfig%init` after the
+   shared handler is initialised, and remove exactly those entries from the legacy
+   registry. A domain with no assigned codes skips this step. Preserve existing
+   trigger/clear/propagation semantics; redesigning diagnostic flow is separate from
+   this pure refactor.
+6. **Repoint every consumer:** across the repository, not just under `src/X/`, replace
+   reads of X-owned facade fields with `XConfigModule`; use `KernelModule`,
+   `ModelDimensionsModule`, or `ModelConfigModule` for values owned by those layers.
+   Domain-to-domain imports must be explicit, one-way, and acyclic.
 7. **Update bootstrap:** add `call xConfig%init(configFilePath)` in the right order.
 8. **Drop facade fields:** remove domain fields from `GlobalsType`/`GLOBALS_INIT` once
    no other code reads them (grep `C%fieldName`).
-9. **Verify:** build + reference run produces identical output (§9).
+9. **Preserve comments:** retain every original code comment and TODO verbatim where
+   its code remains; when ownership moves, relocate the associated comment without
+   paraphrasing or dropping it.
+10. **Verify:** build + `verify_refactor.py --exact` produces identical output (§9),
+    plus focused smoke tests for the touched domain and checkpoint/batch paths.
+11. **Document:** add/update `migration_documentation/phaseX_<domain>.md` with what
+    was implemented, commands and results, preserved APIs/behaviour/comments, and an
+    explicit list of what remains.
 
 ---
 
@@ -552,10 +691,15 @@ For domain `X`:
 - **Build gate:** the project build must pass after every phase. The facade keeps the
   build green between phases.
 - **Regression gate:** keep one canonical config + input dataset. After each phase,
-  run the model and diff output (CSV/NetCDF) against a pre-migration baseline. Output
-  must be **identical** — this is a pure refactor, no science changes.
-- **Checkpoint round-trip:** after Phase 1, confirm save-then-reinstate reproduces a
-  continued run.
+  run `verify_refactor.py --exact` against a fresh pre-phase baseline. Output must be
+  **exactly identical** — this is a pure refactor, no science changes. Add focused
+  scenario variants when the touched flag has enabled/disabled behaviour.
+- **Checkpoint smoke gate:** run the existing checkpoint save/reinstate smoke path
+  after relevant phases. Exact continuation equivalence remains unresolved because
+  warm-up/reinstate run-control semantics have not yet been separated; do not report
+  the smoke test as proof of checkpoint continuation correctness.
+- **Batch smoke gate:** run the existing batch path whenever assembly, source snapping,
+  config paths, or runtime-mutated model config are touched.
 - **Grep gates** (final phase): `grep -rn "use GlobalsModule" src` → 0;
   `grep -rn "C%" src` → 0.
 
@@ -568,23 +712,31 @@ For domain `X`:
 | 490 `C%npDim` readers can't change at once | Facade shim — `C` stays populated until the last domain migrates |
 | Namelist read-order coupling (`allocatable_array_sizes` first) | Model-dimensions reads sizes in Phase 1, before any domain init; bootstrap enforces order |
 | IO-unit collisions when domains read independently | Use `open(newunit=…)`; retire the central `iou*` registry |
-| `errors(11)` double-assignment bug carried forward | Fixed during final error-distribution pass; code 405 restored |
-| Silent behaviour change during refactor | Byte-identical output regression gate after every phase |
-| Checkpoint depends on dimensions | It reads *only* dimensions (verified); repointed once in Phase 1, untouched after |
+| Malformed/unowned legacy registry entries carried into domains | Preserve them during pure refactors; fix `errors(4:5)`, duplicate `errors(11)`, code 901, and unowned 110/200/201/300 only in the separately tested diagnostic phase |
+| Silent behaviour change during refactor | `verify_refactor.py --exact` regression gate after every phase |
+| Checkpoint depends on dimensions | It reads *only* dimensions (verified); repointed once in Phase 1. Save/reinstate remains a smoke test until continuation semantics receive a dedicated test |
 | Layer-depth vs count split (soil/sediment) | Counts → model-dimensions; depths → domain, which queries the count to allocate |
 | Builder must `use` concrete domain types (reverse arrow) | Builder is a *top* layer (above domains); nothing below depends on it, so no cycle — see §3b |
+| Source is consumed by GridCell/WaterBody | Allow the explicit one-way dependency onto lower-level Source; forbid the reverse edge and defer speculative `AbstractSource`/DI work |
 | Construction reorder could change results | Phase B *moves* code without changing operation order; byte-identical regression gate catches any drift |
 
 ---
 
 ## 11. Out of scope
 
-- Input pre-processing (`src/Data/`, `DataInputModule`) and output post-processing
-  (`DataOutputModule`) — these are not the model engine. They will continue to read
-  the slim model module's output/data-path config.
+- Changes to input parsing and output-writing algorithms (`src/Data/`,
+  `DataInputModule`, `DataOutputModule`) — these are not part of the model-engine
+  refactor. Their imports and reads of migrated config/dimension fields **are** in
+  scope and must be repointed repo-wide to the owning modules.
 - Any science/algorithm change. This migration is behaviour-preserving — including the
   builder extraction (§3b / Phase B), which relocates construction code without
   altering the order of operations.
+- Correcting the known legacy diagnostic-registry defects during a config/domain
+  phase. Those corrections are a separately tested behaviour-change phase (§7).
+- Proving exact checkpoint continuation while the existing warm-up/reinstate
+  run-control semantics remain coupled; current checkpoint coverage is a smoke test.
+- Introducing Source dependency injection or a new `AbstractSource` interface. The
+  current explicit one-way Source dependency is acceptable and acyclic.
 - Generalising the contaminant-specific accessor interfaces on the spatial containers
   (`get_C_np_water`, `get_j_nm_*` on `AbstractGridCell` / `AbstractEnvironment`) so the
   grid/environment become agnostic to the modelled stressor. This is a larger, more

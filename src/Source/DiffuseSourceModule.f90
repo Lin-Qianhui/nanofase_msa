@@ -1,8 +1,8 @@
 module DiffuseSourceModule
-    use GlobalsModule
-    use ResultModule
+    use KernelModule, only: dp
+    use ModelDimensionsModule, only: npDim, nSizeClassesNM
     use netcdf, only: nf90_fill_double
-    use DataInputModule
+    use DataInputModule, only: DATASET
     implicit none
     private
 
@@ -32,8 +32,8 @@ module DiffuseSourceModule
         me%y = y
         me%s = s
         me%compartment = compartment
-        allocate(me%j_np_diffuseSource(C%npDim(1), C%npDim(2), C%npDim(3)), &
-                 me%j_transformed_diffuseSource(C%npDim(1), C%npDim(2), C%npDim(3)))
+        allocate(me%j_np_diffuseSource(npDim(1), npDim(2), npDim(3)), &
+                 me%j_transformed_diffuseSource(npDim(1), npDim(2), npDim(3)))
     end subroutine
 
     !> Update the diffuse source on time step t
@@ -74,7 +74,7 @@ module DiffuseSourceModule
             end if
             ! Matrix-embedded NM - add to form=core (index=1) and state=attached (index=2)
             if (.not. DATASET%emissionsArealWaterMatrixEmbedded(me%x, me%y) >= nf90_fill_double) then
-                do i = 1, C%nSizeClassesNM
+                do i = 1, nSizeClassesNM
                     me%j_np_diffuseSource(i,1,3:) = DATASET%emissionsArealWaterMatrixEmbedded(me%x, me%y) &
                         * DATASET%defaultMatrixEmbeddedDistributionToSpm * DATASET%defaultNMSizeDistribution(i)
                 end do
@@ -97,7 +97,7 @@ module DiffuseSourceModule
             end if
             ! Matrix-embedded NM
             if (.not. DATASET%emissionsAtmosphericDryDepoMatrixEmbedded(me%x, me%y, t) >= nf90_fill_double) then
-                do i = 1, C%nSizeClassesNM
+                do i = 1, nSizeClassesNM
                     me%j_np_diffuseSource(i,1,3:) = DATASET%emissionsAtmosphericDryDepoMatrixEmbedded(me%x, me%y, t) &
                         * DATASET%defaultMatrixEmbeddedDistributionToSpm * DATASET%defaultNMSizeDistribution(i)
                 end do
@@ -119,7 +119,7 @@ module DiffuseSourceModule
             end if
             ! Matrix-embedded NM
             if (.not. DATASET%emissionsAtmosphericWetDepoMatrixEmbedded(me%x, me%y, t) >= nf90_fill_double) then
-                do i = 1, C%nSizeClassesNM
+                do i = 1, nSizeClassesNM
                     me%j_np_diffuseSource(i,1,3:) = me%j_np_diffuseSource(i,1,3:) &
                         + DATASET%emissionsAtmosphericWetDepoMatrixEmbedded(me%x, me%y, t) &
                         * DATASET%defaultMatrixEmbeddedDistributionToSpm * DATASET%defaultNMSizeDistribution(i)

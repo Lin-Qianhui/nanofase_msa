@@ -19,6 +19,7 @@ program main
     use GlobalsModule, only: ERROR_HANDLER, GLOBALS_INIT
     use KernelModule, only: dp, COLOR_BLUE, COLOR_GREEN, COLOR_YELLOW, iouLog
     use ModelConfigModule, only: modelConfig
+    use SourceConfigModule, only: sourceConfig
     use UtilModule
     use ResultModule
     use RiverReachModule
@@ -50,6 +51,8 @@ program main
 
     ! Set up global vars/constants and initialise the logger
     call GLOBALS_INIT()
+    ! Initialise source-domain config during the staged bootstrap migration
+    call sourceConfig%init(modelConfig%configFilePath)
     ! Initialise the logger
     call LOGR%init( &
         logToFile=modelConfig%writeToLog, &
