@@ -16,16 +16,15 @@
 !>          https://github.com/NERC-CEH/nanofase/blob/develop/LICENSE           !
 !-------------------------------------------------------------------------------!
 program main
-    use GlobalsModule, only: ERROR_HANDLER, GLOBALS_INIT
-    use KernelModule, only: dp, COLOR_BLUE, COLOR_GREEN, COLOR_YELLOW, iouLog
+    use BootstrapModule, only: bootstrap
+    use ErrorHandlingModule, only: ERROR_HANDLER
+    use KernelModule, only: dp, COLOR_BLUE, COLOR_GREEN, COLOR_YELLOW
     use ModelConfigModule, only: modelConfig
-    use SourceConfigModule, only: sourceConfig
     use UtilModule
     use ResultModule
     use RiverReachModule
     use EstuaryReachModule
     use EnvironmentModule
-    use ModelAssemblyModule, only: buildEnvironment
     use DataInputModule, only: DATASET
     use CheckpointModule, only: Checkpoint
     use DataOutputModule
@@ -50,27 +49,7 @@ program main
     call system_clock(start_wall, clock_rate)
 
     ! Set up global vars/constants and initialise the logger
-    call GLOBALS_INIT()
-    ! Initialise source-domain config during the staged bootstrap migration
-    call sourceConfig%init(modelConfig%configFilePath)
-    ! Initialise the logger
-    call LOGR%init( &
-        logToFile=modelConfig%writeToLog, &
-        logToConsole=.true., &
-        logFilePath=modelConfig%logFilePath, &
-        fileUnit=iouLog &
-    )
-
-    ! Welcome, good to have you here!
-    call printWelcome()
-
-    ! Load the input data
-    call DATASET%init(modelConfig%inputFile, modelConfig%constantsFile)
-
-    ! Create the Environment object and deal with any errors that arise
-    rslt = buildEnvironment(env)
-    call LOGR%toFile(errors=.errors.rslt)
-    call ERROR_HANDLER%trigger(errors=.errors.rslt)
+    call bootstrap(env)
 
     ! Initialise the data output module, check if we're running to steady state
     call output%init(env)

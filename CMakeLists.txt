@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(nanofase)
 enable_language(Fortran)
+enable_testing()
 
 # GFortran compiler
 if (CMAKE_Fortran_COMPILER_ID MATCHES GNU)
@@ -80,3 +81,17 @@ file(WRITE "src/VersionModule.f90" ${version_file_new})
 add_executable(nanofase ${sources})
 target_include_directories(nanofase PUBLIC "${NETCDF_INCLUDES}")
 target_link_libraries(nanofase PRIVATE "${NETCDF_LIBRARIES_F90}")
+
+# Focused regression test for the shared diagnostics singleton and the
+# intentionally malformed legacy registry retained during migration.
+add_executable(error_handling_registry_test
+    vendor/feh/src/ErrorInstance.f90
+    vendor/feh/src/ErrorHandler.f90
+    vendor/feh/src/ErrorCriteria.f90
+    src/ErrorHandling/ErrorHandlingModule.f90
+    test/ErrorHandlingModuleTest.f90
+)
+set_target_properties(error_handling_registry_test PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/error-handling-test-modules"
+)
+add_test(NAME error_handling_registry COMMAND error_handling_registry_test)

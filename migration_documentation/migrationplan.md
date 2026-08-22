@@ -253,7 +253,9 @@ than the facade `C`. See the builder phase in §7.
   The kernel does not own `ERROR_HANDLER`, FEH re-exports, or logging state.
 
 ### Shared diagnostics (`src/ErrorHandling/` — proposed)
-- `ErrorHandlingModule` owns the single `ERROR_HANDLER` object and FEH integration.
+- `ErrorHandlingModule` owns the single `type(ErrorCriteria) :: ERROR_HANDLER` object
+  and FEH integration; the criteria-capable type is required by existing calls such
+  as `ERROR_HANDLER%equal`.
 - Bootstrap initialises it from already-loaded `ModelConfig` controls before any
   domain config attempts error registration.
 - During migration, `GlobalsModule` temporarily imports and publicly re-exports the
@@ -340,8 +342,9 @@ The blocker for "incremental" is that `C` is a module singleton referenced 490+ 
 We cannot edit all call sites at once. Strategy:
 
 1. Build new layers/modules as **pure additions** that become the source of truth.
-2. Keep `type(GlobalsType) :: C` alive as a **facade**: during `GLOBALS_INIT`,
-   populate the old `C%…` fields *from* the new modules (or make them pointers).
+2. Keep `type(GlobalsType) :: C` alive as a **facade**: during the private bootstrap
+   facade synchronisation, populate the old `C%…` fields *from* the new modules (or
+   make them pointers).
 3. Migrate call sites **one domain at a time** from `C%foo` to the new module's
    accessor. Untouched domains keep reading `C%foo` and keep compiling.
 4. After domain phases, migrate the remaining cross-cutting facade readers. When `C`
@@ -349,8 +352,9 @@ We cannot edit all call sites at once. Strategy:
    has already moved during that owner's phase; final cleanup only removes an empty
    legacy registry and must not be used to change diagnostic behaviour.
 
-This means `LoggerModule`, the error array, and most checkpoint state keep reading
-`C%…` until their owning layers are migrated. The Phase 1 exception is deliberate:
+This means `LoggerModule` and most checkpoint state keep reading `C%…` until their
+owning layers are migrated. The error registry moved to `ErrorHandlingModule` in
+Phase 4. The Phase 1 exception is deliberate:
 `CheckpointModule` may read dimension fields directly from `ModelDimensionsModule`,
 while keeping `C` for non-dimension state such as `epsilon`, `t0`, and error handling.
 Phase 2 adds `ModelConfigModule` as the source of truth for model-level config, while
@@ -358,13 +362,13 @@ Phase 2 adds `ModelConfigModule` as the source of truth for model-level config, 
 `nTimeSteps`, `startDate`, `t0`) must be changed through `ModelConfigModule` helpers
 and mirrored back into `C` until all readers migrate.
 
-Before any error-owning domain phase, introduce `ErrorHandlingModule` and make it the
-sole owner of `ERROR_HANDLER`. `GlobalsModule` temporarily re-exports that singleton
-for untouched consumers. The bootstrap order is: initialise model dimensions as
-needed for allocation, initialise `ModelConfig`, initialise the shared handler from
-the model-level diagnostics controls, then initialise domain configs and register
-their owned errors. There must never be both a Globals-owned and diagnostics-owned
-handler.
+Phase 4 introduced `ErrorHandlingModule` before any error-owning domain phase and made
+it the sole owner of `ERROR_HANDLER`. `GlobalsModule` temporarily re-exports that
+singleton for untouched consumers. The bootstrap order is: initialise model
+dimensions as needed for allocation, initialise `ModelConfig`, initialise the shared
+handler from the model-level diagnostics controls, then initialise domain configs and
+register their owned errors. There must never be both a Globals-owned and
+diagnostics-owned handler.
 
 ### Namelist read-order coupling (must preserve)
 Today `/allocatable_array_sizes/` is read first because its counts size the
@@ -450,17 +454,25 @@ end module
 
 ### Bootstrap (orchestration only)
 ```fortran
-subroutine bootstrap(configFilePath)
-    call modelDimensions%init(configFilePath) ! reads /allocatable_array_sizes/, /nanomaterial/ first
-    call modelConfig%init(configFilePath)  ! run/output/checkpoint/steady/batch
-    call initErrorHandling(modelConfig)    ! shared handler exists before domain registration
+subroutine bootstrap(env)
+    type(Environment), target, intent(inout) :: env
+    type(Result) :: rslt, auditResult
+    ! Resolve configFilePath and optional batchRunFilePath from command-line arguments.
+    call initModelDimensions(configFilePath) ! reads /allocatable_array_sizes/, /nanomaterial/ first
+    call modelConfig%init(configFilePath)     ! pass batchRunFilePath when present
+    call initErrorHandling(modelConfig%triggerWarnings, modelConfig%errorOutput)
+    call initLegacyGlobalsFacade(configFilePath) ! private transitional helper
+    auditResult = modelConfig%audit()
+    call ERROR_HANDLER%trigger(errors=.errors.auditResult)
     call sourceConfig%init(configFilePath)
-    call soilConfig%init(configFilePath)   ! domain reads its group + registers owned errors
-    call bedSedimentConfig%init(configFilePath)
-    call waterConfig%init(configFilePath)  ! may consume BedSediment configuration
-    ! … reactor, biota
+    ! Future owner-domain initialisers are added here after the handler call.
+    call LOGR%init(...)
+    call printWelcome()
+    call DATASET%init(modelConfig%inputFile, modelConfig%constantsFile)
     ! Only AFTER all config is loaded: build and wire the object graph
-    call buildEnvironment(env)             ! ModelAssembly: instantiate + wire, reads DATASET
+    rslt = buildEnvironment(env)            ! function: instantiate + wire, reads DATASET
+    call LOGR%toFile(errors=.errors.rslt)
+    call ERROR_HANDLER%trigger(errors=.errors.rslt)
 end subroutine
 ```
 
@@ -474,14 +486,15 @@ module ModelAssemblyModule
     use EnvironmentModule, only: Environment
     implicit none
 contains
-    subroutine buildEnvironment(env)
+    function buildEnvironment(env) result(r)
         type(Environment), target, intent(inout) :: env
+        type(Result) :: r
         ! 1. instantiate the grid + cells (+ their reaches / soil profiles)
         ! 2. wire topology: inflow/outflow pointers, headwaters, tidal limits
         ! 3. finalise: snap point sources, determine stream order, allocate routedReaches
         ! (the body is the construction code lifted out of createEnvironment /
         !  createGridCell — see §4 "Model assembly / builder")
-    end subroutine
+    end function
 end module
 ```
 
@@ -489,13 +502,14 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
-Implementation status: Phases 0, 1, 2, B, and 3 are complete. Their authoritative
+Implementation status: Phases 0, 1, 2, B, 3, and 4 are complete. Their authoritative
 records are [phase0_kernel.md](phase0_kernel.md),
 [phase1_model_dimensions.md](phase1_model_dimensions.md),
 [phase2_model_config.md](phase2_model_config.md), and
 [phaseB_builder_extraction.md](phaseB_builder_extraction.md), plus
-[phase3_source.md](phase3_source.md). Remaining execution starts with the Phase 4
-bootstrap and diagnostics infrastructure gate.
+[phase3_source.md](phase3_source.md) and
+[phase4_bootstrap_diagnostics.md](phase4_bootstrap_diagnostics.md). Remaining
+execution starts with the Phase 5 Soil migration.
 
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
@@ -583,14 +597,15 @@ phases below. It can run in parallel once `ModelDimensions` + `ModelConfig` exis
   `verify_refactor.py --exact`, plus the existing batch and checkpoint
   save/reinstate smoke tests.
 
-### Phase 4 — Bootstrap and diagnostics infrastructure gate
+### Phase 4 — Bootstrap and diagnostics infrastructure gate (complete)
 - Introduce `BootstrapModule` with one public startup routine and make `main.f90` call
   it instead of invoking `GLOBALS_INIT` and individual domain config initialisers.
   Bootstrap owns command-line config-path resolution and the complete initialisation
-  order; remaining facade synchronisation and legacy namelist reads become private
-  transitional helpers until their owner phases remove them.
-- Introduce `ErrorHandlingModule` as the sole owner of `ERROR_HANDLER`; keep the
-  dependency-free kernel free of FEH state.
+  order; remaining facade synchronisation and legacy namelist reads are private
+  `BootstrapModule` transitional helpers until their owner phases remove them.
+- Introduce `ErrorHandlingModule` as the sole owner of the criteria-capable
+  `type(ErrorCriteria) :: ERROR_HANDLER`; keep the dependency-free kernel free of
+  FEH state.
 - Temporarily import and publicly re-export that singleton from `GlobalsModule` for
   untouched consumers.
 - Establish the bootstrap order: model dimensions where allocation requires them →
@@ -600,7 +615,8 @@ phases below. It can run in parallel once `ModelDimensions` + `ModelConfig` exis
   move. Domain registration uses the valid FEH generic form
   `call ERROR_HANDLER%add(error=ErrorInstance(...))`.
 - **Verify:** build, `verify_refactor.py --exact`, and diagnostic startup/error smoke
-  tests. This gate must pass before Soil starts.
+  tests. This gate passed before Soil starts; see
+  [phase4_bootstrap_diagnostics.md](phase4_bootstrap_diagnostics.md).
 
 ### Phase 5 → N — Remaining domains, one at a time
 Order by dependency and blast radius:
@@ -639,7 +655,8 @@ assigned codes; a domain without assigned errors skips error registration.
   malformed/unowned entries. Final cleanup must see an empty registry and must not
   change error behaviour.
 - Move remaining log messages to domain code (most are already inline).
-- Delete `type(GlobalsType) :: C` and `GLOBALS_INIT` once no readers remain.
+- Delete `type(GlobalsType) :: C` and the remaining transitional bootstrap facade
+  helpers once no readers remain. `GLOBALS_INIT` was removed in Phase 4.
 - Delete migrated parameters from `DefaultsModule` (keep only IO units there, or fold
   into kernel).
 - **Verify:** build + `verify_refactor.py --exact`; grep confirms zero `C%` /
@@ -673,8 +690,8 @@ For domain `X`:
    `ModelDimensionsModule`, or `ModelConfigModule` for values owned by those layers.
    Domain-to-domain imports must be explicit, one-way, and acyclic.
 7. **Update bootstrap:** add `call xConfig%init(configFilePath)` in the right order.
-8. **Drop facade fields:** remove domain fields from `GlobalsType`/`GLOBALS_INIT` once
-   no other code reads them (grep `C%fieldName`).
+8. **Drop facade fields:** remove domain fields from `GlobalsType` and the private
+   bootstrap facade helper once no other code reads them (grep `C%fieldName`).
 9. **Preserve comments:** retain every original code comment and TODO verbatim where
    its code remains; when ownership moves, relocate the associated comment without
    paraphrasing or dropping it.
