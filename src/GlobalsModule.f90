@@ -79,13 +79,8 @@ module GlobalsModule
         real(dp)            :: steadyStateDelta                 !! Delta value used to test whether we're at steady state
 
         ! Compartments
-        real, allocatable   :: soilLayerDepth(:)                !! Soil layer depth [m]
         real, allocatable   :: sedimentLayerDepth(:)            !! Sediment layer depth [m]
-        logical             :: includeBioturbation              !! Should bioturbation be modelled?
         logical             :: includeBedSediment               !! Should the bed sediment be included?
-        logical             :: includeAttachment                !! Should attachment to soil be included?
-        logical             :: includeSoilErosion               !! Should soil erosion be included?
-        logical             :: includeClayEnrichment            !! Should clay enrichment be included?
         integer             :: nSoilLayers                      !! Number of soil layers to be modelled
         integer             :: nSedimentLayers                  !! Number of sediment layers to be modelled
         real                :: minStreamSlope                   !! Minimum stream slope, imposed where calculated stream slope is less than this value [m/m]

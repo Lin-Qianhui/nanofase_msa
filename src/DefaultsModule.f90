@@ -36,7 +36,6 @@ module DefaultsModule
         logical             :: includeSoilStateBreakdown = .false.      ! Output breakdown of different soil states?
         logical             :: includeSoilErosionYields = .false.       ! Should we output soil erosion yields?
         logical             :: includeSpmSizeClassBreakdown = .false.
-        logical             :: includeClayEnrichment = .false.
         character(len=5)    :: soilPECUnits = 'kg/kg'                   ! Should soil PECS be kg/kg or kg/m3?
         character(len=5)    :: sedimentPECUnits = 'kg/kg'               ! Should sediment PECs be kg/kg or kg/m3?
         logical             :: writeMetadataAsComment = .true.          ! Should metadata be added to the top of CSV files as # comments
@@ -53,15 +52,11 @@ module DefaultsModule
         ! Water
         logical             :: includeEstuary = .true.                  ! Should we model estuaries, or treat them as rivers?
         logical             :: includeBankErosion = .true.              ! Should we include the inflow of sediment from bank erosion?
-        ! Soil
-        logical             :: includeSoilErosion = .true.              ! Should we model soil erosion?
     end type
     ! Object to exposre the config defaults
     type(ConfigDefaultsType) :: configDefaults
 
     ! Defaults for constants
-    real, parameter :: defaultSoilAttachmentEfficiency = 0.0
-    real, parameter :: defaultSoilDarcyVelocity = 9e-6_dp           ! [m/s] Tufenkji et al, 2004: https://doi.org/10.1021/es034049r 
     real, parameter :: default_k_diss_pristine = 0.0
     real, parameter :: default_k_diss_transformed = 0.0
     real, parameter :: default_k_transform_pristine = 0.0

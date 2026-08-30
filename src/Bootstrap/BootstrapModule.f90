@@ -13,6 +13,7 @@ module BootstrapModule
     use ErrorHandlingModule, only: ERROR_HANDLER, initErrorHandling
     use ResultModule, only: Result
     use GlobalsModule, only: C
+    use SoilConfigModule, only: soilConfig
     use SourceConfigModule, only: sourceConfig
     use LoggerModule, only: LOGR
     use UtilModule, only: printWelcome
@@ -51,6 +52,8 @@ module BootstrapModule
 
         call initErrorHandling(modelConfig%triggerWarnings, modelConfig%errorOutput)
 
+        call soilConfig%init(modelConfig%configFilePath)
+
         call initLegacyGlobalsFacade(trim(configFilePath))
 
         ! Auditing the config. Must be done after error handler has been initialised.
@@ -86,35 +89,28 @@ module BootstrapModule
         integer :: nmlIOStat                                ! IO status for namelist reading
         integer :: min_estuary_timestep
         real :: min_stream_slope
-        real, allocatable :: soil_layer_depth(:), spm_size_classes(:), &
-            sediment_particle_densities(:), sediment_layer_depth(:)
-        logical :: include_bioturbation, include_attachment, include_bed_sediment, &
-            include_clay_enrichment, include_estuary, include_bank_erosion, include_soil_erosion
+        real, allocatable :: spm_size_classes(:), sediment_particle_densities(:), &
+            sediment_layer_depth(:)
+        logical :: include_bed_sediment, include_estuary, include_bank_erosion
 
         ! Domain config namelists still owned by Globals until their domain phases.
-        namelist /soil/ soil_layer_depth, include_bioturbation, include_attachment, include_clay_enrichment, include_soil_erosion
         namelist /sediment/ spm_size_classes, include_bed_sediment, sediment_particle_densities, sediment_layer_depth
         namelist /water/ min_stream_slope, min_estuary_timestep, include_estuary, include_bank_erosion
 
-        include_clay_enrichment = configDefaults%includeClayEnrichment
         min_stream_slope = configDefaults%minStreamSlope
         min_estuary_timestep = configDefaults%minEstuaryTimestep
         include_estuary = configDefaults%includeEstuary
         include_bank_erosion = configDefaults%includeBankErosion
-        include_soil_erosion = configDefaults%includeSoilErosion
-
         call syncModelConfigToGlobals()
 
         open(iouConfig, file=trim(configFilePath), status="old")
 
         ! Use the allocatable array sizes to allocate those arrays (allocatable arrays
         ! must be allocated before being read in to).
-        allocate(soil_layer_depth(dim_nSoilLayers))
         allocate(sediment_layer_depth(dim_nSedimentLayers))
         allocate(spm_size_classes(dim_nSizeClassesSpm))
         allocate(sediment_particle_densities(dim_nFracCompsSpm))
 
-        read(iouConfig, nml=soil); rewind(iouConfig)
         read(iouConfig, nml=sediment); rewind(iouConfig)
         read(iouConfig, nml=water, iostat=nmlIOStat); rewind(iouConfig)
         if (nmlIOStat .ge. 0) read(iouConfig, nml=water); rewind(iouConfig)
@@ -138,11 +134,6 @@ module BootstrapModule
         allocate(C%sedimentParticleDensities, source=dim_sedimentParticleDensities)
 
         C%nSoilLayers = dim_nSoilLayers
-        C%soilLayerDepth = soil_layer_depth
-        C%includeBioturbation = include_bioturbation
-        C%includeAttachment = include_attachment
-        C%includeClayEnrichment = include_clay_enrichment
-        C%includeSoilErosion = include_soil_erosion
 
         C%minStreamSlope = min_stream_slope
         C%minEstuaryTimestep = min_estuary_timestep

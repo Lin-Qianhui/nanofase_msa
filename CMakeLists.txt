@@ -95,3 +95,24 @@ set_target_properties(error_handling_registry_test PROPERTIES
     Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/error-handling-test-modules"
 )
 add_test(NAME error_handling_registry COMMAND error_handling_registry_test)
+
+# Focused regression test for Soil-owned configuration, defaults, and error
+# registration. It is a separate process because the shared handler may only
+# be initialised once in a process.
+add_executable(soil_config_module_test
+    vendor/feh/src/ErrorInstance.f90
+    vendor/feh/src/ErrorHandler.f90
+    vendor/feh/src/ErrorCriteria.f90
+    src/Kernel/KernelModule.f90
+    src/ModelDimensions/ModelDimensionsModule.f90
+    src/ErrorHandling/ErrorHandlingModule.f90
+    src/Soil/SoilConfigModule.f90
+    test/SoilConfigModuleTest.f90
+)
+set_target_properties(soil_config_module_test PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/soil-config-test-modules"
+)
+add_test(
+    NAME soil_config
+    COMMAND soil_config_module_test "${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/soil-config-defaults.nml"
+)

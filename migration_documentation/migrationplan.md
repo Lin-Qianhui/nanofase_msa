@@ -59,7 +59,7 @@ other explicitly deferred defects remain current until their named follow-up pha
 
 - **`GlobalsModule.f90` is a god-object.** `type(GlobalsType) :: C` holds ~100 fields
   spanning every domain, jumbled with physical constants and run control.
-  `GLOBALS_INIT` ([src/GlobalsModule.f90:148](src/GlobalsModule.f90#L148)) centrally
+  `GLOBALS_INIT` ([src/GlobalsModule.f90:148](../src/GlobalsModule.f90#L148)) centrally
   declares *all* namelist groups, reads them all, stores into `C`, and defines *all*
   error codes in one flat `errors(17)` array.
 - **34 files** do `use GlobalsModule` and reach into `C%…`.
@@ -89,7 +89,7 @@ other explicitly deferred defects remain current until their named follow-up pha
 - The FEH generic already supports incremental registration. The unambiguous form for
   one domain error is
   `call ERROR_HANDLER%add(error=ErrorInstance(code=..., ...))`
-  ([vendor/feh/src/ErrorHandler.f90:31-34](vendor/feh/src/ErrorHandler.f90#L31-L34)).
+  ([vendor/feh/src/ErrorHandler.f90:31-34](../vendor/feh/src/ErrorHandler.f90#L31-L34)).
 
 ---
 
@@ -184,16 +184,16 @@ work in §§3-9. Config decoupling answers *"who owns this setting?"*. This axis
 ### The problem today
 
 `create` is overloaded. Inside `createEnvironment`
-([src/Environment/EnvironmentModule.f90:40-144](src/Environment/EnvironmentModule.f90#L40-L144))
+([src/Environment/EnvironmentModule.f90:40-144](../src/Environment/EnvironmentModule.f90#L40-L144))
 and `createGridCell` / `createReaches`
-([src/GridCell/GridCellModule.f90:74-126](src/GridCell/GridCellModule.f90#L74-L126))
+([src/GridCell/GridCellModule.f90:74-126](../src/GridCell/GridCellModule.f90#L74-L126))
 four distinct jobs are mashed into the same type-bound procedures that also hold the
 per-timestep science (`update`):
 
 | # | Job | Example in code | Lifecycle | Belongs to |
 |---|---|---|---|---|
 | 1 | **Per-object self-init** | `allocate(GridCell :: …)`, allocate own arrays, set own defaults | once, at startup | the type itself (thin `init`) |
-| 2 | **Topology / assembly / wiring** | link reach inflows/outflows across cells, mark headwaters & tidal limits, stream order, snap point sources ([EnvironmentModule.f90:69-127](src/Environment/EnvironmentModule.f90#L69-L127)) | once, at startup | **the builder** |
+| 2 | **Topology / assembly / wiring** | link reach inflows/outflows across cells, mark headwaters & tidal limits, stream order, snap point sources ([EnvironmentModule.f90:69-127](../src/Environment/EnvironmentModule.f90#L69-L127)) | once, at startup | **the builder** |
 | 3 | **Input-data parsing** | `parseInputData`, `createReaches` deciding which reaches exist from `DATASET` | once, at startup | input-data boundary (builder *calls* it) |
 | 4 | **Science / process behaviour** | `update`, fate & transport equations | every timestep | the domain science modules |
 
@@ -220,7 +220,7 @@ construction from behaviour.
 ### Fortran mechanism
 
 `create` is a **type-bound procedure** (`procedure :: create => createGridCell`,
-[GridCellModule.f90:19](src/GridCell/GridCellModule.f90#L19)). Two clean ways to
+[GridCellModule.f90:19](../src/GridCell/GridCellModule.f90#L19)). Two clean ways to
 physically separate construction from science:
 
 1. **Free-standing builder module** (recommended for Job 2) — `buildEnvironment(env)`,
@@ -273,7 +273,7 @@ than the facade `C`. See the builder phase in §7.
 - Namelists owned: `/allocatable_array_sizes/`, `/nanomaterial/`, and the size-class
   portion of `/sediment/`
 - The `d_spm_low`/`d_spm_upp` derivation logic (currently
-  [src/GlobalsModule.f90:404-421](src/GlobalsModule.f90#L404-L421))
+  [src/GlobalsModule.f90:404-421](../src/GlobalsModule.f90#L404-L421))
 
 ### Slim model module (`src/ModelConfig` — proposed; replaces the global parts of `C`)
 - Run: `timeStep`, `nTimeSteps`, `startDate`, `epsilon`, `warmUpPeriod`,
@@ -307,6 +307,14 @@ than the facade `C`. See the builder phase in §7.
 > (`soilLayerDepth`, `sedimentLayerDepth`) belong to the owning domain, which reads
 > the count from model-dimensions to allocate.
 >
+> There are two unrelated namelist groups both named `/soil/`. The group in
+> `config.nml` contains layer depths and four runtime switches and is owned by
+> `SoilConfigModule`. The group in the separate constants file contains Darcy
+> velocity, attachment efficiency, and other input values; `DataInputModule` still
+> reads that group. The two default-real fallback constants move to
+> `SoilConfigModule` as public module constants so `DataInputModule` can use them,
+> but the constants-file reading order and assignments do not move.
+>
 > Error ownership in this table is conditional and provisional. Restoring code 405 to
 > WaterBody would change current diagnostic behaviour and is therefore deferred. Code
 > 901 must not be moved into BedSediment merely because the legacy array places it
@@ -318,19 +326,19 @@ than the facade `C`. See the builder phase in §7.
 Owns **construction and wiring**, not config data. What moves here:
 
 - The grid-instantiation loop and cell/reach/soil-profile construction currently in
-  `createEnvironment` ([EnvironmentModule.f90:47-67](src/Environment/EnvironmentModule.f90#L47-L67))
-  and `createGridCell` ([GridCellModule.f90:74-126](src/GridCell/GridCellModule.f90#L74-L126)).
+  `createEnvironment` ([EnvironmentModule.f90:47-67](../src/Environment/EnvironmentModule.f90#L47-L67))
+  and `createGridCell` ([GridCellModule.f90:74-126](../src/GridCell/GridCellModule.f90#L74-L126)).
 - The **cross-cell topology wiring**: inflow/outflow pointer linking, headwater and
-  tidal-limit detection ([EnvironmentModule.f90:69-113](src/Environment/EnvironmentModule.f90#L69-L113)).
+  tidal-limit detection ([EnvironmentModule.f90:69-113](../src/Environment/EnvironmentModule.f90#L69-L113)).
 - `finaliseCreate` work that needs full cell linking, e.g. snapping point sources to
-  cells ([EnvironmentModule.f90:115-122](src/Environment/EnvironmentModule.f90#L115-L122)).
+  cells ([EnvironmentModule.f90:115-122](../src/Environment/EnvironmentModule.f90#L115-L122)).
 - Stream-order determination (`determineStreamOrder`,
-  [EnvironmentModule.f90:124-126](src/Environment/EnvironmentModule.f90#L124-L126),
+  [EnvironmentModule.f90:124-126](../src/Environment/EnvironmentModule.f90#L124-L126),
   253-312) and `routedReaches` / `headwaters` allocation.
 
 What **stays** with each type (thin `init`, not moved): allocation of an object's own
 arrays and setting of its own defaults — e.g. the per-timestep mean arrays at
-[EnvironmentModule.f90:130-137](src/Environment/EnvironmentModule.f90#L130-L137) stay
+[EnvironmentModule.f90:130-137](../src/Environment/EnvironmentModule.f90#L130-L137) stay
 local. Dependencies: `ModelAssembly` `use`s the concrete domain types and `DATASET`;
 nothing `use`s `ModelAssembly` except the bootstrap.
 
@@ -367,13 +375,22 @@ it the sole owner of `ERROR_HANDLER`. `GlobalsModule` temporarily re-exports tha
 singleton for untouched consumers. The bootstrap order is: initialise model
 dimensions as needed for allocation, initialise `ModelConfig`, initialise the shared
 handler from the model-level diagnostics controls, then initialise domain configs and
-register their owned errors. There must never be both a Globals-owned and
-diagnostics-owned handler.
+register their owned errors. Phase 5 places Soil initialisation immediately after the
+handler and before the remaining legacy Sediment and Water reads and the model audit.
+This preserves the existing Soil → Sediment → Water → audit failure order. There must
+never be both a Globals-owned and diagnostics-owned handler.
+
+During the Soil error handoff, the legacy array shrank from 17 entries to 16. Codes
+901–904 shifted to slots 13–16; the two blank slots at 4–5 and the overwritten slot 11
+were deliberately preserved. Initialising the shared handler alone therefore gives
+25 effective entries and no code 600. Soil initialisation registers exactly one
+unchanged, non-critical code 600 and brings the effective count to 26. Correcting the
+old blank and overwritten entries remains a separate behaviour-change phase.
 
 ### Namelist read-order coupling (must preserve)
 Today `/allocatable_array_sizes/` is read first because its counts size the
 allocatable arrays read by `/soil/`, `/sediment/`, `/nanomaterial/`
-([src/GlobalsModule.f90:280-302](src/GlobalsModule.f90#L280-L302)). After migration:
+([src/GlobalsModule.f90:280-302](../src/GlobalsModule.f90#L280-L302)). After migration:
 model-dimensions owns the counts and reads `/allocatable_array_sizes/` **first** during
 its init; the bootstrap calls model-dimensions init before any domain init; each domain
 queries model-dimensions for the count it needs, allocates, then reads its own group.
@@ -413,18 +430,23 @@ end module
 module SoilConfigModule
     use KernelModule, only: dp
     use ModelDimensionsModule, only: nSoilLayers   ! count owned by dimensions layer
+    use ErrorHandlingModule, only: ERROR_HANDLER
+    use ErrorInstanceModule, only: ErrorInstance
     implicit none
+    private
+
+    public :: SoilConfigType, soilConfig
+    public :: defaultSoilAttachmentEfficiency, defaultSoilDarcyVelocity
+
+    real, parameter :: defaultSoilAttachmentEfficiency = 0.0
+    real, parameter :: defaultSoilDarcyVelocity = 9e-6_dp
 
     type :: SoilConfigType
         real, allocatable :: soilLayerDepth(:)
         logical :: includeBioturbation, includeAttachment
         logical :: includeSoilErosion, includeClayEnrichment
-        ! domain science defaults live here as components or module parameters
-        real :: soilAttachmentEfficiency = 0.0
-        real :: soilDarcyVelocity = 9e-6
     contains
         procedure :: init => initSoilConfig
-        procedure :: audit => auditSoilConfig
     end type
     type(SoilConfigType) :: soilConfig
 contains
@@ -432,25 +454,37 @@ contains
         class(SoilConfigType), intent(inout) :: me
         character(*), intent(in) :: configFilePath
         integer :: iou
-        ! domain-local defaults
-        logical :: include_bioturbation = .true., include_attachment = .false.
-        logical :: include_soil_erosion = .true., include_clay_enrichment = .false.
         real, allocatable :: soil_layer_depth(:)
+        logical :: include_bioturbation, include_attachment
+        logical :: include_soil_erosion, include_clay_enrichment
         namelist /soil/ soil_layer_depth, include_bioturbation, &
             include_attachment, include_clay_enrichment, include_soil_erosion
+
+        ! These are the only existing optional defaults. Executable assignments are
+        ! required so every call starts cleanly; initialized local variables retain
+        ! their values between calls in Fortran.
+        include_clay_enrichment = .false.
+        include_soil_erosion = .true.
+
         allocate(soil_layer_depth(nSoilLayers))
         open(newunit=iou, file=configFilePath, status="old")
         read(iou, nml=soil); close(iou)
         me%soilLayerDepth = soil_layer_depth
         me%includeBioturbation = include_bioturbation
-        ! …
-        call me%audit()
+        me%includeAttachment = include_attachment
+        me%includeClayEnrichment = include_clay_enrichment
+        me%includeSoilErosion = include_soil_erosion
+
+        call ERROR_HANDLER%add(error=ErrorInstance(code=600, &
+            message="All water removed from SoilLayer.", isCritical=.false.))
     end subroutine
-    ! If this domain owns registered errors, initSoilConfig adds them after
-    ! ErrorHandlingModule has initialised the shared handler:
-    !   call ERROR_HANDLER%add(error=ErrorInstance(code=600, message="All water removed from SoilLayer.", isCritical=.false.))
 end module
 ```
+
+Depth, bioturbation, and attachment are required because they were required before
+the migration. The example deliberately invents no defaults, audit, or validation.
+The depths and both fallback constants remain default `real`, matching the existing
+calculations and exact output formatting.
 
 ### Bootstrap (orchestration only)
 ```fortran
@@ -461,11 +495,12 @@ subroutine bootstrap(env)
     call initModelDimensions(configFilePath) ! reads /allocatable_array_sizes/, /nanomaterial/ first
     call modelConfig%init(configFilePath)     ! pass batchRunFilePath when present
     call initErrorHandling(modelConfig%triggerWarnings, modelConfig%errorOutput)
-    call initLegacyGlobalsFacade(configFilePath) ! private transitional helper
+    call soilConfig%init(configFilePath)      ! reads config /soil/ and registers code 600
+    call initLegacyGlobalsFacade(configFilePath) ! remaining Sediment and Water reads
     auditResult = modelConfig%audit()
     call ERROR_HANDLER%trigger(errors=.errors.auditResult)
     call sourceConfig%init(configFilePath)
-    ! Future owner-domain initialisers are added here after the handler call.
+    ! Future owner-domain initialisers are added after the handler in their required order.
     call LOGR%init(...)
     call printWelcome()
     call DATASET%init(modelConfig%inputFile, modelConfig%constantsFile)
@@ -502,14 +537,15 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
-Implementation status: Phases 0, 1, 2, B, 3, and 4 are complete. Their authoritative
+Implementation status: Phases 0, 1, 2, B, 3, 4, and 5 are complete. Their authoritative
 records are [phase0_kernel.md](phase0_kernel.md),
 [phase1_model_dimensions.md](phase1_model_dimensions.md),
 [phase2_model_config.md](phase2_model_config.md), and
 [phaseB_builder_extraction.md](phaseB_builder_extraction.md), plus
 [phase3_source.md](phase3_source.md) and
-[phase4_bootstrap_diagnostics.md](phase4_bootstrap_diagnostics.md). Remaining
-execution starts with the Phase 5 Soil migration.
+[phase4_bootstrap_diagnostics.md](phase4_bootstrap_diagnostics.md), and
+[phase5_soil.md](phase5_soil.md). Remaining execution starts with Phase 6
+BedSediment.
 
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
@@ -537,7 +573,7 @@ execution starts with the Phase 5 Soil migration.
 - Create `ModelConfigModule` owning run/output/checkpoint/steady-state/batch/data-path
   config and their namelist reads.
 - `GLOBALS_INIT` delegates these reads to it, copies back into `C` (facade).
-- Move model-level config audits ([src/GlobalsModule.f90:474-507](src/GlobalsModule.f90#L474-L507))
+- Move model-level config audits ([src/GlobalsModule.f90:474-507](../src/GlobalsModule.f90#L474-L507))
   into `ModelConfig%audit`, returning a `Result` so `ModelConfigModule` does not
   depend on `GlobalsModule`/`ERROR_HANDLER`.
 - Keep domain namelist reads (`/soil/`, `/sediment/`, `/water/`, `/sources/`) in
@@ -618,19 +654,54 @@ phases below. It can run in parallel once `ModelDimensions` + `ModelConfig` exis
   tests. This gate passed before Soil starts; see
   [phase4_bootstrap_diagnostics.md](phase4_bootstrap_diagnostics.md).
 
-### Phase 5 → N — Remaining domains, one at a time
-Order by dependency and blast radius:
-1. **Soil**
-2. **BedSediment** (suspended + bed sediment dynamics)
-3. **WaterBody** (river + estuary; consumes `includeBedSediment`)
-4. **Reactor** (water-column reactor)
-5. **Biota**
+### Phase 5 — Soil (complete)
+- Create `SoilConfigModule` and move the config-file `/soil/` group, its five fields,
+  and the two Soil fallback constants to it. Layer depth, bioturbation, and attachment
+  remain required. Only clay enrichment (false) and soil erosion (true) have defaults.
+- Keep layer depth and both constants as default `real`; add no new audit or
+  validation. `DataInputModule` continues to read the separate constants-file
+  `/soil/` group using the public fallback constants from `SoilConfigModule`.
+- Initialise Soil after the shared handler, then register code 600 with its unchanged
+  message and warning status. Shrink and shift the legacy array without repairing its
+  two blank entries or missing code 405.
+- Remove the five Soil fields from `C` and repoint all four Soil science files to the
+  owning modules. Public types, procedure bindings and arguments, array shapes,
+  calculation order, batch behaviour, and every original comment remain unchanged.
+- This removes Soil's direct use of the global `C` object, but it does not make Soil
+  fully independent: the science still calls Biota and input-data code.
+- Track [verification/README.md](../verification/README.md) and
+  [verification/verify_refactor.py](../verification/verify_refactor.py). Exact tests
+  cover every Soil switch, both optional defaults, the constants fallback path,
+  missing `/soil/`, batch operation, and checkpoint save/reinstate. See
+  [phase5_soil.md](phase5_soil.md) for commands and actual results.
+
+### Phase 6 — BedSediment (next)
+- Migrate suspended- and bed-sediment settings, defaults, assigned errors, and every
+  repository consumer by following the per-domain checklist in §8.
+- Preserve the shared `/sediment/` group rules: dimension variables already owned by
+  `ModelDimensionsModule` must continue to be declared where a full namelist read
+  requires them.
+
+### Phase 7 — WaterBody
+- Migrate river and estuary settings after BedSediment because WaterBody consumes the
+  bed-sediment switch. Keep the missing code 405 deferred to the registry-correction
+  phase.
+
+### Phase 8 — Reactor
+- Migrate the water-column Reactor defaults and its assigned error without changing
+  reaction calculations.
+
+### Phase 9 — Biota
+- Migrate Biota last, including the existing Soil-to-Biota relationship, without
+  redesigning the science interfaces during the ownership move.
 
 Each domain phase follows the **per-domain checklist** (§8), including migration of
-all repo-wide consumers of the domain's fields. Errors move only when that domain has
-assigned codes; a domain without assigned errors skips error registration.
+all repository consumers of the domain's fields. Errors move only when that domain
+has assigned codes; a domain without assigned errors skips error registration.
 
 ### Cross-cutting facade-consumer phase
+- Run this after Phase 9. Migrate the remaining global `C` readers before attempting
+  final removal of the compatibility object.
 - Migrate the remaining `ModelConfig` and `ModelDimensions` facade readers in
   GridCell, Data, Output, Logger, Util, Checkpoint, and any other repo-wide consumer.
 - Input/output algorithms remain unchanged, but their imports of configuration and
@@ -649,6 +720,13 @@ assigned codes; a domain without assigned errors skips error registration.
   valid scientific output remains unchanged while the corrected diagnostics are
   intentionally different.
 
+### Separate build-system cleanup
+- Stop CMake configuration from rewriting the tracked `src/VersionModule.f90` in a
+  normal source checkout. Until then, each migration phase must use the tracked-file
+  gate in §9.
+- Test this separately from science-domain migrations so a version-generation change
+  cannot hide a model-output change.
+
 ### Final phase — Cleanup
 - Remove the legacy flat registry only after all of its valid entries have moved in
   their owning phases and the separate registry-correction phase has resolved the
@@ -662,9 +740,11 @@ assigned codes; a domain without assigned errors skips error registration.
 - **Verify:** build + `verify_refactor.py --exact`; grep confirms zero `C%` /
   `use GlobalsModule`.
 
-Every phase adds or updates a file in `migration_documentation/` recording what was
-implemented, exact verification commands/results, preserved public behaviour and
-original comments, and the remaining migration debt.
+Every phase adds a plain-language file in `migration_documentation/` recording what
+was implemented, actual verification commands and results, preserved public behaviour
+and original comments, and the exact work left. Define unavoidable code terms when
+they first appear. Earlier records are historical snapshots: do not rewrite their
+"work left" sections after later phases finish.
 
 ---
 
@@ -674,11 +754,18 @@ For domain `X`:
 
 1. **Create `XConfigModule`** in `src/X/`: a `XConfigType` with the domain's config
    fields + a `type(XConfigType) :: xConfig` singleton.
-2. **Move defaults** into the domain: config defaults as component initialisers,
-   science constants as module `parameter`s. Delete them from `DefaultsModule`.
+2. **Move existing defaults** into the domain without inventing new ones. Keep their
+   declared kinds and values. Science constants become module `parameter`s. For local
+   namelist variables, use executable assignments on every call: declaration
+   initialisation gives a Fortran local variable saved state and can leak values from
+   an earlier call. Delete the moved values from `DefaultsModule`.
 3. **Own the namelist:** declare `namelist /x/ …` inside `XConfig%init`, open
-   `config.nml` with `newunit`, read, populate, `close`.
-4. **Move audits:** domain-specific checks from `C%audit` into `XConfig%audit`.
+   `config.nml` with `newunit`, allocate arrays before reading, read, populate, and
+   `close`. Distinguish a config-file group from any same-named group in another input
+   file; move only the group the domain currently owns.
+4. **Move existing audits only:** if `C%audit` already contains domain-specific
+   checks, move them into `XConfig%audit`. Do not create new validation merely to fit
+   the module template.
 5. **Register errors conditionally:** only if X has assigned codes, call
    `ERROR_HANDLER%add(error=ErrorInstance(code=…, …))` in `XConfig%init` after the
    shared handler is initialised, and remove exactly those entries from the legacy
@@ -695,11 +782,12 @@ For domain `X`:
 9. **Preserve comments:** retain every original code comment and TODO verbatim where
    its code remains; when ownership moves, relocate the associated comment without
    paraphrasing or dropping it.
-10. **Verify:** build + `verify_refactor.py --exact` produces identical output (§9),
-    plus focused smoke tests for the touched domain and checkpoint/batch paths.
-11. **Document:** add/update `migration_documentation/phaseX_<domain>.md` with what
-    was implemented, commands and results, preserved APIs/behaviour/comments, and an
-    explicit list of what remains.
+10. **Verify:** build + `verify_refactor.py --exact` produces identical output (§9).
+    Prove each focused variant actually exercises the branch it is meant to test, and
+    run focused error/config tests plus the relevant checkpoint and batch paths.
+11. **Document:** add `migration_documentation/phaseX_<domain>.md` in plain language,
+    define unavoidable code terms, list actual commands and results, state preserved
+    APIs/behaviour/comments, and give an explicit list of what remains.
 
 ---
 
@@ -709,14 +797,27 @@ For domain `X`:
   build green between phases.
 - **Regression gate:** keep one canonical config + input dataset. After each phase,
   run `verify_refactor.py --exact` against a fresh pre-phase baseline. Output must be
-  **exactly identical** — this is a pure refactor, no science changes. Add focused
-  scenario variants when the touched flag has enabled/disabled behaviour.
+  **exactly identical** — this is a pure refactor, no science changes. In exact mode,
+  each CSV file is byte-for-byte identical, `summary.md` matches after removing only
+  its `Simulation datetime` line, and `ncdump` text matches after removing only the
+  NetCDF `history` field. Raw NetCDF bytes need not match because that metadata is
+  time-dependent. Add focused scenario variants when a touched flag has
+  enabled/disabled behaviour, and confirm before editing that each variant changes
+  relevant output.
+- **Focused config/error gate:** test existing required values and defaults in a
+  separate process where shared singleton state requires it. Check both the base
+  registry and the count after domain registration.
 - **Checkpoint smoke gate:** run the existing checkpoint save/reinstate smoke path
   after relevant phases. Exact continuation equivalence remains unresolved because
   warm-up/reinstate run-control semantics have not yet been separated; do not report
   the smoke test as proof of checkpoint continuation correctness.
 - **Batch smoke gate:** run the existing batch path whenever assembly, source snapping,
   config paths, or runtime-mutated model config are touched.
+- **Tracked-file gate:** some CMake configurations rewrite tracked
+  `src/VersionModule.f90`. Save its content and hash before configuration. If CMake
+  rewrites it, restore the exact content, rebuild without configuring again, and
+  confirm the hash and regression results. Correcting this build-system mutation is a
+  separate cleanup task.
 - **Grep gates** (final phase): `grep -rn "use GlobalsModule" src` → 0;
   `grep -rn "C%" src` → 0.
 

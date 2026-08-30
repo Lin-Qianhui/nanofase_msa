@@ -5,6 +5,7 @@
 module DataInputModule
     use mo_netcdf
     use DefaultsModule
+    use SoilConfigModule, only: defaultSoilAttachmentEfficiency, defaultSoilDarcyVelocity
     use GlobalsModule
     use ModelConfigModule, only: modelConfig
     use ResultModule, only: Result

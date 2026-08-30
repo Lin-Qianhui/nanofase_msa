@@ -15,7 +15,7 @@ module ErrorHandlingModule
     subroutine initErrorHandling(triggerWarnings, errorOutput)
         logical, intent(in) :: triggerWarnings
         logical, intent(in) :: errorOutput
-        type(ErrorInstance) :: errors(17)                   ! ErrorInstances to be added to ErrorHandler
+        type(ErrorInstance) :: errors(16)                   ! ErrorInstances to be added to ErrorHandler
 
         ! General
         errors(1) = ErrorInstance(code=110, message="Invalid object type index in data file.")
@@ -43,13 +43,11 @@ module ErrorHandlingModule
             message="All SPM advected from RiverReach.", isCritical=.false.)
         errors(12) = ErrorInstance(code=501, &
             message="No input data provided for required SubRiver - check nSubRivers is correct.")
-        ! Soil
-        errors(13) = ErrorInstance(code=600, message="All water removed from SoilLayer.", isCritical=.false.)
         ! General
-        errors(14) = ErrorInstance(code=901, message="Invalid RiverReach type index provided.")
-        errors(15) = ErrorInstance(code=902, message="Invalid Biota index provided.")
-        errors(16) = ErrorInstance(code=903, message="Invalid Reactor index provided.")
-        errors(17) = ErrorInstance(code=904, message="Invalid BedSedimentLayer index provided.")
+        errors(13) = ErrorInstance(code=901, message="Invalid RiverReach type index provided.")
+        errors(14) = ErrorInstance(code=902, message="Invalid Biota index provided.")
+        errors(15) = ErrorInstance(code=903, message="Invalid Reactor index provided.")
+        errors(16) = ErrorInstance(code=904, message="Invalid BedSedimentLayer index provided.")
 
         ! Add custom errors to the error handler.
         call ERROR_HANDLER%init(errors=errors, triggerWarnings=triggerWarnings, on=errorOutput)

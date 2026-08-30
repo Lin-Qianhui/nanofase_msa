@@ -1,0 +1,26 @@
+&allocatable_array_sizes
+n_soil_layers = 3
+n_nm_size_classes = 1
+n_spm_size_classes = 1
+n_fractional_compositions = 1
+n_sediment_layers = 1
+/
+
+&nanomaterial
+n_nm_forms = 1
+n_nm_extra_states = 1
+nm_size_classes = 1.0e-9
+/
+
+&soil
+soil_layer_depth = 0.05, 0.15, 0.20
+include_bioturbation = .false.
+include_attachment = .true.
+/
+
+&sediment
+spm_size_classes = 1.0e-4
+include_bed_sediment = .false.
+sediment_particle_densities = 2650.0
+sediment_layer_depth = 0.01
+/

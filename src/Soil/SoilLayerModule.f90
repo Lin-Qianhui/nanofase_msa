@@ -1,11 +1,18 @@
 !> Module containing definition of `SoilLayer` class.
 module SoilLayerModule
-    use GlobalsModule
-    use UtilModule
+    use KernelModule, only: dp, kernel_g => g, kernel_k_B => k_B, kernel_pi => pi, &
+        kernel_rho_w => rho_w, kernel_mu_w => mu_w
+    use ModelDimensionsModule, only: npDim, nSizeClassesNM, d_nm
+    use ModelConfigModule, only: modelConfig
+    use SoilConfigModule, only: soilConfig
+    use UtilModule, only: ref, isZero, divideCheckZero, str
     use AbstractSoilLayerModule
     use DataInputModule, only: DATASET
     use BiotaSoilModule
     use datetime_module
+    use ResultModule, only: Result
+    use ErrorInstanceModule, only: ErrorInstance
+    use netcdf, only: nf90_fill_real
     implicit none
 
     !> `SoilLayer` is responsible for routing percolated water through
@@ -50,7 +57,7 @@ module SoilLayerModule
         me%l = l
         me%ref = ref("SoilLayer", x, y, p, l)
         me%area = area
-        me%depth = C%soilLayerDepth(l)
+        me%depth = soilConfig%soilLayerDepth(l)
         me%volume = me%area * me%depth
         me%bulkDensity = bulkDensity
         me%d_grain = d_grain
@@ -58,15 +65,15 @@ module SoilLayerModule
         me%earthwormDensity = earthwormDensity
 
         ! Allocate and initialise variables
-        allocate(me%m_np(C%npDim(1), C%npDim(2), C%npDim(3)))
-        allocate(me%m_np_perc(C%npDim(1), C%npDim(2), C%npDim(3)))
-        allocate(me%m_np_eroded(C%npDim(1), C%npDim(2), C%npDim(3)))
-        allocate(me%C_np(C%npDim(1), C%npDim(2), C%npDim(3)))
-        allocate(me%m_transformed(C%npDim(1), C%npDim(2), C%npDim(3)))
-        allocate(me%m_transformed_perc(C%npDim(1), C%npDim(2), C%npDim(3)))
-        allocate(me%m_transformed_eroded(C%npDim(1), C%npDim(2), C%npDim(3)))
-        allocate(me%C_transformed(C%npDim(1), C%npDim(2), C%npDim(3)))
-        allocate(me%k_att(C%npDim(1)))
+        allocate(me%m_np(npDim(1), npDim(2), npDim(3)))
+        allocate(me%m_np_perc(npDim(1), npDim(2), npDim(3)))
+        allocate(me%m_np_eroded(npDim(1), npDim(2), npDim(3)))
+        allocate(me%C_np(npDim(1), npDim(2), npDim(3)))
+        allocate(me%m_transformed(npDim(1), npDim(2), npDim(3)))
+        allocate(me%m_transformed_perc(npDim(1), npDim(2), npDim(3)))
+        allocate(me%m_transformed_eroded(npDim(1), npDim(2), npDim(3)))
+        allocate(me%C_transformed(npDim(1), npDim(2), npDim(3)))
+        allocate(me%k_att(npDim(1)))
         me%m_np = 0.0_dp                                ! Set initial NM mass to 0 [kg]
         me%m_np_perc = 0.0_dp                           ! Just to be on the safe side
         me%m_np_eroded = 0.0_dp
@@ -125,7 +132,7 @@ module SoilLayerModule
         real                :: T_water_t                ! Water temperature on the current timestep [deg C]
 
         ! Get the current date to use to get the water temperature
-        currentDate = C%startDate + timedelta(t-1)
+        currentDate = modelConfig%startDate + timedelta(t-1)
         T_water_t = DATASET%waterTemperature(currentDate%yearday())
 
         ! Set the inflow to this SoilLayer and store initial water in layer
@@ -152,7 +159,7 @@ module SoilLayerModule
         end if
         ! Calculate volume percolated on this timestep [m3 m-2]
         me%V_perc = min(me%V_excess * &                          
-                        (1-exp(-C%timeStep*me%K_s/(me%V_sat-me%V_FC))), &   ! Up to a maximum of V_w
+                        (1-exp(-modelConfig%timeStep*me%K_s/(me%V_sat-me%V_FC))), &   ! Up to a maximum of V_w
                         me%V_w)
         ! Use this to calculate the amount of nanomaterial percolated as a fraction of that in layer,
         ! then remove this and the water. Check if (near) zero to avoid FPE.
@@ -210,8 +217,8 @@ module SoilLayerModule
         integer             :: i
         real(dp)            :: dm_att
 
-        if (C%includeAttachment) then
-            do i = 1, C%nSizeClassesNM
+        if (soilConfig%includeAttachment) then
+            do i = 1, nSizeClassesNM
                 ! Has attachment rate been set by input data? If not, then calculate it from
                 ! attachment efficiency. Attachment efficiency will be either spatial (if
                 ! provided), or set by default value in constants file. If it is calculated here,
@@ -220,11 +227,11 @@ module SoilLayerModule
                     me%k_att = me%calculateAttachmentRate(T_water_t)
                 end if
                 ! Pristine NM
-                dm_att = min(me%k_att(i)*C%timeStep*me%m_np(i,1,1), me%m_np(i,1,1))     ! Mass to move from free -> attached, max of the current mass
+                dm_att = min(me%k_att(i)*modelConfig%timeStep*me%m_np(i,1,1), me%m_np(i,1,1))     ! Mass to move from free -> attached, max of the current mass
                 me%m_np(i,1,1) = me%m_np(i,1,1) - dm_att                                ! Remove from free
                 me%m_np(i,1,2) = me%m_np(i,1,2) + dm_att                                ! Add to attached (bound)
                 ! Same for transformed NM
-                dm_att = min(me%k_att(i)*C%timeStep*me%m_transformed(i,1,1), me%m_transformed(i,1,1))
+                dm_att = min(me%k_att(i)*modelConfig%timeStep*me%m_transformed(i,1,1), me%m_transformed(i,1,1))
                 me%m_transformed(i,1,1) = me%m_transformed(i,1,1) - dm_att
                 me%m_transformed(i,1,2) = me%m_transformed(i,1,2) + dm_att
             end do
@@ -241,7 +248,7 @@ module SoilLayerModule
         type(Result)        :: r
         real(dp)            :: m_soil_l1
         real(dp)            :: propEroded
-        real(dp)            :: erodedNP(C%nSizeClassesNM)
+        real(dp)            :: erodedNP(nSizeClassesNM)
         
         m_soil_l1 = bulkDensity * area * me%depth           ! Calculate the mass of the soil in this soil layer
         propEroded = sum(erodedSediment)*area/m_soil_l1     ! Proportion of this that is eroded, convert erodedSediment to kg/gridcell/day
@@ -273,22 +280,22 @@ module SoilLayerModule
     function calculateAttachmentRateSoilLayer(me, T_water_t) result(k_att)
         class(SoilLayer)    :: me
         real                :: T_water_t
-        real                :: k_att(C%nSizeClassesNM)
+        real                :: k_att(nSizeClassesNM)
         integer             :: i
         real(dp) :: gamma, r_i, kBT, N_G, N_VDW, N_Pe, N_R, A_s, eta_grav, eta_intercept, &
             eta_0, lambda_filter, D_i, eta_Brownian
 
         gamma = (1 - me%porosity) ** 0.333
-        kBT = C%k_B * (T_water_t + 273.15)
+        kBT = kernel_k_B * (T_water_t + 273.15)
         N_VDW = DATASET%soilHamakerConstant / kBT                                       ! Van der Waals number
         A_s = 2 * (1 - gamma**5) / (2 - 3 * gamma + 3 * gamma**5 - 2 * gamma**6)        ! Porosity dependent param
         ! Loop through NM size classes for the parameters that are dependent on NM size
-        do i = 1, C%nSizeClassesNM
-            r_i = C%d_nm(i) * 0.5                                                       ! NM radius
-            D_i = kBT / (6 * C%pi * C%mu_w(T_water_t) * r_i)             ! Diffusivity of NM particle
+        do i = 1, nSizeClassesNM
+            r_i = d_nm(i) * 0.5                                                       ! NM radius
+            D_i = kBT / (6 * kernel_pi * kernel_mu_w(T_water_t) * r_i)             ! Diffusivity of NM particle
             N_Pe = DATASET%soilDarcyVelocity * me%d_grain / D_i                         ! Peclet number
-            N_G = 2 * r_i**2 * (DATASET%soilParticleDensity - C%rho_w(T_water_t)) * C%g &
-                / (9 * C%mu_w(T_water_t) * DATASET%soilDarcyVelocity)    ! Gravity number
+            N_G = 2 * r_i**2 * (DATASET%soilParticleDensity - kernel_rho_w(T_water_t)) * kernel_g &
+                / (9 * kernel_mu_w(T_water_t) * DATASET%soilDarcyVelocity)    ! Gravity number
             N_R = r_i / (me%d_grain * 0.5)                                              ! Aspect ratio number
             eta_grav = 2.22 * N_R**(-0.024) * N_G**1.11 * N_VDW**0.053                  ! Gravitational collection efficiency
             eta_intercept = 0.55 * N_R**1.55 * N_Pe**(-0.125) * N_VDW**0.125            ! Interception collection efficiency
