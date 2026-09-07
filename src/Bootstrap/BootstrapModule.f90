@@ -14,6 +14,7 @@ module BootstrapModule
     use ResultModule, only: Result
     use GlobalsModule, only: C
     use SoilConfigModule, only: soilConfig
+    use BedSedimentConfigModule, only: bedSedimentConfig
     use SourceConfigModule, only: sourceConfig
     use LoggerModule, only: LOGR
     use UtilModule, only: printWelcome
@@ -53,6 +54,7 @@ module BootstrapModule
         call initErrorHandling(modelConfig%triggerWarnings, modelConfig%errorOutput)
 
         call soilConfig%init(modelConfig%configFilePath)
+        call bedSedimentConfig%init(modelConfig%configFilePath)
 
         call initLegacyGlobalsFacade(trim(configFilePath))
 
@@ -89,12 +91,9 @@ module BootstrapModule
         integer :: nmlIOStat                                ! IO status for namelist reading
         integer :: min_estuary_timestep
         real :: min_stream_slope
-        real, allocatable :: spm_size_classes(:), sediment_particle_densities(:), &
-            sediment_layer_depth(:)
-        logical :: include_bed_sediment, include_estuary, include_bank_erosion
+        logical :: include_estuary, include_bank_erosion
 
         ! Domain config namelists still owned by Globals until their domain phases.
-        namelist /sediment/ spm_size_classes, include_bed_sediment, sediment_particle_densities, sediment_layer_depth
         namelist /water/ min_stream_slope, min_estuary_timestep, include_estuary, include_bank_erosion
 
         min_stream_slope = configDefaults%minStreamSlope
@@ -105,13 +104,6 @@ module BootstrapModule
 
         open(iouConfig, file=trim(configFilePath), status="old")
 
-        ! Use the allocatable array sizes to allocate those arrays (allocatable arrays
-        ! must be allocated before being read in to).
-        allocate(sediment_layer_depth(dim_nSedimentLayers))
-        allocate(spm_size_classes(dim_nSizeClassesSpm))
-        allocate(sediment_particle_densities(dim_nFracCompsSpm))
-
-        read(iouConfig, nml=sediment); rewind(iouConfig)
         read(iouConfig, nml=water, iostat=nmlIOStat); rewind(iouConfig)
         if (nmlIOStat .ge. 0) read(iouConfig, nml=water); rewind(iouConfig)
         close(iouConfig)
@@ -123,9 +115,7 @@ module BootstrapModule
         if (allocated(C%d_nm)) deallocate(C%d_nm)
         allocate(C%d_nm, source=dim_d_nm)
 
-        C%sedimentLayerDepth = sediment_layer_depth
         C%nSizeClassesSpm = dim_nSizeClassesSpm
-        C%includeBedSediment = include_bed_sediment
         C%nSedimentLayers = dim_nSedimentLayers
         if (allocated(C%d_spm)) deallocate(C%d_spm)
         allocate(C%d_spm, source=dim_d_spm)

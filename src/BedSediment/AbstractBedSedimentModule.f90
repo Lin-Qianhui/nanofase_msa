@@ -1,6 +1,8 @@
 !> Module containing definition of abstract superclass `AbstractBedSediment`.
 module AbstractBedSedimentModule
-    use GlobalsModule
+    use KernelModule, only: dp
+    use ModelDimensionsModule, only: npDim, nSedimentLayers
+    use BedSedimentConfigModule, only: bedSedimentConfig
     use mo_netcdf
     use ResultModule, only: Result, Result0D
     use ErrorInstanceModule
@@ -74,7 +76,7 @@ module AbstractBedSedimentModule
         !! resuspension, layers and burial
         !! objects
         subroutine FinaliseMTCMatrix(Me, djdep, djres)
-            use GlobalsModule, only: dp
+            use KernelModule, only: dp
             import AbstractBedSediment
             class(AbstractBedSediment) :: me                                 !! Self-reference
             real(dp) :: djdep(:)                                     !! deposition fluxes by size class [kg/m2]
@@ -111,7 +113,7 @@ module AbstractBedSedimentModule
         end function
 
         subroutine transferNMBedSediment(me, j_np_dep)
-            use GlobalsModule, only: dp
+            use KernelModule, only: dp
             import AbstractBedSediment
             class(AbstractBedSediment) :: me
             real(dp) :: j_np_dep(:,:,:)
@@ -132,7 +134,7 @@ module AbstractBedSedimentModule
         !! **Function outputs/outcomes**                            <br>
         !! `r (real(dp))` returns water requirement from the water column [m3 m-2]
         function depositSediment(Me, FS_dep) result (r)
-            use GlobalsModule
+            use KernelModule, only: dp
             use ResultModule, only: Result0D
             import AbstractBedSediment, FineSediment
             class(AbstractBedSediment) :: Me                                !! Self-reference
@@ -188,7 +190,7 @@ module AbstractBedSedimentModule
         !!
         !! ----------------------------------------------------------------------------------
         function resuspendSediment(Me, FS_resusp) result(r)
-            use GlobalsModule
+            use KernelModule, only: dp
             import ResultFineSediment2D, AbstractBedSediment
             class(AbstractBedSediment) :: Me                                     !! Self-reference
             real(dp) :: FS_resusp(:)                                     !! Array of sediment masses to be resuspended [kg m-2]. Index = size class[1,...,S]
@@ -266,7 +268,7 @@ module AbstractBedSedimentModule
         ! end if
         ! if (r%hasCriticalError()) return                             ! exit if error thrown
         Af_sediment = 0
-        do L = 1, C%nSedimentLayers                                             ! loop through each layer
+        do L = 1, nSedimentLayers                                             ! loop through each layer
             Af_sediment = Af_sediment + Me%colBedSedimentLayers(L)%item%A_f(S)  ! sum capacities for all layers
         end do
     end function
@@ -310,7 +312,7 @@ module AbstractBedSedimentModule
         ! end if
         ! if (r%hasCriticalError()) return                             ! exit if error thrown
         Cf_sediment = 0
-        do L = 1, C%nSedimentLayers                                         ! loop through each layer
+        do L = 1, nSedimentLayers                                         ! loop through each layer
             Cf_sediment = Cf_sediment + Me%colBedSedimentLayers(L)%item%C_f(S)          ! sum capacities for all layers
         end do
         ! r = Result(data = Cf_sediment)
@@ -355,7 +357,7 @@ module AbstractBedSedimentModule
         ! end if
         ! if (r%hasCriticalError()) return                             ! exit if error thrown
         Aw_sediment = 0
-        do L = 1, C%nSedimentLayers                                         ! loop through each layer
+        do L = 1, nSedimentLayers                                         ! loop through each layer
             Aw_sediment = Aw_sediment + Me%colBedSedimentLayers(L)%item%A_w(S)  ! sum capacities for all layers
         end do
         ! r = Result(data = Aw_sediment)
@@ -400,7 +402,7 @@ module AbstractBedSedimentModule
         ! end if
         ! if (r%hasCriticalError()) return                             ! exit if error thrown
         Cw_sediment = 0
-        do L = 1, C%nSedimentLayers                                         ! loop through each layer
+        do L = 1, nSedimentLayers                                         ! loop through each layer
             Cw_sediment = Cw_sediment + Me%colBedSedimentLayers(L)%item%C_w(S)          ! sum capacities for all layers
         end do
         ! r = Result(data = Cw_sediment)
@@ -444,7 +446,7 @@ module AbstractBedSedimentModule
         end if
         if (r%hasCriticalError()) return                             ! exit if error thrown
         Mf  = 0
-        do L = 1, C%nSedimentLayers                                         ! loop through each layer
+        do L = 1, nSedimentLayers                                         ! loop through each layer
             Mf = Mf + &
                 Me%colBedSedimentLayers(L)%item%colFineSediment(S)%M_f()
                                                                      ! sum masses for all layers. Not very elegant
@@ -462,7 +464,7 @@ module AbstractBedSedimentModule
         real(dp) :: Mf                                               ! Internal storage
         integer :: l                                                 ! Iterator
         Mf = 0
-        do l = 1, C%nSedimentLayers                                  ! loop through each layer
+        do l = 1, nSedimentLayers                                  ! loop through each layer
             Mf = Mf + me%colBedSedimentLayers(l)%item%M_f_layer()    ! sum masses across layers
         end do
     end function
@@ -479,17 +481,17 @@ module AbstractBedSedimentModule
     function get_Mf_bed_layer_array(me) result(Mf)
         class(AbstractBedSediment), intent(in)  :: me
         integer                         :: l            ! Layer
-        real(dp)                        :: Mf(C%nSedimentLayers)
-        do l = 1, C%nSedimentLayers 
+        real(dp)                        :: Mf(nSedimentLayers)
+        do l = 1, nSedimentLayers
             Mf(l) = me%colBedSedimentLayers(l)%item%M_f_layer()
         end do
     end function
 
     function get_V_w_by_layer(me) result(V_w)
         class(AbstractBedSediment), intent(in) :: me
-        real(dp) :: V_w(C%nSedimentLayers)
+        real(dp) :: V_w(nSedimentLayers)
         integer :: i
-        do i = 1, C%nSedimentLayers
+        do i = 1, nSedimentLayers
             V_w(i) = me%colBedSedimentLayers(i)%item%V_w_layer()
         end do
     end function
@@ -502,7 +504,7 @@ module AbstractBedSedimentModule
         real(dp) :: Mf_size(Me%nSizeClasses)                         ! LOCAL 1D array to hold masses by size fraction
         do S = 1, Me%nSizeClasses                                    ! for each size class
             Mf = 0                                                   ! initialise sumnation of mass
-            do L = 1, C%nSedimentLayers                                     ! loop through each layer
+            do L = 1, nSedimentLayers                                     ! loop through each layer
                 Mf = Mf + &
                     Me%colBedSedimentLayers(L)%item%colFineSediment(S)%M_f()
                                                                      ! sum masses across all layers. Not very elegant
@@ -514,43 +516,43 @@ module AbstractBedSedimentModule
     !> Get the current mass of NM in all bed sediment layers
     function get_m_np(me) result(m_np)
         class(AbstractBedSediment)  :: me                                       !! This AbstractBedSediment instance
-        real(dp)            :: m_np(C%npDim(1),C%npDim(2),C%npDim(3))   !! NM mass in all bed sediment layers [kg/m2]
+        real(dp)            :: m_np(npDim(1),npDim(2),npDim(3))   !! NM mass in all bed sediment layers [kg/m2]
         ! Sum the layer mass from the bed sediment m_np array. The first two elements
         ! are ignored as they are deposited and resuspended NM
-        m_np = sum(me%m_np(3:C%nSedimentLayers+2,:,:,:), dim=1)
+        m_np = sum(me%m_np(3:nSedimentLayers+2,:,:,:), dim=1)
     end function
 
     !> Get the NM mass in layer l [kg/m2]
     function get_m_np_lBedSediment(me, l) result(m_np_l)
         class(AbstractBedSediment)  :: me                                           !! This AbstractBedSediment instance 
         integer             :: l                                            !! Layer index to retrieve NM mass for
-        real(dp)            :: m_np_l(C%npDim(1), C%npDim(2), C%npDim(3))   !! NM mass in layer l
+        real(dp)            :: m_np_l(npDim(1), npDim(2), npDim(3))   !! NM mass in layer l
         m_np_l = me%m_np(2+l,:,:,:)
     end function
 
     !> Get the current NM PEC [kg/m3] across all bed sediment layers
     function get_C_np(me) result(C_np)
         class(AbstractBedSediment)  :: me                                           !! This AbstractBedSediment instance
-        real(dp)            :: C_np(C%npDim(1), C%npDim(2), C%npDim(3))     !! NM PEC across all bed sediment layers [kg/m3]
-        C_np = me%get_m_np() / sum(C%sedimentLayerDepth)
+        real(dp)            :: C_np(npDim(1), npDim(2), npDim(3))     !! NM PEC across all bed sediment layers [kg/m3]
+        C_np = me%get_m_np() / sum(bedSedimentConfig%sedimentLayerDepth)
     end function
 
     !> Get the current NM PEC by volume [kg/m3] in layer 1
     function get_C_np_lBedSediment(me, l) result(C_np_l)
         class(AbstractBedSediment)  :: me                                           !! This AbstractBedSediment instance
         integer             :: l                                            !! Layer index to retrieve NM PEC for
-        real(dp)            :: C_np_l(C%npDim(1), C%npDim(2), C%npDim(3))   !! NM PEC in layer l [kg/m3]
-        C_np_l = me%get_m_np_l(l) / C%sedimentLayerDepth(l)
+        real(dp)            :: C_np_l(npDim(1), npDim(2), npDim(3))   !! NM PEC in layer l [kg/m3]
+        C_np_l = me%get_m_np_l(l) / bedSedimentConfig%sedimentLayerDepth(l)
     end function
 
     !> Get the current NM PEC by mass [kg/kg] across all bed sediment layers
     function get_C_np_byMassBedSediment(me) result(C_np_byMass)
         class(AbstractBedSediment)  :: me                                               !! This AbstractBedSediment instance
-        real(dp)            :: C_np_byMass(C%npDim(1), C%npDim(2), C%npDim(3))  !! NM PEC across all bed layers [kg/kg]
-        real(dp)            :: layerMasses(C%nSedimentLayers)                   !! Mass (per m2) of each layer to weight average NM PEC by [kg/m2]
+        real(dp)            :: C_np_byMass(npDim(1), npDim(2), npDim(3))  !! NM PEC across all bed layers [kg/kg]
+        real(dp)            :: layerMasses(nSedimentLayers)                   !! Mass (per m2) of each layer to weight average NM PEC by [kg/m2]
         integer             :: i
         ! Get the masses of the sediment in each layer to use in weighting PEC average
-        do i = 1, C%nSedimentLayers
+        do i = 1, nSedimentLayers
             layerMasses(i) = me%Mf_bed_by_layer(i)
         end do
         ! Calculate the weighted average using these masses
@@ -561,15 +563,15 @@ module AbstractBedSedimentModule
     function get_C_np_l_byMassBedSediment(me, l) result(C_np_l_byMass)
         class(AbstractBedSediment)  :: me                                                   !! This AbstractBedSediment instance
         integer             :: l                                                    !! Layer index to retrieve NM PEC for
-        real(dp)            :: C_np_l_byMass(C%npDim(1), C%npDim(2), C%npDim(3))    !! NM PEC by mass for layer l [kg/kg]
+        real(dp)            :: C_np_l_byMass(npDim(1), npDim(2), npDim(3))    !! NM PEC by mass for layer l [kg/kg]
         C_np_l_byMass = me%C_np_byMass(l,:,:,:)
     end function
     
     !> Get the mass of NM buried on this timestep [kg/m2]
     function get_m_np_buriedBedSediment(me) result(m_np_buried)
         class(AbstractBedSediment)  :: me                                                   !! This AbstractBedSediment instance
-        real(dp)            :: m_np_buried(C%npDim(1), C%npDim(2), C%npDim(3))      !! Mass of buried NM [kg/m2]
-        m_np_buried = me%m_np(C%nSedimentLayers+3,:,:,:)
+        real(dp)            :: m_np_buried(npDim(1), npDim(2), npDim(3))      !! Mass of buried NM [kg/m2]
+        m_np_buried = me%m_np(nSedimentLayers+3,:,:,:)
     end function
 
 end module AbstractBedSedimentModule

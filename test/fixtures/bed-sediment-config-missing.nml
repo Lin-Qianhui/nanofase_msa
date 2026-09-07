@@ -1,0 +1,6 @@
+! Deliberately contains no sediment group.
+&soil
+soil_layer_depth = 0.05
+include_bioturbation = .false.
+include_attachment = .true.
+/

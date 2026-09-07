@@ -1,0 +1,7 @@
+! Different dimension values prove that this reader does not replace their owner.
+&sediment
+sediment_layer_depth = 0.04, 0.05, 0.06
+spm_size_classes = 2.0e-6, 2.0e-4
+include_bed_sediment = .false.
+sediment_particle_densities = 1600.0, 1900.0, 2300.0, 2700.0
+/

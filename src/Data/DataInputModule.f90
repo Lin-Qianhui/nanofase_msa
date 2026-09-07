@@ -5,6 +5,9 @@
 module DataInputModule
     use mo_netcdf
     use DefaultsModule
+    use BedSedimentConfigModule, only: defaultSedimentTransport_a, defaultSedimentTransport_b, &
+        defaultSedimentTransport_c, defaultSedimentEnrichment_k, defaultSedimentEnrichment_a, &
+        defaultDepositionAlpha, defaultDepositionBeta
     use SoilConfigModule, only: defaultSoilAttachmentEfficiency, defaultSoilDarcyVelocity
     use GlobalsModule
     use ModelConfigModule, only: modelConfig

@@ -1,6 +1,8 @@
 !> Module container for `FineSediment` class. Nonpolymorphic.
 module FineSedimentModule
-    use GlobalsModule
+    use KernelModule, only: dp
+    use ModelDimensionsModule, only: sedimentParticleDensities
+    use ErrorHandlingModule, only: ERROR_HANDLER
     use ErrorInstanceModule
     use ResultModule, only: Result, Result0D, Result1D, Result2D
     use UtilModule
@@ -79,7 +81,7 @@ module FineSedimentModule
             if (allocated(me%f_comp)) deallocate(me%f_comp)
             Me%name = n                                              ! set object name
             Me%nfComp = nfC                                          ! set number of compositional fractions
-            allocate(me%pd_comp, source=C%sedimentParticleDensities) ! particle densities of compositional fractions from Global
+            allocate(me%pd_comp, source=sedimentParticleDensities) ! particle densities of compositional fractions from Global
             allocate(Me%f_comp(Me%nfComp))                                      ! allocate space for compositional fractions
             me%isCreated = .true.                                    ! if we got this far, tag the object as created
         end subroutine

@@ -1,5 +1,6 @@
 !> Module containing definition of abstract base class `Reach`.
 module ReachModule
+    use BedSedimentConfigModule, only: bedSedimentConfig
     use GlobalsModule
     use ResultModule, only: Result
     use ErrorInstanceModule
@@ -275,7 +276,7 @@ module ReachModule
             )
         end do
 
-        if (C%includeBedSediment) then
+        if (bedSedimentConfig%includeBedSediment) then
             ! Deposit the fine sediment to the bed sediment
             depositRslt = Me%bedSediment%deposit(fineSed)
             call rslt%addErrors(.errors. depositRslt)

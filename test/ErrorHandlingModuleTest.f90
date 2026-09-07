@@ -3,8 +3,8 @@ program ErrorHandlingModuleTest
     use ErrorInstanceModule, only: ErrorInstance
     implicit none
 
-    integer, parameter :: expectedCodes(14) = [ &
-        110, 200, 201, 300, 401, 402, 403, 404, 500, 501, 901, 902, 903, 904 &
+    integer, parameter :: expectedCodes(13) = [ &
+        110, 200, 201, 300, 401, 402, 403, 404, 500, 501, 901, 902, 903 &
     ]
     type(ErrorInstance), allocatable :: errors(:)
     type(ErrorInstance) :: error
@@ -13,8 +13,10 @@ program ErrorHandlingModuleTest
     call initErrorHandling(.true., .true.)
 
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 25, "base registry size changed")
+    call assertTrue(size(errors) == 24, "base registry size changed")
     call assertTrue(.not. ERROR_HANDLER%errorExists(600), "Soil error was unexpectedly registered by the base handler")
+
+    call assertTrue(.not. ERROR_HANDLER%errorExists(904), "BedSediment error was unexpectedly registered by the base handler")
 
     do i = 1, size(expectedCodes)
         call assertTrue(ERROR_HANDLER%errorExists(expectedCodes(i)), "expected legacy error code is absent")

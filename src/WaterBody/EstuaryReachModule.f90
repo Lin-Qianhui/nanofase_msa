@@ -1,4 +1,5 @@
 module EstuaryReachModule
+    use BedSedimentConfigModule, only: bedSedimentConfig
     use GlobalsModule
     use ReachModule
     use UtilModule
@@ -345,7 +346,7 @@ module EstuaryReachModule
             tmp_dj_spm_resus_perArea = dj_spm_resus_perArea
             dj_nm_deposit_perArea = divideCheckZero(dj_nm_deposit, me%bedArea)
             ! If we're including bed sediment, then deposit and resuspend to/from
-            if (C%includeBedSediment) then
+            if (bedSedimentConfig%includeBedSediment) then
                 ! Remove resuspended SPM from sediment
                 call rslt%addErrors(.errors. me%bedSediment%resuspend(tmp_dj_spm_resus_perArea))
                 ! bedSediment%resuspend modifies dj_spm_resus_perArea to be the amount of sediment passed in

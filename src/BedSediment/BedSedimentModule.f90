@@ -1,6 +1,8 @@
 !> Module containing definition of `BedSediment`.
 module BedSedimentModule
-    use GlobalsModule
+    use KernelModule, only: dp
+    use ModelDimensionsModule, only: nSizeClassesSpm, nFracCompsSpm, nSedimentLayers, npDim
+    use ErrorInstanceModule, only: ErrorInstance
     use UtilModule
     use ResultModule
     use AbstractBedSedimentModule
@@ -48,7 +50,7 @@ module BedSedimentModule
         integer :: L, LL, S                                 ! Iterators
 
         do S = 1, me%nSizeClasses
-            do L = 3, C%nSedimentLayers + 3 
+            do L = 3, nSedimentLayers + 3
                 if (.not. isZero(djdep(S)) .and. .not. isZero(me%delta_sed(L, 1, S))) then
                     me%delta_sed(L, 1, S) = &
                         me%delta_sed(L, 1, S) / djdep(S)             ! d -> l and d-> b
@@ -56,7 +58,7 @@ module BedSedimentModule
                     me%delta_sed(L, 1, S) = 0                        ! failsafe if no deposition
                 end if 
             end do
-            do LL = 3, C%nSedimentLayers + 2
+            do LL = 3, nSedimentLayers + 2
                 if (.not. isZero(djres(S)) .and. .not. isZero(me%delta_sed(2, LL, S))) then
                     ml = me%colBedSedimentLayers(LL - 2)%item%colFineSediment(S)%M_f_backup() ! Phew!
                     me%delta_sed(2, LL, S) = &
@@ -66,8 +68,8 @@ module BedSedimentModule
                     me%delta_sed(2, LL, S) = 0                       ! failsafe if no resuspension
                 end if
             end do
-            do L = 3, C%nSedimentLayers + 3
-                do LL = 3, C%nSedimentLayers + 2
+            do L = 3, nSedimentLayers + 3
+                do LL = 3, nSedimentLayers + 2
                     ml = me%colBedSedimentLayers(LL - 2)%item%colFineSediment(S)%M_f_backup() ! Phew!
                     ! print *, "per layer, S, from, to", S, LL - 2, L - 2, ml
                     if (.not. isZero(ml)) then
@@ -90,7 +92,7 @@ module BedSedimentModule
             end do
         end do
         ! Convert delta_sed to CSR storage, to speed up NM transfer during simulation
-        do s = 1, C%nSizeClassesSpm
+        do s = 1, nSizeClassesSpm
             me%delta_sed_csr(s) = CSRMatrix(me%delta_sed(:,:,s))
         end do
     end subroutine
@@ -113,25 +115,25 @@ module BedSedimentModule
         character(len=16), parameter :: ms = "Allocation error"      ! LOCAL allocation error message
 
         me%name = trim(ref('BedSediment', x, y, w))
-        me%nSizeClasses = C%nSizeClassesSpm                          ! set number of size classes from global value
-        me%nfComp = C%nFracCompsSpm                                  ! set number of compositional fractions from global value
+        me%nSizeClasses = nSizeClassesSpm                          ! set number of size classes from global value
+        me%nfComp = nFracCompsSpm                                  ! set number of compositional fractions from global value
         tr = trim(me%name) // "%createBedSediment1"                  ! procedure name as trace
 
         ! Initialise NM mass pools matrix
-        allocate(me%M_np(C%nSedimentLayers + 3, C%npDim(1), C%npDim(2), C%npDim(3)))
-        allocate(me%C_np_byMass(C%nSedimentLayers, C%npDim(1), C%npDim(2), C%npDim(3)))
-        allocate(me%delta_sed_csr(C%nSizeClassesSpm))
+        allocate(me%M_np(nSedimentLayers + 3, npDim(1), npDim(2), npDim(3)))
+        allocate(me%C_np_byMass(nSedimentLayers, npDim(1), npDim(2), npDim(3)))
+        allocate(me%delta_sed_csr(nSizeClassesSpm))
         me%M_np = 0.0_dp
         me%C_np_byMass = 0.0_dp
 
-        allocate(me%colBedSedimentLayers(C%nSedimentLayers))        ! Create BedSedimentLayer collection
-        me%n_delta_sed = C%nSedimentLayers + 3                      ! The order of the delta_sed matrix
-        allocate(me%delta_sed(C%nSedimentLayers + 3, &
-                              C%nSedimentLayers + 3, &
+        allocate(me%colBedSedimentLayers(nSedimentLayers))        ! Create BedSedimentLayer collection
+        me%n_delta_sed = nSedimentLayers + 3                      ! The order of the delta_sed matrix
+        allocate(me%delta_sed(nSedimentLayers + 3, &
+                              nSedimentLayers + 3, &
                               me%nSizeClasses))                         ! allocate space for sediment mass transfer matrix
         me%delta_sed = 0.0_dp                                           ! initialise to zero
 
-        do L = 1, C%nSedimentLayers                                         ! loop through each layer
+        do L = 1, nSedimentLayers                                         ! loop through each layer
             allocate(bsl1)                                           ! allocate the temporary local BedSedimentLayer variable
             call r%addErrors(.errors. bsl1%create(L))                   ! initialise the layer object
             allocate(me%colBedSedimentLayers(L)%item, &
@@ -165,7 +167,7 @@ module BedSedimentModule
         integer :: allst                                             ! LOCAL array allocation status
         character(len=18), parameter :: ms = "Deallocation error"    ! LOCAL CONSTANT error message
 
-        do L = 1, C%nSedimentLayers
+        do L = 1, nSedimentLayers
             call r%addErrors(.errors. &
                 me%colBedSedimentLayers(L)%item%destroy())           ! destroy enclosed BedSedimentLayers
         end do
@@ -187,18 +189,18 @@ module BedSedimentModule
         class(BedSediment) :: me                               !! This BedSediment instance
         real(dp)            :: j_np_dep(:,:,:)                  !! Mass of NM deposited to bed sediment on this time step [kg/m2]
         integer             :: i, j, k, l                       ! Iterator
-        real(dp)            :: M_f_byLayer(C%nSedimentLayers)   ! Mass of fine sediment by layer
+        real(dp)            :: M_f_byLayer(nSedimentLayers)   ! Mass of fine sediment by layer
 
         ! Assumes me%delta_sed has already been set
         ! Add new deposited NM to matrix, reset resus and buried to zero
         me%M_np(1,:,:,:) = j_np_dep                     ! Deposited     [kg/m2]
         me%M_np(2,:,:,:) = 0.0_dp                       ! Resuspended   [kg/m2]
-        me%M_np(C%nSedimentLayers+3,:,:,:) = 0.0_dp     ! Buried        [kg/m2]
+        me%M_np(nSedimentLayers+3,:,:,:) = 0.0_dp     ! Buried        [kg/m2]
 
         ! Perform the transfer calculation to move NM between the layers
-        do k = 1, C%nSizeClassesSpm
-            do j = 1, C%npDim(2)
-                do i = 1, C%npDim(1)
+        do k = 1, nSizeClassesSpm
+            do j = 1, npDim(2)
+                do i = 1, npDim(1)
                     ! Below are a number of different matrix multiplication methods. Generally, the fastest
                     ! is when delta_sed is stored in CSR format, for setups with ~5 sediment layers. You may
                     ! wish to play around with other methods if your setup typically uses fewer or more
@@ -208,7 +210,7 @@ module BedSedimentModule
                     ! CSR storage implementation
                     me%M_np(:,i,j,k+2) = me%delta_sed_csr(k)%multiply(me%M_np(:,i,j,k+2))
                     ! Set NM concentration for all layers 
-                    me%C_np_byMass(:,i,j,k+2) = divideCheckZero(me%M_np(3:C%nSedimentLayers+2,i,j,k+2), me%Mf_bed_layer_array())
+                    me%C_np_byMass(:,i,j,k+2) = divideCheckZero(me%M_np(3:nSedimentLayers+2,i,j,k+2), me%Mf_bed_layer_array())
 
                     ! Matmul implementation. Might be faster for <5 sediment layers
                     ! me%M_np(:,i,j,k+2) = matmul(me%delta_sed(:,:,k), me%M_np(:,i,j,k+2))
@@ -261,12 +263,12 @@ module BedSedimentModule
         ! Create fine sediment objects F and G
         call F%create("FineSediment", me%nfComp)
         call G%create("FineSediment", me%nfComp)
-        allocate(FS(me%nSizeClasses, C%nSedimentLayers))            ! set up FineSediment array FS
-        allocate(delta_l_r(C%nSedimentLayers, me%nSizeClasses))     ! allocate delta_d-l
+        allocate(FS(me%nSizeClasses, nSedimentLayers))            ! set up FineSediment array FS
+        allocate(delta_l_r(nSedimentLayers, me%nSizeClasses))     ! allocate delta_d-l
         me%delta_sed = 0.0_dp                                       ! Reset the matrix of mass transfer coefficients
         delta_l_r = 0.0_dp                                          ! initialise the delta_l_r values
         do S = 1, me%nSizeClasses
-            do L = 1, C%nSedimentLayers                          
+            do L = 1, nSedimentLayers
                 ! back up all the fine sediment masses, an essential part of the mass trasfer matrix computation
                 call me%colBedSedimentLayers(L)%item%colFineSediment(S)%backup_M_f()
             end do
@@ -277,7 +279,7 @@ module BedSedimentModule
         do S = 1, me%nSizeClasses                                    ! loop through all size classes
             call F%set(Mf_in = FS_resusp(S))                        ! set up F with the mass of fine sediment in this size class to be resuspended [kg]
             L = 1                                                    ! start with top layer
-            do while (FS_resusp(S) > 0.000001 .and. L <= C%nSedimentLayers) ! loop through layers until all sediment resuspended or all layers considered
+            do while (FS_resusp(S) > 0.000001 .and. L <= nSedimentLayers) ! loop through layers until all sediment resuspended or all layers considered
                 associate(O => me%colBedSedimentLayers(L)%item)      ! association for brevity
                     call F%set(f_comp_in = O%colFineSediment(S)%f_comp) ! set the fractional composition of F to that of the sediment being resuspended  
                     call r%addErrors(.errors. &
@@ -316,7 +318,7 @@ module BedSedimentModule
         end do                                                       ! and loop to the next size class
         call r%setData(FS)                                           ! copy output to Result
         do S = 1, me%nSizeClasses                                    ! incorporate delta_l_r into the mass transfer coefficients matrix delta_sed
-            do L = 1, C%nSedimentLayers                            
+            do L = 1, nSedimentLayers
                 me%delta_sed(2, L + 2, S) = &
                     me%delta_sed(2, L + 2, S) + delta_l_r(L, S)      ! element (L, S) of delta_l_r is added to element (2, L+2, S) of delta_sed
                 me%delta_sed(L + 2, L + 2, S) = &
@@ -380,10 +382,10 @@ module BedSedimentModule
         ! Add this procedure to the trace, allocate space to arrays and initialise them
         tr = trim(me%name) // "%DepositSediment1"
         allocate(IsEmpty(me%nSizeClasses))
-        allocate(delta_d_l(C%nSedimentLayers, me%nSizeClasses))
+        allocate(delta_d_l(nSedimentLayers, me%nSizeClasses))
         allocate(delta_d_b(me%nSizeClasses))
-        allocate(delta_l_b(C%nSedimentLayers, me%nSizeClasses))
-        allocate(delta_l_l(C%nSedimentLayers, C%nSedimentLayers, me%nSizeClasses))
+        allocate(delta_l_b(nSedimentLayers, me%nSizeClasses))
+        allocate(delta_l_l(nSedimentLayers, nSedimentLayers, me%nSizeClasses))
         delta_d_b = 0.0_dp
         delta_d_l = 0.0_dp
         delta_l_b = 0.0_dp
@@ -397,7 +399,7 @@ module BedSedimentModule
                                                                     ! in this case, delta[l,n-b] = 1 for all layers, and delta[d-b] > 0.
             if (dep_excess > 0) then                                ! check whether the depositing sediment in each size class exceeds the total
                     associate(O => me%colBedSedimentLayers)         ! association for brevity
-                        do l = 1, C%nSedimentLayers                 ! capacity for that size fraction in the bed. If so, then remove all fine sediment, water and
+                        do l = 1, nSedimentLayers                 ! capacity for that size fraction in the bed. If so, then remove all fine sediment, water and
                             delta_l_b(l, s) = O(l)%item%colFineSediment(s)%M_f()        ! delta l -> b
                             delta_l_l(l, l, s) = -O(l)%item%colFineSediment(s)%M_f()    ! delta l -> l
                             call O(l)%item%colFineSediment(s)%ClearAll()  ! fractional compositions from all layers for this size class
@@ -429,7 +431,7 @@ module BedSedimentModule
                                                                      ! from the top, compute for each layer the volume of fine sediment that must be
                                                                      ! removed to allow space for deposition, and the volume of water associated with the
                                                                      ! fine sediment
-                    l = C%nSedimentLayers                            ! loop through layers, upwards from the bottom
+                    l = nSedimentLayers                            ! loop through layers, upwards from the bottom
                     do while (l > 0 .and. T%V_f() > 0)               ! use fine sediment volume in T as a counter. Through this loop, T holds the count of the  
                                                                      ! requirement for sediment burial that has not yet been accounted for by higher layers
                         associate (O => me%colBedSedimentLayers(l)%item)         ! association to layer L
@@ -457,7 +459,7 @@ module BedSedimentModule
                     call T%set(Vf_in = FS_dep(s)%V_f() - A_f_sed)       ! reset the fine sediment burial requirement, still using object T
                                                                         ! now we remove and bury material from the base of the sediment upwards, 
                                                                         ! to create sufficient space to accommodate deposited material
-                    l = C%nSedimentLayers                               ! start with the bottom layer
+                    l = nSedimentLayers                               ! start with the bottom layer
                     do while (l > 0 .and. T%V_f() + T%V_w() > 0)        ! loop through each layer, while there is still material to bury
                         if (T%V_f() > 0) Then
                             associate(O => &
@@ -479,7 +481,7 @@ module BedSedimentModule
                         l = l - 1                                       ! move up to next layer
                     end do                                              ! finished burial. temporary object T can be reused
                                                                         ! now we shift sediment downwards from upper layers to fill the hole created by burial
-                    do l = C%nSedimentLayers, 2, -1                     ! downward shift of fine sediment. Loop through the layers, starting at the bottom
+                    do l = nSedimentLayers, 2, -1                     ! downward shift of fine sediment. Loop through the layers, starting at the bottom
                                                                         ! and working upwards
                         assoc1 : associate(O => me%colBedSedimentLayers(L)%item)      ! association to "receiving" layer L
                             A = l - 1                                   ! counter for "donating" layer - initially the layer above
@@ -519,7 +521,7 @@ module BedSedimentModule
         end do
         V_w_tot = 0.0_dp                                                ! Initialise V_w_tot to zero
         do s = 1, me%nSizeClasses                                       ! now add in the depositing sediment, work by size class
-            do l = C%nSedimentLayers, 1, -1                             ! start with the bottom layer and work upwards
+            do l = nSedimentLayers, 1, -1                             ! start with the bottom layer and work upwards
                 if (FS_dep(s)%M_f() > 0.0_dp) then
                     associate(O => me%colBedSedimentLayers(l)%item)     ! size class S in Layer L
                         if (O%A_f(s) > 0.0_dp .or. &
@@ -542,15 +544,15 @@ module BedSedimentModule
         end do
         r = Result(data = V_w_tot)                                      ! return Result object, with volume of water required from water column
         do s = 1, me%nSizeClasses                                       ! incorporate delta_d_b, delta_d_l, delta_l_b, delta_l_l into the mass transfer coefficients matrix delta_sed 
-            me%delta_sed(C%nSedimentLayers + 3, 1, S) = &
-                me%delta_sed(C%nSedimentLayers + 3, 1, S) + delta_d_b(S)    ! element (S) of delta_d_b is added to element (Layers+3, 1, S) of me%delta_sed
-            do L = 1, C%nSedimentLayers
+            me%delta_sed(nSedimentLayers + 3, 1, S) = &
+                me%delta_sed(nSedimentLayers + 3, 1, S) + delta_d_b(S)    ! element (S) of delta_d_b is added to element (Layers+3, 1, S) of me%delta_sed
+            do L = 1, nSedimentLayers
                 me%delta_sed(L + 2, 1, S) = &
                     me%delta_sed(L + 2, 1, S) + delta_d_l(L, S)         ! element (L, S) of delta_d_l is added to element (L+2, 1, S) of me%delta_sed
-                me%delta_sed(C%nSedimentLayers + 3, L + 2, S) = &
-                    me%delta_sed(C%nSedimentLayers + 3, L + 2, S) + &
+                me%delta_sed(nSedimentLayers + 3, L + 2, S) = &
+                    me%delta_sed(nSedimentLayers + 3, L + 2, S) + &
                     delta_l_b(L, S)                                     ! element (L, S) of delta_l_b is added to element (Layers+3, L+2, S) of me%delta_sed
-                do LL = 1, C%nSedimentLayers
+                do LL = 1, nSedimentLayers
                     if (isZero(me%delta_sed(L + 2, LL + 2, S))) then
                         me%delta_sed(L + 2, LL + 2, S) = 0.0_dp
                     end if
@@ -574,7 +576,7 @@ module BedSedimentModule
     subroutine ReportBedMassToConsole1(me)
         class(BedSediment) :: me                                    !! The `BedSediment` instance
         integer :: n                                                 !! LOCAL loop counter 
-        do n=1, C%nSedimentLayers
+        do n=1, nSedimentLayers
             call me%colBedSedimentLayers(n)%item%repMass()           !! print out mass of FS in each layer, by size class [kg/m2]
         end do
     end subroutine

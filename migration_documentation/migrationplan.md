@@ -90,6 +90,11 @@ other explicitly deferred defects remain current until their named follow-up pha
   one domain error is
   `call ERROR_HANDLER%add(error=ErrorInstance(code=..., ...))`
   ([vendor/feh/src/ErrorHandler.f90:31-34](../vendor/feh/src/ErrorHandler.f90#L31-L34)).
+- Phase 6 investigation confirmed an existing river failure when
+  `include_bed_sediment = .false.`: `depositToBedReach` skips deposition but still
+  reads the unset deposit result. River resuspension and nanomaterial transfers also
+  remain outside that switch. Phase 6 preserves this behaviour and tests the known
+  failure. A separate fix must define and test the complete river-disabled behaviour.
 
 ---
 
@@ -315,6 +320,13 @@ than the facade `C`. See the builder phase in §7.
 > `SoilConfigModule` as public module constants so `DataInputModule` can use them,
 > but the constants-file reading order and assignments do not move.
 >
+> Sediment defaults also cross input-group boundaries. `BedSedimentConfigModule`
+> now owns the seven transport, enrichment, and deposition fallback constants.
+> `DataInputModule` still reads their values from the separate constants-file
+> `/soil/`, `/sediment/`, and `/water/` groups respectively. All seven constants
+> remain `real(dp)`, while the existing local deposition buffers remain default
+> `real`. Neither those conversions nor spatial input overrides change in Phase 6.
+>
 > Error ownership in this table is conditional and provisional. Restoring code 405 to
 > WaterBody would change current diagnostic behaviour and is therefore deferred. Code
 > 901 must not be moved into BedSediment merely because the legacy array places it
@@ -375,17 +387,21 @@ it the sole owner of `ERROR_HANDLER`. `GlobalsModule` temporarily re-exports tha
 singleton for untouched consumers. The bootstrap order is: initialise model
 dimensions as needed for allocation, initialise `ModelConfig`, initialise the shared
 handler from the model-level diagnostics controls, then initialise domain configs and
-register their owned errors. Phase 5 places Soil initialisation immediately after the
-handler and before the remaining legacy Sediment and Water reads and the model audit.
-This preserves the existing Soil → Sediment → Water → audit failure order. There must
-never be both a Globals-owned and diagnostics-owned handler.
+register their owned errors. Phase 6 places Soil initialisation immediately after the
+handler, then BedSediment initialisation, the remaining legacy Water read, and the
+model audit. This preserves the later domain-read order. It is not the complete
+startup failure order: model-dimensions already reads the full `/sediment/` group
+before Soil, so missing or malformed sediment input can fail at that earlier read.
+There must never be both a Globals-owned and diagnostics-owned handler.
 
 During the Soil error handoff, the legacy array shrank from 17 entries to 16. Codes
 901–904 shifted to slots 13–16; the two blank slots at 4–5 and the overwritten slot 11
-were deliberately preserved. Initialising the shared handler alone therefore gives
-25 effective entries and no code 600. Soil initialisation registers exactly one
-unchanged, non-critical code 600 and brings the effective count to 26. Correcting the
-old blank and overwritten entries remains a separate behaviour-change phase.
+were deliberately preserved. At that stage the shared handler alone gave 25 effective
+entries and Soil registration brought the count to 26. Phase 6 removes code 904 from
+the legacy array, reducing it to 15 slots and 24 effective base entries. Soil adds
+code 600 to reach 25; BedSediment adds the unchanged critical code 904 to reach 26.
+Codes 901–903 remain in slots 13–15. Correcting the old blank and overwritten entries
+remains a separate behaviour-change phase.
 
 ### Namelist read-order coupling (must preserve)
 Today `/allocatable_array_sizes/` is read first because its counts size the
@@ -403,6 +419,13 @@ even if some variables are only local dummies. In Phase 1, `ModelDimensionsModul
 therefore declares dummy `include_bed_sediment` and `sediment_layer_depth` variables
 when reading `/sediment/`, while storing only the SPM size classes and sediment
 particle densities.
+
+Phase 6 keeps that early dimension read. `BedSedimentConfigModule` declares the same
+four group members, with local size-class and density buffers, but stores only the
+layer depths and bed-sediment switch. There are therefore two configuration-file
+readers and the separate, unchanged constants-file sediment reader. A missing-group
+test of the BedSediment reader must load dimensions from a valid fixture first;
+otherwise an earlier failure would not test the new reader.
 
 ---
 
@@ -496,7 +519,8 @@ subroutine bootstrap(env)
     call modelConfig%init(configFilePath)     ! pass batchRunFilePath when present
     call initErrorHandling(modelConfig%triggerWarnings, modelConfig%errorOutput)
     call soilConfig%init(configFilePath)      ! reads config /soil/ and registers code 600
-    call initLegacyGlobalsFacade(configFilePath) ! remaining Sediment and Water reads
+    call bedSedimentConfig%init(configFilePath) ! reads config /sediment/ and registers code 904
+    call initLegacyGlobalsFacade(configFilePath) ! remaining Water read and facade copies
     auditResult = modelConfig%audit()
     call ERROR_HANDLER%trigger(errors=.errors.auditResult)
     call sourceConfig%init(configFilePath)
@@ -537,15 +561,16 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
-Implementation status: Phases 0, 1, 2, B, 3, 4, and 5 are complete. Their authoritative
+Implementation status: Phases 0, 1, 2, B, 3, 4, 5, and 6 are complete. Their authoritative
 records are [phase0_kernel.md](phase0_kernel.md),
 [phase1_model_dimensions.md](phase1_model_dimensions.md),
 [phase2_model_config.md](phase2_model_config.md), and
 [phaseB_builder_extraction.md](phaseB_builder_extraction.md), plus
 [phase3_source.md](phase3_source.md) and
 [phase4_bootstrap_diagnostics.md](phase4_bootstrap_diagnostics.md), and
-[phase5_soil.md](phase5_soil.md). Remaining execution starts with Phase 6
-BedSediment.
+[phase5_soil.md](phase5_soil.md), plus
+[phase6_bed_sediment.md](phase6_bed_sediment.md). Remaining execution starts with
+Phase 7 WaterBody.
 
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
@@ -675,14 +700,25 @@ phases below. It can run in parallel once `ModelDimensions` + `ModelConfig` exis
   missing `/soil/`, batch operation, and checkpoint save/reinstate. See
   [phase5_soil.md](phase5_soil.md) for commands and actual results.
 
-### Phase 6 — BedSediment (next)
-- Migrate suspended- and bed-sediment settings, defaults, assigned errors, and every
-  repository consumer by following the per-domain checklist in §8.
-- Preserve the shared `/sediment/` group rules: dimension variables already owned by
-  `ModelDimensionsModule` must continue to be declared where a full namelist read
-  requires them.
+### Phase 6 — BedSediment (complete)
+- Added `BedSedimentConfigModule` with default-real layer depths, the bed-sediment
+  switch, seven unchanged sediment fallback constants, and registration of code 904.
+  No new defaults or validation were added for the two settings.
+- Kept all four configuration `/sediment/` members in the domain reader, using local
+  buffers for values owned by model-dimensions. The earlier dimension read and all
+  constants-file reads remain unchanged.
+- Removed the two fields from `C`, migrated all five sediment science modules and
+  every external consumer, and retained all original comments verbatim. GridCell now
+  also imports the shared error handler directly from its owner.
+- Kept inline construction errors and the known river-disabled failure unchanged.
+  Code 904 has no current sediment raising site; the focused tests check its
+  registration without adding one.
+- **Verified:** five CTest cases, seven exact output comparisons, missing-group and
+  construction-error checks, the known river-disabled failure, batch operation, and
+  checkpoint save/reinstate. See [phase6_bed_sediment.md](phase6_bed_sediment.md) for
+  actual commands, results, original-comment checks, and remaining work.
 
-### Phase 7 — WaterBody
+### Phase 7 — WaterBody (next)
 - Migrate river and estuary settings after BedSediment because WaterBody consumes the
   bed-sediment switch. Keep the missing code 405 deferred to the registry-correction
   phase.
@@ -726,6 +762,14 @@ has assigned codes; a domain without assigned errors skips error registration.
   gate in §9.
 - Test this separately from science-domain migrations so a version-generation change
   cannot hide a model-output change.
+
+### Separate river-disabled behaviour correction
+- Define what disabling bed sediment should do to deposition, resuspension,
+  nanomaterial transfers, and reach water-depth changes. Fixing only the unset
+  deposit-result read would not address all current river operations.
+- Add focused river-enabled and river-disabled tests before changing the behaviour.
+  Keep this work separate from the domain migrations; Phase 6 deliberately retains
+  the existing river-disabled failure as a negative test.
 
 ### Final phase — Cleanup
 - Remove the legacy flat registry only after all of its valid entries have moved in
@@ -804,6 +848,14 @@ For domain `X`:
   time-dependent. Add focused scenario variants when a touched flag has
   enabled/disabled behaviour, and confirm before editing that each variant changes
   relevant output.
+- **Known failing scenarios:** record and compare the existing exit status and
+  meaningful error text instead of claiming a successful output comparison. In
+  Phase 6 this applies to rivers with bed sediment disabled. Estuary enabled/disabled
+  runs succeed and remain subject to exact output comparisons.
+- **Default-value coverage:** establish whether a value comes from its fallback,
+  constants file, or spatial input. Test the applicable paths without accidentally
+  hiding a moved default behind a spatial override. Preserve existing number kinds
+  and conversions as well as the parameter values.
 - **Focused config/error gate:** test existing required values and defaults in a
   separate process where shared singleton state requires it. Check both the base
   registry and the count after domain registration.
@@ -851,6 +903,8 @@ For domain `X`:
   altering the order of operations.
 - Correcting the known legacy diagnostic-registry defects during a config/domain
   phase. Those corrections are a separately tested behaviour-change phase (§7).
+- Correcting the existing river-disabled bed-sediment failure during a domain
+  migration. Its complete behaviour needs a separate fix and dedicated tests (§7).
 - Proving exact checkpoint continuation while the existing warm-up/reinstate
   run-control semantics remain coupled; current checkpoint coverage is a smoke test.
 - Introducing Source dependency injection or a new `AbstractSource` interface. The

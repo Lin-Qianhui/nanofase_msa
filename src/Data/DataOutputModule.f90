@@ -1,5 +1,6 @@
 !> Module container for the DataOutput class
 module DataOutputModule
+    use BedSedimentConfigModule, only: bedSedimentConfig
     use DefaultsModule, only: iouOutputSummary, iouOutputWater, &
         iouOutputSediment, iouOutputSoil, iouOutputSSD, iouOutputStats
     use GlobalsModule, only: C, dp
@@ -299,7 +300,7 @@ module DataOutputModule
                         write(iouOutputSediment, '(a)') &
                             trim(str(sum(reach%bedSediment%get_m_np_buried()) * reach%bedArea)) // "," // &
                             trim(str(reach%bedArea)) // "," // trim(str(reach%bedSediment%Mf_bed_all() * reach%bedArea)) &
-                            // "," // trim(str(reach%bedSediment%Mf_bed_all() / sum(C%sedimentLayerDepth)))
+                            // "," // trim(str(reach%bedSediment%Mf_bed_all() / sum(bedSedimentConfig%sedimentLayerDepth)))
                     end associate
                 end do
             else
@@ -325,7 +326,7 @@ module DataOutputModule
                             trim(str(sum(cell%get_m_np_buried_sediment()))) // "," // &
                             trim(str(cell%getBedSedimentArea())) // "," // trim(str(cell%getBedSedimentMass())) &
                             // "," // trim(str(cell%getBedSedimentMass() / &
-                                ((cell%getBedSedimentArea() * sum(C%sedimentLayerDepth)))))
+                                ((cell%getBedSedimentArea() * sum(bedSedimentConfig%sedimentLayerDepth)))))
                     end if
                 end associate
             end if

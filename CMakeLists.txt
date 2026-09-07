@@ -116,3 +116,40 @@ add_test(
     NAME soil_config
     COMMAND soil_config_module_test "${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/soil-config-defaults.nml"
 )
+
+# Read sediment configuration and register its error in a separate process.
+# Distinct fixture dimensions exercise each namelist buffer's allocation.
+add_executable(bed_sediment_config_module_test
+    vendor/feh/src/ErrorInstance.f90
+    vendor/feh/src/ErrorHandler.f90
+    vendor/feh/src/ErrorCriteria.f90
+    src/Kernel/KernelModule.f90
+    src/ModelDimensions/ModelDimensionsModule.f90
+    src/ErrorHandling/ErrorHandlingModule.f90
+    src/Soil/SoilConfigModule.f90
+    src/BedSediment/BedSedimentConfigModule.f90
+    test/BedSedimentConfigModuleTest.f90
+)
+set_target_properties(bed_sediment_config_module_test PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bed-sediment-config-test-modules"
+)
+add_test(
+    NAME bed_sediment_config_on
+    COMMAND bed_sediment_config_module_test
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/bed-sediment-config.nml"
+        on "${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/bed-sediment-config.nml"
+)
+add_test(
+    NAME bed_sediment_config_off
+    COMMAND bed_sediment_config_module_test
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/bed-sediment-config.nml"
+        off "${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/bed-sediment-config-off.nml"
+)
+add_test(
+    NAME bed_sediment_config_missing
+    COMMAND "${CMAKE_COMMAND}"
+        "-DTEST_EXECUTABLE=$<TARGET_FILE:bed_sediment_config_module_test>"
+        "-DDIMENSIONS_FIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/bed-sediment-config.nml"
+        "-DSEDIMENT_FIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/bed-sediment-config-missing.nml"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectMissingSediment.cmake"
+)

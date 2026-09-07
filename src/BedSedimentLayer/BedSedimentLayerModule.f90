@@ -1,6 +1,8 @@
 !> Module container for `BedSedimentLayer` class
 module BedSedimentLayerModule
-    use GlobalsModule
+    use KernelModule, only: dp
+    use ModelDimensionsModule, only: nSizeClassesSpm, nFracCompsSpm
+    use BedSedimentConfigModule, only: bedSedimentConfig
     use UtilModule
     use ErrorInstanceModule
     use ResultModule, only: Result, Result0D
@@ -59,13 +61,13 @@ module BedSedimentLayerModule
         !       occupied by water.
         ! -------------------------------------------------------------------------------
         ! TODO remove local versions of me%nSizeClasses and nfComp to free up memory
-        Me%nSizeClasses = C%nSizeClassesSpm                      ! set number of size classes from global value
-        Me%nfComp = C%nFracCompsSpm                              ! set number of fractional compositions from global value
+        Me%nSizeClasses = nSizeClassesSpm                      ! set number of size classes from global value
+        Me%nfComp = nFracCompsSpm                              ! set number of fractional compositions from global value
         me%l = l                                        ! Index for this layer
         me%name = ref('Layer', me%l)                    ! Name for this layer
         tr = trim(Me%name) // "%create"                          ! add name to trace string
         ! Get the layer capacity [m3/m2] from data for this layer
-        me%C_total = C%sedimentLayerDepth(me%l)
+        me%C_total = bedSedimentConfig%sedimentLayerDepth(me%l)
         if (Me%C_total == 0) then                                ! CRITICAL ERROR HERE: C_total == 0
             call r%addError(ErrorInstance( &
                         code = 1, &

@@ -1,5 +1,6 @@
 module GridCellModule
-    use GlobalsModule, only: C, ERROR_HANDLER
+    use BedSedimentConfigModule, only: bedSedimentConfig
+    use ErrorHandlingModule, only: ERROR_HANDLER
     use KernelModule, only: dp, kernel_n_river => n_river
     use UtilModule
     use DataInputModule, only: DATASET
@@ -689,7 +690,7 @@ module GridCellModule
                 ! Get the NM PEC [kg/m3] for each sediment
                 C_np_sediment_b(i, :, :, :) = bedSediment%get_C_np()
                 ! Calculate the sediment volume from the bed area and depth
-                sedimentVolumes(i) = me%colRiverReaches(i)%item%bedArea * sum(C%sedimentLayerDepth)
+                sedimentVolumes(i) = me%colRiverReaches(i)%item%bedArea * sum(bedSedimentConfig%sedimentLayerDepth)
             end associate
         end do
         ! Get the weighted mean across the bed sediments, using sediment mass as the weight
@@ -712,7 +713,7 @@ module GridCellModule
                 ! Get the NM PEC [kg/m3] for each layer
                 C_np_sediment_b(i, :, :, :) = bedSediment%get_C_np_l(l)
                 ! Calculate the sediment volume from the bed area and layer depth
-                sedimentVolumes(i) = me%colRiverReaches(i)%item%bedArea * C%sedimentLayerDepth(l)
+                sedimentVolumes(i) = me%colRiverReaches(i)%item%bedArea * bedSedimentConfig%sedimentLayerDepth(l)
             end associate
         end do
         ! Get the weighted mean across the sediment layers, using sediment mass as the weight

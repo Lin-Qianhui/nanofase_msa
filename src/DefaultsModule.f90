@@ -64,14 +64,7 @@ module DefaultsModule
     real, parameter :: defaultMinWaterTemperature = 4.0             ! Thames River
     real, parameter :: defaultMaxWaterTemperature = 21.0            ! Thames River
     integer, parameter :: defaultMinWaterTemperatureDayOfYear = 32  ! Thames River
-    real(dp), parameter :: defaultSedimentTransport_a = 2.0e-9_dp
-    real(dp), parameter :: defaultSedimentTransport_b = 0.0_dp
-    real(dp), parameter :: defaultSedimentTransport_c = 0.2_dp
-    real(dp), parameter :: defaultSedimentEnrichment_k = 1.0_dp
-    real(dp), parameter :: defaultSedimentEnrichment_a = 0.0_dp
     real(dp), parameter :: defaultSlope = 0.0005_dp
-    real(dp), parameter :: defaultDepositionAlpha = 38.1_dp         ! Zhiyao et al, 2008: https://doi.org/10.1016/S1674-2370(15)30017-X
-    real(dp), parameter :: defaultDepositionBeta =  0.93_dp         ! Zhiyao et al, 2008: https://doi.org/10.1016/S1674-2370(15)30017-X
     real(dp), parameter :: defaultBankErosionAlpha = 1.0e-9_dp      ! [kg/m5] Loosely based on Lazar et al, 2010: https://doi.org/10.1016/j.scitotenv.2010.02.030
     real(dp), parameter :: defaultBankErosionBeta = 1.0_dp          ! [-] Loosely based on Lazar et al, 2010: https://doi.org/10.1016/j.scitotenv.2010.02.030
 end module DefaultsModule
