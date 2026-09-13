@@ -1,7 +1,9 @@
 !> Module containing definition of base class WaterBody, which provides the primitive
 !! functionality to all environmental compartments that are water bodies.
 module WaterBodyModule
-    use GlobalsModule
+    use KernelModule, only: dp
+    use ModelDimensionsModule, only: npDim, nSizeClassesSpm, nSizeClassesNM
+    use ResultModule, only: Result
     use PointSourceModule
     use DiffuseSourceModule
     use DataInputModule, only: DATASET
@@ -121,7 +123,7 @@ module WaterBodyModule
     function createWaterBody(me, x, y, w, distributionSediment) result(rslt)
         class(WaterBody) :: me                                  !! The `WaterBody` instance
         integer :: x, y, w                                      !! `GridCell` and `WaterBody` identifiers
-        real(dp) :: distributionSediment(C%nSizeClassesSPM)     !! Distribution to split sediment across size classes
+        real(dp) :: distributionSediment(nSizeClassesSPM)     !! Distribution to split sediment across size classes
         type(Result) :: rslt                                    !! The Result object
         ! Set reach indices and grid cell area
         me%x = x
@@ -187,19 +189,19 @@ module WaterBodyModule
     !! may extend this routine to allocate their own body specific variables
     subroutine allocateAndInitialiseWaterBody(me)
         class(WaterBody) :: me
-        allocate(me%C_spm(C%nSizeClassesSpm), &
-            me%C_spm_final(C%nSizeClassesSpm), &
-            me%m_spm(C%nSizeClassesSpm), &
-            me%C_np(C%npDim(1), C%npDim(2), C%npDim(3)), &
-            me%C_np_final(C%npDim(1), C%npDim(2), C%npDim(3)), &
-            me%m_np(C%npDim(1), C%npDim(2), C%npDim(3)), &
-            me%k_resus(C%nSizeClassesSpm), &
-            me%k_settle(C%nSizeClassesSpm), &
-            me%W_settle_spm(C%nSizeClassesSpm), &
-            me%W_settle_np(C%nSizeClassesNM), &
-            me%C_transformed(C%npDim(1), C%npDim(2), C%npDim(3)), &
-            me%C_transformed_final(C%npDim(1), C%npDim(2), C%npDim(3)), &
-            me%m_transformed(C%npDim(1), C%npDim(2), C%npDim(3)) &
+        allocate(me%C_spm(nSizeClassesSpm), &
+            me%C_spm_final(nSizeClassesSpm), &
+            me%m_spm(nSizeClassesSpm), &
+            me%C_np(npDim(1), npDim(2), npDim(3)), &
+            me%C_np_final(npDim(1), npDim(2), npDim(3)), &
+            me%m_np(npDim(1), npDim(2), npDim(3)), &
+            me%k_resus(nSizeClassesSpm), &
+            me%k_settle(nSizeClassesSpm), &
+            me%W_settle_spm(nSizeClassesSpm), &
+            me%W_settle_np(nSizeClassesNM), &
+            me%C_transformed(npDim(1), npDim(2), npDim(3)), &
+            me%C_transformed_final(npDim(1), npDim(2), npDim(3)), &
+            me%m_transformed(npDim(1), npDim(2), npDim(3)) &
         )
         me%C_spm = 0.0_dp
         me%C_spm_final = 0.0_dp

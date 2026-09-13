@@ -16,8 +16,6 @@ module DefaultsModule
         logical             :: runToSteadyState = .false.
         character(len=50)   :: steadyStateMode = 'sediment_size_distribution'   ! Run to steady state of which variable?
         real(dp)            :: steadyStateDelta = 1e-5
-        real                :: minStreamSlope = 0.0001                  ! [m/m]
-        integer             :: minEstuaryTimestep = 3600                ! 1 hour [s] 
         logical             :: writeToLog = .true.
         real(dp)            :: epsilon = 1e-10_dp                       !! Used as proximity to check whether variable as equal
         integer             :: warmUpPeriod = 0                         ! How many time steps to warm the model up for
@@ -49,9 +47,6 @@ module DefaultsModule
         character(len=32)   :: outputHash = ''                          ! Hash to append to output file names
         logical             :: ignoreNM = .false.                       ! If .true., costly NM calculations are missed out. Useful for sediment calibation
         character(len=256)  :: simulationMask = ''                      ! Path to model simulation mask (or empty if there isn't one)
-        ! Water
-        logical             :: includeEstuary = .true.                  ! Should we model estuaries, or treat them as rivers?
-        logical             :: includeBankErosion = .true.              ! Should we include the inflow of sediment from bank erosion?
     end type
     ! Object to exposre the config defaults
     type(ConfigDefaultsType) :: configDefaults
@@ -61,10 +56,4 @@ module DefaultsModule
     real, parameter :: default_k_diss_transformed = 0.0
     real, parameter :: default_k_transform_pristine = 0.0
     real, parameter :: defaultShearRate = 10.0                      ! Arvidsson et al, 2009: https://doi.org/10.1080/10807039.2011.538639
-    real, parameter :: defaultMinWaterTemperature = 4.0             ! Thames River
-    real, parameter :: defaultMaxWaterTemperature = 21.0            ! Thames River
-    integer, parameter :: defaultMinWaterTemperatureDayOfYear = 32  ! Thames River
-    real(dp), parameter :: defaultSlope = 0.0005_dp
-    real(dp), parameter :: defaultBankErosionAlpha = 1.0e-9_dp      ! [kg/m5] Loosely based on Lazar et al, 2010: https://doi.org/10.1016/j.scitotenv.2010.02.030
-    real(dp), parameter :: defaultBankErosionBeta = 1.0_dp          ! [-] Loosely based on Lazar et al, 2010: https://doi.org/10.1016/j.scitotenv.2010.02.030
 end module DefaultsModule

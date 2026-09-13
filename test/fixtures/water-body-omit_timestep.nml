@@ -1,0 +1,5 @@
+&water
+min_stream_slope = 0.002
+include_estuary = .false.
+include_bank_erosion = .false.
+/

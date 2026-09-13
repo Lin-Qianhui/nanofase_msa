@@ -1,0 +1,7 @@
+&water
+min_estuary_timestep = 'invalid'
+/
+
+&sources
+include_point_sources = .true.
+/

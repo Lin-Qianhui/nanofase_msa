@@ -83,9 +83,10 @@ other explicitly deferred defects remain current until their named follow-up pha
     RiverReach type.
   - codes 110, 200, 201, and 300 do not yet have explicit target owners.
   These require a separate, explicitly tested behaviour-change phase.
-- `CheckpointModule.f90` reads **only dimension fields** (`npDim` ×66,
+- `CheckpointModule.f90` uses shared dimension fields (`npDim` ×66,
   `nSedimentLayers` ×14, `nSizeClassesSpm` ×18, `nSoilLayers` ×10, `nFracCompsSpm` ×4)
-  — i.e. the foundation layer, **no per-domain config flags**.
+  to shape its arrays. It also reads model-wide state such as `epsilon` and the
+  preserved timestep; it does not own per-domain configuration flags.
 - The FEH generic already supports incremental registration. The unambiguous form for
   one domain error is
   `call ERROR_HANDLER%add(error=ErrorInstance(code=..., ...))`
@@ -95,6 +96,12 @@ other explicitly deferred defects remain current until their named follow-up pha
   reads the unset deposit result. River resuspension and nanomaterial transfers also
   remain outside that switch. Phase 6 preserves this behaviour and tests the known
   failure. A separate fix must define and test the complete river-disabled behaviour.
+- Phase 7 confirmed a separate terrain-height failure: adding a flat `dem` array to
+  the shipped river example causes an out-of-bounds terrain read at the model outlet
+  in `setReachLengthAndSlopeReach`. The shipped river and estuary examples have no
+  `dem`, so their ordinary runs do not exercise `minStreamSlope`. Phase 7 preserves
+  the outlet failure and tests the slope procedure directly on an interior reach.
+  Repairing terrain access at outlets remains a separate behaviour change.
 
 ---
 
@@ -387,9 +394,9 @@ it the sole owner of `ERROR_HANDLER`. `GlobalsModule` temporarily re-exports tha
 singleton for untouched consumers. The bootstrap order is: initialise model
 dimensions as needed for allocation, initialise `ModelConfig`, initialise the shared
 handler from the model-level diagnostics controls, then initialise domain configs and
-register their owned errors. Phase 6 places Soil initialisation immediately after the
-handler, then BedSediment initialisation, the remaining legacy Water read, and the
-model audit. This preserves the later domain-read order. It is not the complete
+register their owned errors. Phase 7 places Soil initialisation immediately after the
+handler, then BedSediment, model-config copying into `C`, WaterBody initialisation,
+dimension copying into `C`, and the model audit. This preserves the later domain-read order. It is not the complete
 startup failure order: model-dimensions already reads the full `/sediment/` group
 before Soil, so missing or malformed sediment input can fail at that earlier read.
 There must never be both a Globals-owned and diagnostics-owned handler.
@@ -400,8 +407,23 @@ were deliberately preserved. At that stage the shared handler alone gave 25 effe
 entries and Soil registration brought the count to 26. Phase 6 removes code 904 from
 the legacy array, reducing it to 15 slots and 24 effective base entries. Soil adds
 code 600 to reach 25; BedSediment adds the unchanged critical code 904 to reach 26.
-Codes 901–903 remain in slots 13–15. Correcting the old blank and overwritten entries
-remains a separate behaviour-change phase.
+At the end of Phase 6, codes 901–903 remained in slots 13–15.
+
+Phase 7 moves the six effective WaterBody codes 401–404 and 500–501. The legacy array
+now has 9 slots, retaining blank slots 4–5 and codes 901–903 in slots 7–9. Effective
+counts are 18 after shared-handler initialisation, 19 after Soil, 20 after
+BedSediment, and 26 after WaterBody. The original 405-then-500 overwrite moves into
+slot 5 of WaterBody's private six-entry list; only its final six entries are
+registered. Removing only the old code-500 assignment would incorrectly restore
+405. Correcting the blank entries and missing 405 remains a separate behaviour change.
+
+The configuration-file `/water/` group and all four of its members are optional.
+WaterBody owns their defaults and retains the original two-read/status-check logic.
+Do not substitute the required Soil/BedSediment reading pattern. Even existing
+malformed-input behaviour is retained: the invalid integer fixture at end of file
+leaves defaults in place, while the same group followed by `/sources/` fails.
+The unrelated constants-file `/water/` group continues to be read by DataInput;
+WaterBody supplies its six moved fallback constants without changing input parsing.
 
 ### Namelist read-order coupling (must preserve)
 Today `/allocatable_array_sizes/` is read first because its counts size the
@@ -520,7 +542,9 @@ subroutine bootstrap(env)
     call initErrorHandling(modelConfig%triggerWarnings, modelConfig%errorOutput)
     call soilConfig%init(configFilePath)      ! reads config /soil/ and registers code 600
     call bedSedimentConfig%init(configFilePath) ! reads config /sediment/ and registers code 904
-    call initLegacyGlobalsFacade(configFilePath) ! remaining Water read and facade copies
+    call syncModelConfigToGlobals()          ! temporary copies for older consumers
+    call waterBodyConfig%init(configFilePath) ! optional config /water/ and six effective errors
+    call syncModelDimensionsToGlobals()      ! remaining dimension copies
     auditResult = modelConfig%audit()
     call ERROR_HANDLER%trigger(errors=.errors.auditResult)
     call sourceConfig%init(configFilePath)
@@ -561,7 +585,7 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
-Implementation status: Phases 0, 1, 2, B, 3, 4, 5, and 6 are complete. Their authoritative
+Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, and 7 are complete. Their authoritative
 records are [phase0_kernel.md](phase0_kernel.md),
 [phase1_model_dimensions.md](phase1_model_dimensions.md),
 [phase2_model_config.md](phase2_model_config.md), and
@@ -569,8 +593,9 @@ records are [phase0_kernel.md](phase0_kernel.md),
 [phase3_source.md](phase3_source.md) and
 [phase4_bootstrap_diagnostics.md](phase4_bootstrap_diagnostics.md), and
 [phase5_soil.md](phase5_soil.md), plus
-[phase6_bed_sediment.md](phase6_bed_sediment.md). Remaining execution starts with
-Phase 7 WaterBody.
+[phase6_bed_sediment.md](phase6_bed_sediment.md), and
+[phase7_waterbody.md](phase7_waterbody.md). Remaining execution starts with
+Phase 8 Reactor.
 
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
@@ -718,12 +743,24 @@ phases below. It can run in parallel once `ModelDimensions` + `ModelConfig` exis
   checkpoint save/reinstate. See [phase6_bed_sediment.md](phase6_bed_sediment.md) for
   actual commands, results, original-comment checks, and remaining work.
 
-### Phase 7 — WaterBody (next)
-- Migrate river and estuary settings after BedSediment because WaterBody consumes the
-  bed-sediment switch. Keep the missing code 405 deferred to the registry-correction
-  phase.
+### Phase 7 — WaterBody (complete)
+- Added `WaterBodyConfigModule` owning the four optional `/water/` settings, six
+  unchanged fallback constants, and six effective errors. The constants-file reader
+  stays in DataInput; the original 405-then-500 overwrite stays uncorrected.
+- Removed the four fields from `C`, repointed all five WaterBody science modules and
+  DataInput consumers, and replaced Bootstrap's final domain read with WaterBody
+  initialisation and separate model/dimension copying helpers.
+- Preserved every original comment, numeric type, science interface, calculation
+  order, optional-group behaviour, and both known river failures.
+- Added the repeatable `verification/verify_waterbody.py` capture/compare runner,
+  generated spatial/terrain fixtures, configuration/error tests, and an interior
+  reach slope test. No third-party Python packages are required.
+- **Verified:** 21 CTest cases, 14 exact scientific comparisons, four expected
+  failures, batch operation, and checkpoint save/reinstate. See
+  [phase7_waterbody.md](phase7_waterbody.md) for commands, actual results, comment
+  checks, the EOF-sensitive malformed-input detail, and remaining work.
 
-### Phase 8 — Reactor
+### Phase 8 — Reactor (next)
 - Migrate the water-column Reactor defaults and its assigned error without changing
   reaction calculations.
 
@@ -747,7 +784,8 @@ has assigned codes; a domain without assigned errors skips error registration.
 
 ### Separate diagnostic-registry correction phase (behaviour change)
 - Add focused tests that capture the intended diagnostics, then correct the two
-  unassigned `errors(4:5)` entries, the overwritten code 405 at `errors(11)`, and the
+  unassigned legacy `errors(4:5)` entries, the overwritten code 405 now in WaterBody
+  registration slot 5 (formerly legacy slot 11), and the
   incorrect association of code 901 with BedSediment.
 - Determine explicit owners for codes 110, 200, 201, and 300 from their raising sites,
   then move them to those owners. Do not bundle these behaviour changes into a pure
@@ -770,6 +808,12 @@ has assigned codes; a domain without assigned errors skips error registration.
 - Add focused river-enabled and river-disabled tests before changing the behaviour.
   Keep this work separate from the domain migrations; Phase 6 deliberately retains
   the existing river-disabled failure as a negative test.
+
+### Separate terrain-height outlet correction
+- Define how a reach determines elevation difference when its outflow lies outside
+  the terrain array. Test headwater and non-headwater outlets before changing code.
+- Fix the out-of-bounds access separately from domain migrations. Phase 7 keeps the
+  failing full-model fixture and covers minimum-slope calculations on interior reaches.
 
 ### Final phase — Cleanup
 - Remove the legacy flat registry only after all of its valid entries have moved in
@@ -805,7 +849,10 @@ For domain `X`:
    an earlier call. Delete the moved values from `DefaultsModule`.
 3. **Own the namelist:** declare `namelist /x/ …` inside `XConfig%init`, open
    `config.nml` with `newunit`, allocate arrays before reading, read, populate, and
-   `close`. Distinguish a config-file group from any same-named group in another input
+   `close`. Preserve whether the group and each member are required or optional,
+   including their current read-status handling. WaterBody must retain its optional
+   reader rather than copying the required Soil or BedSediment reader. Distinguish a
+   config-file group from any same-named group in another input
    file; move only the group the domain currently owns.
 4. **Move existing audits only:** if `C%audit` already contains domain-specific
    checks, move them into `XConfig%audit`. Do not create new validation merely to fit
@@ -850,8 +897,15 @@ For domain `X`:
   relevant output.
 - **Known failing scenarios:** record and compare the existing exit status and
   meaningful error text instead of claiming a successful output comparison. In
-  Phase 6 this applies to rivers with bed sediment disabled. Estuary enabled/disabled
-  runs succeed and remain subject to exact output comparisons.
+  Phase 6 this applies to rivers with bed sediment disabled. Phase 7 also preserves
+  the terrain-height outlet failure. Its minimum-slope test uses an interior reach;
+  the ordinary examples lack terrain data and cannot prove that setting is exercised.
+  Estuary enabled/disabled runs succeed and remain subject to exact comparisons.
+- **Repeatable scenario setup:** keep small tests and fixture-generation scripts in
+  the repository. Store generated data, reference executables, inputs, hashes, commands,
+  and logs outside tracked source directories. Phase 7's
+  `verification/verify_waterbody.py capture/compare` commands rebuild all its scenario
+  inputs; old temporary Phase 6 evidence is not required.
 - **Default-value coverage:** establish whether a value comes from its fallback,
   constants file, or spatial input. Test the applicable paths without accidentally
   hiding a moved default behind a spatial override. Preserve existing number kinds
@@ -882,9 +936,9 @@ For domain `X`:
 | 490 `C%npDim` readers can't change at once | Facade shim — `C` stays populated until the last domain migrates |
 | Namelist read-order coupling (`allocatable_array_sizes` first) | Model-dimensions reads sizes in Phase 1, before any domain init; bootstrap enforces order |
 | IO-unit collisions when domains read independently | Use `open(newunit=…)`; retire the central `iou*` registry |
-| Malformed/unowned legacy registry entries carried into domains | Preserve them during pure refactors; fix `errors(4:5)`, duplicate `errors(11)`, code 901, and unowned 110/200/201/300 only in the separately tested diagnostic phase |
+| Malformed/unowned legacy registry entries carried into domains | Preserve them during pure refactors; fix legacy `errors(4:5)`, WaterBody's code-405 overwrite (formerly `errors(11)`), code 901, and unowned 110/200/201/300 only in the separately tested diagnostic phase |
 | Silent behaviour change during refactor | `verify_refactor.py --exact` regression gate after every phase |
-| Checkpoint depends on dimensions | It reads *only* dimensions (verified); repointed once in Phase 1. Save/reinstate remains a smoke test until continuation semantics receive a dedicated test |
+| Checkpoint depends on dimensions | Dimension reads moved in Phase 1; remaining model-wide state still uses the compatibility object. Save/reinstate remains a smoke test until continuation semantics receive a dedicated test |
 | Layer-depth vs count split (soil/sediment) | Counts → model-dimensions; depths → domain, which queries the count to allocate |
 | Builder must `use` concrete domain types (reverse arrow) | Builder is a *top* layer (above domains); nothing below depends on it, so no cycle — see §3b |
 | Source is consumed by GridCell/WaterBody | Allow the explicit one-way dependency onto lower-level Source; forbid the reverse edge and defer speculative `AbstractSource`/DI work |
@@ -905,6 +959,8 @@ For domain `X`:
   phase. Those corrections are a separately tested behaviour-change phase (§7).
 - Correcting the existing river-disabled bed-sediment failure during a domain
   migration. Its complete behaviour needs a separate fix and dedicated tests (§7).
+- Correcting the terrain-height outlet failure or tightening optional Water input
+  validation during a domain migration. Both require separately tested behaviour changes.
 - Proving exact checkpoint continuation while the existing warm-up/reinstate
   run-control semantics remain coupled; current checkpoint coverage is a smoke test.
 - Introducing Source dependency injection or a new `AbstractSource` interface. The

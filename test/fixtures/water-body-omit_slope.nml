@@ -1,0 +1,5 @@
+&water
+min_estuary_timestep = 1800
+include_estuary = .false.
+include_bank_erosion = .false.
+/

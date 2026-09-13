@@ -1,6 +1,11 @@
 !> Module containing RiverReach type definition.
 module RiverReachModule
-    use GlobalsModule
+    use KernelModule, only: dp
+    use ModelDimensionsModule, only: npDim, nSizeClassesSpm
+    use ModelConfigModule, only: modelConfig
+    use ErrorHandlingModule, only: ERROR_HANDLER
+    use ErrorInstanceModule, only: ErrorInstance
+    use datetime_module, only: datetime, timedelta
     use ReachModule
     use UtilModule
     use ResultModule
@@ -37,7 +42,7 @@ module RiverReachModule
         integer :: x                            !! Grid cell x-position index
         integer :: y                            !! Grid cell y-position index
         integer :: w                            !! Water body index within the cell
-        real(dp) :: distributionSediment(C%nSizeClassesSPM)     !! Distribution to split sediment across size classes
+        real(dp) :: distributionSediment(nSizeClassesSPM)     !! Distribution to split sediment across size classes
         type(Result) :: rslt                    !! Result object to return errors in
         integer :: i                            ! Iterator
 
@@ -99,9 +104,9 @@ module RiverReachModule
         integer             :: nDisp                                ! Number of displacements to split this time step into
         real(dp)            :: dt                                   ! Length of each displacement [s]
         real(dp)            :: dQ                                   ! Water flow for each displacement
-        real(dp)            :: dj_spm(C%nSizeClassesSpm)            ! SPM inflows for each displacement
-        real(dp)            :: dj_nm(C%npDim(1), C%npDim(2), C%npDim(3)) ! NM inflows for each displacement
-        real(dp)            :: dj_nm_transformed(C%npDim(1), C%npDim(2), C%npDim(3)) ! Transformed NM inflows for each displacement
+        real(dp)            :: dj_spm(nSizeClassesSpm)            ! SPM inflows for each displacement
+        real(dp)            :: dj_nm(npDim(1), npDim(2), npDim(3)) ! NM inflows for each displacement
+        real(dp)            :: dj_nm_transformed(npDim(1), npDim(2), npDim(3)) ! Transformed NM inflows for each displacement
         real(dp)            :: dj_dissolved                         ! Dissolved species inflows for each displacement
         type(datetime)      :: currentDate                          ! The current timestep's date
         real                :: T_water_t                            ! Water temperature on this timestep [deg C]
@@ -110,7 +115,7 @@ module RiverReachModule
         call me%emptyFlows()
 
         ! Get the current date and use the day of year to get the water temp
-        currentDate = C%startDate + timedelta(t-1)
+        currentDate = modelConfig%startDate + timedelta(t-1)
         T_water_t = me%T_water(currentDate%yearday())
             
         ! Get the inflows from upstream water bodies
@@ -133,13 +138,13 @@ module RiverReachModule
 
         ! TODO transfers and demands
 
-        if (.not. C%ignoreNM .and. .not. isWarmUp) then
+        if (.not. modelConfig%ignoreNM .and. .not. isWarmUp) then
             ! Inflows from point and diffuse sources, updates the NM flow object
             call me%updateSources(t)
         end if
 
         ! Set the resuspension and settling rates [/s] (but don't settle until we're looping through displacements) 
-        call me%setResuspensionRate(me%Q_in_total / C%timeStep, T_water_t)
+        call me%setResuspensionRate(me%Q_in_total / modelConfig%timeStep, T_water_t)
         call me%setSettlingRate(T_water_t)
 
         ! If the total inflow for this timestep is bigger than the current reach volume, 
@@ -149,10 +154,10 @@ module RiverReachModule
         else
             nDisp = ceiling(me%Q_in_total / me%volume)
         end if
-        dt = C%timestep / nDisp
+        dt = modelConfig%timestep / nDisp
         dQ = me%Q_in_total / nDisp
         dj_SPM = (me%j_spm%inflow + me%j_spm%soilErosion + me%j_spm%bankErosion) / nDisp
-        if (.not. C%ignoreNM) then
+        if (.not. modelConfig%ignoreNM) then
             dj_NM = (me%j_nm%inflow + me%j_nm%soilErosion + me%j_nm%pointSources & 
                     + me%j_nm%diffuseSources) / nDisp
             dj_NM_transformed = (me%j_nm_transformed%inflow + me%j_nm_transformed%soilErosion &
@@ -170,7 +175,7 @@ module RiverReachModule
         ! Set the new concentrations
         me%C_spm = divideCheckZero(me%m_spm, me%volume)
         ! Only if we're not ignoring NM
-        if (.not. C%ignoreNM) then
+        if (.not. modelConfig%ignoreNM) then
             me%C_np = divideCheckZero(me%m_np, me%volume)
             me%C_transformed = divideCheckZero(me%m_transformed, me%volume)
             me%C_dissolved = divideCheckZero(me%m_dissolved, me%volume)
@@ -224,24 +229,24 @@ module RiverReachModule
         integer             :: d                                                !! Current time displacement index (used for error output)
         real(dp)            :: dt                                               !! Time displacement [s] 
         real(dp)            :: dQ                                               !! Water flow from runoff and inflows [m3/displacement]
-        real(dp)            :: dj_spm_in(C%nSizeClassesSPM)                     !! SPM inflow from erosion and inflows [kg/displacement]
-        real(dp)            :: dj_nm_in(C%npDim(1), C%npDim(2), C%npDim(3))     !! NM inflow from erosion, inflows and sources [kg/displacement]
-        real(dp)            :: dj_nm_transformed_in(C%npDim(1), C%npDim(2), C%npDim(3)) !! Transformed NM inflow from erosion, inflows and sources [kg/displacement]
+        real(dp)            :: dj_spm_in(nSizeClassesSPM)                     !! SPM inflow from erosion and inflows [kg/displacement]
+        real(dp)            :: dj_nm_in(npDim(1), npDim(2), npDim(3))     !! NM inflow from erosion, inflows and sources [kg/displacement]
+        real(dp)            :: dj_nm_transformed_in(npDim(1), npDim(2), npDim(3)) !! Transformed NM inflow from erosion, inflows and sources [kg/displacement]
         real(dp)            :: dj_dissolved_in                                  !! Dissolved species inflow from inflows and sources [kg/displacement]
-        real(dp)            :: dj_spm_resus(C%nSizeClassesSPM)
-        real(dp)            :: dj_spm_resus_perArea(C%nSizeClassesSpm)
-        real(dp)            :: dj_spm_resus_perArea_(C%nSizeClassesSpm)
+        real(dp)            :: dj_spm_resus(nSizeClassesSPM)
+        real(dp)            :: dj_spm_resus_perArea(nSizeClassesSpm)
+        real(dp)            :: dj_spm_resus_perArea_(nSizeClassesSpm)
         type(Result)        :: rslt
-        real(dp)            :: dj_spm_deposit(C%nSizeClassesSPM)
-        real(dp)            :: dj_spm_outflow(C%nSizeClassesSPM)
+        real(dp)            :: dj_spm_deposit(nSizeClassesSPM)
+        real(dp)            :: dj_spm_outflow(nSizeClassesSPM)
         integer             :: i
         real(dp)            :: k_outflow                                        ! The outflow rate [/s]
-        real(dp)            :: dj_nm_deposit(C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp)            :: dj_nm_transformed_deposit(C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp)            :: dj_nm_resus(C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp)            :: dj_nm_transformed_resus(C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp)            :: dj_nm_outflow(C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp)            :: dj_nm_transformed_outflow(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp)            :: dj_nm_deposit(npDim(1), npDim(2), npDim(3))
+        real(dp)            :: dj_nm_transformed_deposit(npDim(1), npDim(2), npDim(3))
+        real(dp)            :: dj_nm_resus(npDim(1), npDim(2), npDim(3))
+        real(dp)            :: dj_nm_transformed_resus(npDim(1), npDim(2), npDim(3))
+        real(dp)            :: dj_nm_outflow(npDim(1), npDim(2), npDim(3))
+        real(dp)            :: dj_nm_transformed_outflow(npDim(1), npDim(2), npDim(3))
         real(dp)            :: dj_dissolved_outflow
 
         ! Check that we've got a volume before going on
@@ -280,14 +285,14 @@ module RiverReachModule
             me%m_spm = flushToZero(max(me%m_spm + dj_spm_in + dj_spm_resus - dj_spm_deposit - dj_spm_outflow, 0.0_dp))
 
             ! Check we're not meant to be ignore NM processes to speed things up
-            if (.not. C%ignoreNM) then
+            if (.not. modelConfig%ignoreNM) then
                 ! Now we can deal with NM, firstly by calculating the deposited and outflowing NM
                 dj_nm_outflow = min(flushToZero(me%m_np * k_outflow), me%m_np)                                       ! [kg/disp]
                 dj_nm_transformed_outflow = min(flushToZero(me%m_transformed * k_outflow), me%m_transformed)         ! [kg/disp]
                 dj_dissolved_outflow = min(flushToZero(me%m_dissolved * k_outflow), me%m_dissolved)                  ! [kg/disp]
                 dj_nm_deposit = 0.0_dp              ! Only heteraggregated size classes will be changed, to set others to zero
                 dj_nm_transformed_deposit = 0.0_dp
-                do i = 1, C%nSizeClassesSpm
+                do i = 1, nSizeClassesSpm
                     dj_nm_deposit(:,:,2+i) = min(flushToZero((me%m_np(:,:,2+i) + dj_nm_in(:,:,2+i)) &
                         * me%k_settle(i) * dt), me%m_np(:,:,2+i) + dj_nm_in(:,:,2+i))
                     dj_nm_transformed_deposit(:,:,2+i) = min(flushToZero((me%m_transformed(:,:,2+i) &
@@ -343,13 +348,13 @@ module RiverReachModule
         class(RiverReach)  :: me        !! This reach
         integer             :: t        !! The current timestep index
         ! Calculate the width [m], depth [m], cross-section, bed and surface areas [m2] and volume [m3]
-        me%width = me%calculateWidth(me%Q_in_total/C%timeStep)
-        me%depth = me%calculateDepth(me%width, me%slope, me%Q_in_total/C%timeStep, t)
+        me%width = me%calculateWidth(me%Q_in_total/modelConfig%timeStep)
+        me%depth = me%calculateDepth(me%width, me%slope, me%Q_in_total/modelConfig%timeStep, t)
         me%xsArea = me%depth*me%width
         me%bedArea = me%width*me%length*me%f_m
         me%surfaceArea = me%bedArea                         ! For river reaches, set surface area equal to bed area [m2]
         me%volume = me%depth*me%width*me%length*me%f_m
-        me%velocity = me%calculateVelocity(me%depth, me%Q_in_total/C%timeStep, me%width)
+        me%velocity = me%calculateVelocity(me%depth, me%Q_in_total/modelConfig%timeStep, me%width)
     end subroutine
 
     !> Parse data from the input file for this river reach

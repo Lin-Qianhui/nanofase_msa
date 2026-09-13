@@ -79,3 +79,43 @@ by git. It does not modify `config.nml` or the baseline output directory.
 
 Raw NetCDF byte identity is not required because metadata can include run-time
 timestamps even when model results are unchanged.
+
+## Repeatable WaterBody Checks
+
+`verify_waterbody.py` generates the Phase 7 inputs, captures fresh reference results,
+and compares a changed executable with those results. It uses Python's standard
+library and the existing `ncdump` and `ncgen` commands; no Python NetCDF package is
+needed.
+
+Run from the repository root, using an executable built from unchanged Phase 6
+revision `55928ee0c6408174c6d08438c17b3e65a756fc96` with the same compiler, settings,
+and original version-file contents as the changed build:
+
+```sh
+python3 verification/verify_waterbody.py capture \
+  --exe /path/to/phase6/nanofase \
+  --work-dir /private/tmp/nanofase-waterbody-check
+
+python3 verification/verify_waterbody.py compare \
+  --exe build-debug/nanofase \
+  --work-dir /private/tmp/nanofase-waterbody-check
+```
+
+Choose a new work directory for each verification run. Reference and candidate
+directories cannot be overwritten. Input files are copied into the work directory;
+their hashes are checked before comparison. Commands, executable hashes, logs, and
+results are saved beside the outputs. The recorded capture revision identifies the
+checkout running the script; when the reference executable comes from a different
+checkout, record its source revision and compiler settings separately too.
+
+The runner checks fourteen successful scenarios using `verify_refactor.py --exact`,
+four expected failures, batch operation, and checkpoint save/reinstate. It checks
+that settings actually affect the reference results and that spatial bank-erosion
+values override constants. Expected failures retain their exit status and meaningful
+error text. Checkpoint checks establish only that saving and loading complete.
+
+Run CTest separately for configuration defaults, error registration and reporting,
+and minimum-slope behaviour on an interior reach. Full-model terrain-height outlet
+behaviour and disabled river bed sediment remain known failures. See
+[the Phase 7 report](../migration_documentation/phase7_waterbody.md) for actual
+commands, results, preserved comments, and remaining work.

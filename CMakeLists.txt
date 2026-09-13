@@ -153,3 +153,60 @@ add_test(
         "-DSEDIMENT_FIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/bed-sediment-config-missing.nml"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectMissingSediment.cmake"
 )
+
+# WaterBody owns an optional group and six effective errors. Each test starts
+# a fresh process so that the shared error handler is initialised only once.
+add_executable(water_body_config_module_test
+    vendor/feh/src/ErrorInstance.f90
+    vendor/feh/src/ErrorHandler.f90
+    vendor/feh/src/ErrorCriteria.f90
+    src/Kernel/KernelModule.f90
+    src/ModelDimensions/ModelDimensionsModule.f90
+    src/ErrorHandling/ErrorHandlingModule.f90
+    src/Soil/SoilConfigModule.f90
+    src/BedSediment/BedSedimentConfigModule.f90
+    src/WaterBody/WaterBodyConfigModule.f90
+    test/WaterBodyConfigModuleTest.f90
+)
+set_target_properties(water_body_config_module_test PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/water-body-config-test-modules"
+)
+set(water_fixture_dir "${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures")
+foreach(mode explicit empty missing partial omit_slope omit_timestep omit_estuary omit_bank malformed_eof)
+    add_test(NAME water_body_config_${mode}
+        COMMAND water_body_config_module_test
+            "${water_fixture_dir}/bed-sediment-config.nml"
+            "${mode}" "${water_fixture_dir}/water-body-${mode}.nml"
+    )
+endforeach()
+
+function(add_water_body_diagnostic_test mode fixture expected_exit expected_text)
+    add_test(NAME water_body_${mode}
+        COMMAND "${CMAKE_COMMAND}"
+            "-DTEST_EXECUTABLE=$<TARGET_FILE:water_body_config_module_test>"
+            "-DDIMENSIONS_FIXTURE=${water_fixture_dir}/bed-sediment-config.nml"
+            "-DWATER_FIXTURE=${water_fixture_dir}/water-body-${fixture}.nml"
+            "-DMODE=${mode}" "-DEXPECTED_EXIT=${expected_exit}" "-DEXPECTED_TEXT=${expected_text}"
+            ${ARGN}
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectWaterBody.cmake"
+    )
+endfunction()
+add_water_body_diagnostic_test(unknown unknown 2 "Cannot match namelist object name unknown_water_setting")
+add_water_body_diagnostic_test(malformed malformed 2 "Cannot match namelist object name 'invalid'")
+add_water_body_diagnostic_test(warning empty 0 "All SPM advected from RiverReach.")
+add_water_body_diagnostic_test(quiet_warning empty 0 "Completed WaterBody check" "-DFORBIDDEN_TEXT=Warning:")
+add_water_body_diagnostic_test(disabled_error empty 0 "Completed WaterBody check" "-DFORBIDDEN_TEXT=Error:")
+add_water_body_diagnostic_test(critical empty 1
+    "Invalid RiverReach inflow reference. Inflow must be from a neighbouring RiverReach.")
+
+# Exercise the existing slope procedure on an interior reach without constructing
+# an outlet, whose terrain-array failure belongs to a separate repair.
+set(water_body_slope_sources ${sources})
+list(FILTER water_body_slope_sources EXCLUDE REGEX "/src/main\\.f90$")
+add_executable(water_body_slope_test ${water_body_slope_sources} test/WaterBodySlopeTest.f90)
+set_target_properties(water_body_slope_test PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/water-body-slope-test-modules"
+)
+target_include_directories(water_body_slope_test PRIVATE "${NETCDF_INCLUDES}")
+target_link_libraries(water_body_slope_test PRIVATE "${NETCDF_LIBRARIES_F90}")
+add_test(NAME water_body_slope COMMAND water_body_slope_test "${water_fixture_dir}/water-body-explicit.nml")

@@ -1,7 +1,8 @@
 !> The FlowModule contains types which define material flows within the surface water network.
 !! Separate types are provided for water, SPM, NM and dissolved species flows.
 module FlowModule
-    use GlobalsModule, only: dp, C
+    use KernelModule, only: dp
+    use ModelDimensionsModule, only: npDim, nSizeClassesSpm
     implicit none
 
     !> The WaterFlows object stores information on water flows in and out of a reach.
@@ -82,29 +83,29 @@ module FlowModule
 
     subroutine initSPMFlows(me)
         class(SPMFlows) :: me
-        allocate(me%inflow(C%nSizeClassesSPM))
-        allocate(me%soilErosion(C%nSizeClassesSPM))
-        allocate(me%bankErosion(C%nSizeClassesSPM))
-        allocate(me%transfers(C%nSizeClassesSPM))
-        allocate(me%demands(C%nSizeClassesSPM))
-        allocate(me%deposition(C%nSizeClassesSPM))
-        allocate(me%resuspension(C%nSizeClassesSPM))
-        allocate(me%outflow(C%nSizeClassesSPM))
+        allocate(me%inflow(nSizeClassesSPM))
+        allocate(me%soilErosion(nSizeClassesSPM))
+        allocate(me%bankErosion(nSizeClassesSPM))
+        allocate(me%transfers(nSizeClassesSPM))
+        allocate(me%demands(nSizeClassesSPM))
+        allocate(me%deposition(nSizeClassesSPM))
+        allocate(me%resuspension(nSizeClassesSPM))
+        allocate(me%outflow(nSizeClassesSPM))
         call me%empty()
     end subroutine
 
     subroutine initNMFlows(me)
         class(NMFlows) :: me
-        allocate(me%inflow(C%npDim(1),C%npDim(2),C%npDim(3)))
-        allocate(me%soilErosion(C%npDim(1),C%npDim(2),C%npDim(3)))
-        allocate(me%bankErosion(C%npDim(1),C%npDim(2),C%npDim(3)))
-        allocate(me%transfers(C%npDim(1),C%npDim(2),C%npDim(3)))
-        allocate(me%demands(C%npDim(1),C%npDim(2),C%npDim(3)))
-        allocate(me%deposition(C%npDim(1),C%npDim(2),C%npDim(3)))
-        allocate(me%resuspension(C%npDim(1),C%npDim(2),C%npDim(3)))
-        allocate(me%outflow(C%npDim(1),C%npDim(2),C%npDim(3)))
-        allocate(me%pointSources(C%npDim(1),C%npDim(2),C%npDim(3)))
-        allocate(me%diffuseSources(C%npDim(1),C%npDim(2),C%npDim(3)))
+        allocate(me%inflow(npDim(1),npDim(2),npDim(3)))
+        allocate(me%soilErosion(npDim(1),npDim(2),npDim(3)))
+        allocate(me%bankErosion(npDim(1),npDim(2),npDim(3)))
+        allocate(me%transfers(npDim(1),npDim(2),npDim(3)))
+        allocate(me%demands(npDim(1),npDim(2),npDim(3)))
+        allocate(me%deposition(npDim(1),npDim(2),npDim(3)))
+        allocate(me%resuspension(npDim(1),npDim(2),npDim(3)))
+        allocate(me%outflow(npDim(1),npDim(2),npDim(3)))
+        allocate(me%pointSources(npDim(1),npDim(2),npDim(3)))
+        allocate(me%diffuseSources(npDim(1),npDim(2),npDim(3)))
         call me%empty()
     end subroutine
 
@@ -166,7 +167,7 @@ module FlowModule
 
     function asArraySPMFlows(me) result(arr)
         class(SPMFlows) :: me
-        real(dp)        :: arr(8,C%nSizeClassesSpm)
+        real(dp)        :: arr(8,nSizeClassesSpm)
         arr(1,:) = me%inflow
         arr(2,:) = me%soilErosion
         arr(3,:) = me%bankErosion
@@ -179,7 +180,7 @@ module FlowModule
 
     function asArrayNMFlows(me) result(arr)
         class(NMFlows)  :: me
-        real(dp)        :: arr(10,C%npDim(1),C%npDim(2),C%npDim(3))
+        real(dp)        :: arr(10,npDim(1),npDim(2),npDim(3))
         arr(1,:,:,:) = me%inflow
         arr(2,:,:,:) = me%soilErosion
         arr(3,:,:,:) = me%bankErosion
@@ -210,7 +211,7 @@ module FlowModule
 
     subroutine assignSPMFlows(obj, arr)
         class(SPMFlows), intent(out)    :: obj
-        real(dp), intent(in)            :: arr(8,C%nSizeClassesSpm)
+        real(dp), intent(in)            :: arr(8,nSizeClassesSpm)
         obj%inflow = arr(1,:)
         obj%soilErosion = arr(2,:)
         obj%bankErosion = arr(3,:)
@@ -223,7 +224,7 @@ module FlowModule
 
     subroutine assignNMFlows(obj, arr)
         class(NMFlows), intent(out) :: obj
-        real(dp), intent(in)        :: arr(10,C%npDim(1),C%npDim(2),C%npDim(3))
+        real(dp), intent(in)        :: arr(10,npDim(1),npDim(2),npDim(3))
         obj%inflow = arr(1,:,:,:)
         obj%soilErosion = arr(2,:,:,:)
         obj%bankErosion = arr(3,:,:,:)

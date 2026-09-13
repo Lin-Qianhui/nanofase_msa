@@ -1,6 +1,12 @@
 module EstuaryReachModule
     use BedSedimentConfigModule, only: bedSedimentConfig
-    use GlobalsModule
+    use KernelModule, only: dp, kernel_pi => pi
+    use ModelDimensionsModule, only: npDim, nSizeClassesSpm
+    use ModelConfigModule, only: modelConfig
+    use WaterBodyConfigModule, only: waterBodyConfig
+    use ErrorHandlingModule, only: ERROR_HANDLER
+    use DataInputModule, only: DATASET
+    use datetime_module, only: datetime, timedelta
     use ReachModule
     use UtilModule
     use ResultModule
@@ -37,7 +43,7 @@ module EstuaryReachModule
         integer :: x                            !! Grid cell x-position index
         integer :: y                            !! Grid cell y-position index
         integer :: w                            !! Water body index within the cell
-        real(dp) :: distributionSediment(C%nSizeClassesSPM)     !! Distribution to split sediment yields with
+        real(dp) :: distributionSediment(nSizeClassesSPM)     !! Distribution to split sediment yields with
         type(Result) :: rslt                    !! Result object to return errors in
         integer :: i, j                         ! Iterator
 
@@ -95,47 +101,47 @@ module EstuaryReachModule
         type(Result) :: rslt
         real(dp) :: Q_outflow
         real(dp) :: changeInVolume, previousVolume
-        real(dp) :: j_spm_outflow(C%nSizeClassesSpm)
-        real(dp) :: j_np_outflow(C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp) :: j_spm_in_total(C%nSizeClassesSpm)           ! Total inflow of SPM [kg/timestep]
-        real(dp) :: j_np_in_total(C%npDim(1), C%npDim(2), C%npDim(3))   ! Total inflow of NP [kg/timestep]
-        real(dp) :: fractionSpmDeposited(C%nSizeClassesSpm)     ! Fraction of SPM deposited on each time step [-]
+        real(dp) :: j_spm_outflow(nSizeClassesSpm)
+        real(dp) :: j_np_outflow(npDim(1), npDim(2), npDim(3))
+        real(dp) :: j_spm_in_total(nSizeClassesSpm)           ! Total inflow of SPM [kg/timestep]
+        real(dp) :: j_np_in_total(npDim(1), npDim(2), npDim(3))   ! Total inflow of NP [kg/timestep]
+        real(dp) :: fractionSpmDeposited(nSizeClassesSpm)     ! Fraction of SPM deposited on each time step [-]
         integer :: i, j, k                                      ! Iterator
         integer :: nDisp                                        ! Number of displacements to split this time step into
         real(dp) :: dt                                          ! Length of each displacement [s]
         real(dp) :: dQ_in                                       ! Water inflow for each displacement [m3/displacement]
         real(dp) :: dQ_out
-        real(dp) :: dj_spm_erosion(C%nSizeClassesSpm)           ! SPM inflow due to erosion for each displacement [kg/displacement]
-        real(dp) :: dj_spm_inflow(C%nSizeClassesSpm)            ! SPM inflow from inflow reaches for each displacement [kg/displacement]
-        real(dp) :: dj_nm_erosion_sources(C%npDim(1), C%npDim(2), C%npDim(3))   ! NM inflow due to erosion and sources for each displacement [kg/displacement]
-        real(dp) :: dj_nm_inflow(C%npDim(1), C%npDim(2), C%npDim(3))            ! NM inflow from inflow reaches for each displacement [kg/displacement]
-        real(dp) :: dj_nm_transformed_erosion_sources(C%npDim(1), C%npDim(2), C%npDim(3))   ! Transformed NM inflow due to erosion and sources for each displacement [kg/displacement]
-        real(dp) :: dj_nm_transformed_inflow(C%npDim(1), C%npDim(2), C%npDim(3))            ! Transformed NM inflow from inflow reaches for each displacement [kg/displacement]
+        real(dp) :: dj_spm_erosion(nSizeClassesSpm)           ! SPM inflow due to erosion for each displacement [kg/displacement]
+        real(dp) :: dj_spm_inflow(nSizeClassesSpm)            ! SPM inflow from inflow reaches for each displacement [kg/displacement]
+        real(dp) :: dj_nm_erosion_sources(npDim(1), npDim(2), npDim(3))   ! NM inflow due to erosion and sources for each displacement [kg/displacement]
+        real(dp) :: dj_nm_inflow(npDim(1), npDim(2), npDim(3))            ! NM inflow from inflow reaches for each displacement [kg/displacement]
+        real(dp) :: dj_nm_transformed_erosion_sources(npDim(1), npDim(2), npDim(3))   ! Transformed NM inflow due to erosion and sources for each displacement [kg/displacement]
+        real(dp) :: dj_nm_transformed_inflow(npDim(1), npDim(2), npDim(3))            ! Transformed NM inflow from inflow reaches for each displacement [kg/displacement]
         real(dp) :: dj_dissolved_sources                        ! Dissolved species inflow from sources on each displacement [kg/displacement]
         real(dp) :: dj_dissolved_inflow                         ! Dissolved species inflow from inflow reaches on each displacement [kg/displacement]
-        real(dp) :: dj_spm_out(C%nSizeClassesSpm)               ! SPM outflow from reach on current displacement [kg/displacement]
-        real(dp) :: dj_nm_out(C%npDim(1), C%npDim(2), C%npDim(3))   ! NM outflow from reach on current displacement [kg/displacement]
-        real(dp) :: dj_nm_transformed_out(C%npDim(1), C%npDim(2), C%npDim(3))   ! Transformed NM outflow from reach on current displacement [kg/displacement]
+        real(dp) :: dj_spm_out(nSizeClassesSpm)               ! SPM outflow from reach on current displacement [kg/displacement]
+        real(dp) :: dj_nm_out(npDim(1), npDim(2), npDim(3))   ! NM outflow from reach on current displacement [kg/displacement]
+        real(dp) :: dj_nm_transformed_out(npDim(1), npDim(2), npDim(3))   ! Transformed NM outflow from reach on current displacement [kg/displacement]
         real(dp) :: dj_dissolved_out                            ! Dissolved species outflow from reach on current displacement [kg/displacement]
-        real(dp) :: dj_spm_outflow(C%nSizeClassesSpm)               ! SPM outflow from reach on current displacement [kg/displacement]
-        real(dp) :: dj_nm_outflow(C%npDim(1), C%npDim(2), C%npDim(3))   ! NM outflow from reach on current displacement [kg/displacement]
-        real(dp) :: dj_nm_transformed_outflow(C%npDim(1), C%npDim(2), C%npDim(3))   ! Transformed NM outflow from reach on current displacement [kg/displacement]
+        real(dp) :: dj_spm_outflow(nSizeClassesSpm)               ! SPM outflow from reach on current displacement [kg/displacement]
+        real(dp) :: dj_nm_outflow(npDim(1), npDim(2), npDim(3))   ! NM outflow from reach on current displacement [kg/displacement]
+        real(dp) :: dj_nm_transformed_outflow(npDim(1), npDim(2), npDim(3))   ! Transformed NM outflow from reach on current displacement [kg/displacement]
         real(dp) :: dj_dissolved_outflow                            ! Dissolved species outflow from reach on current displacement [kg/displacement]
-        real(dp) :: dj_spm_resus(C%nSizeClassesSpm)             ! Mass of each sediment size class resuspended on each displacement [kg]
-        real(dp) :: dj_spm_in(C%nSizeClassesSpm)
-        real(dp) :: dj_nm_in(C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp) :: dj_nm_transformed_in(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: dj_spm_resus(nSizeClassesSpm)             ! Mass of each sediment size class resuspended on each displacement [kg]
+        real(dp) :: dj_spm_in(nSizeClassesSpm)
+        real(dp) :: dj_nm_in(npDim(1), npDim(2), npDim(3))
+        real(dp) :: dj_nm_transformed_in(npDim(1), npDim(2), npDim(3))
         real(dp) :: dj_dissolved_in
-        real(dp) :: tpm_m_spm(C%nSizeClassesSpm)
+        real(dp) :: tpm_m_spm(nSizeClassesSpm)
         integer :: f
-        real(dp) :: dj_spm_deposit(C%nSizeClassesSpm)
-        real(dp) :: dj_nm_deposit(C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp) :: dj_nm_transformed_deposit(C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp) :: dj_nm_resus(C%npDim(1), C%npDim(2), C%npDim(3))
-        real(dp) :: dj_spm_resus_perArea(C%nSizeClassesSpm)     ! Mass of each sediment size class resuspended on each displacement, per unit area [kg/m2/disp]
-        real(dp) :: dj_spm_deposit_perArea(C%nSizeClassesSpm)   ! Mass of each sediment size class deposited on each displacement, per unit area [kg/m2/disp]
-        real(dp) :: tmp_dj_spm_resus_perArea(C%nSizeClassesSpm) ! Temp dj_spm_resus_perArea, to get around bed sediment procedures modifying input params - TODO sort this out
-        real(dp) :: dj_nm_deposit_perArea(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: dj_spm_deposit(nSizeClassesSpm)
+        real(dp) :: dj_nm_deposit(npDim(1), npDim(2), npDim(3))
+        real(dp) :: dj_nm_transformed_deposit(npDim(1), npDim(2), npDim(3))
+        real(dp) :: dj_nm_resus(npDim(1), npDim(2), npDim(3))
+        real(dp) :: dj_spm_resus_perArea(nSizeClassesSpm)     ! Mass of each sediment size class resuspended on each displacement, per unit area [kg/m2/disp]
+        real(dp) :: dj_spm_deposit_perArea(nSizeClassesSpm)   ! Mass of each sediment size class deposited on each displacement, per unit area [kg/m2/disp]
+        real(dp) :: tmp_dj_spm_resus_perArea(nSizeClassesSpm) ! Temp dj_spm_resus_perArea, to get around bed sediment procedures modifying input params - TODO sort this out
+        real(dp) :: dj_nm_deposit_perArea(npDim(1), npDim(2), npDim(3))
         type(datetime) :: currentDate
         real :: T_water_t                                           ! Water temperature on this timestep [deg C]
 
@@ -143,7 +149,7 @@ module EstuaryReachModule
         call me%emptyFlows()
         
         ! Get the current date and use the day of year to get the water temp
-        currentDate = C%startDate + timedelta(t-1)
+        currentDate = modelConfig%startDate + timedelta(t-1)
         T_water_t = me%T_water(currentDate%yearday()) 
 
         ! Get the inflows from upstream water bodies
@@ -163,12 +169,12 @@ module EstuaryReachModule
         ! TODO transfers and demands
 
         ! Inflows from point and diffuse sources, updates the NM flow object
-        if (.not. C%ignoreNM .and. .not. isWarmUp) then
+        if (.not. modelConfig%ignoreNM .and. .not. isWarmUp) then
             call me%updateSources(t)
         end if
 
         ! Set the reach dimensions (using the timestep in hours for tidal harmonics) and calculate the change in volume 
-        call me%setDimensions((t-1) * C%timeStep / C%minEstuaryTimestep)
+        call me%setDimensions((t-1) * modelConfig%timeStep / waterBodyConfig%minEstuaryTimestep)
         changeInVolume = me%changeInVolume((t-1)*24, t*24)
         ! Calculate the outflow based on the change in volume and inflows. +ve outflow indicates upstream tidal flow,
         ! -ve outflow indicates downstream tidal flow. This is used to determine what classes as "input" SPM/NM
@@ -190,7 +196,7 @@ module EstuaryReachModule
             ! j_np_input_total = j_np_input_total + me%j_np_inflows()
         end if
         ! Use the total inflow to calculate the velocity
-        me%velocity = me%calculateVelocity(me%depth, me%Q_in_total/C%timeStep, me%width)
+        me%velocity = me%calculateVelocity(me%depth, me%Q_in_total/modelConfig%timeStep, me%width)
 
         ! Set the erosion yields, which includes scaling the soil erosion by sediment transport
         ! capacity, calculating the bank ersoion, and storing these in the flow objects. This must
@@ -198,18 +204,18 @@ module EstuaryReachModule
         call me%setErosionYields(j_spm_runoff, q_overland, contributingArea, j_np_runoff, j_transformed_runoff)
 
         ! Set the resuspension and settling rates [/s] (but don't settle until we're looping through displacements) 
-        call me%setResuspensionRate(me%Q_in_total / C%timeStep, T_water_t)
+        call me%setResuspensionRate(me%Q_in_total / modelConfig%timeStep, T_water_t)
         call me%setSettlingRate(T_water_t)
 
         ! If Q_in for this timestep is bigger than the reach volume, then we need to
         ! split into a number of displacements. If Q_in is zero, just have 1 displacement.
         if (isZero(me%Q_in_total) .or. isZero(me%volume)) then
-            nDisp = C%timeStep / C%minEstuaryTimestep
+            nDisp = modelConfig%timeStep / waterBodyConfig%minEstuaryTimestep
         else
             ! Make sure the minimum displacement duration is that provided in config (defaults to 1 hour)
-            nDisp = max(ceiling(me%Q_in_total / me%volume), C%timeStep / C%minEstuaryTimestep)
+            nDisp = max(ceiling(me%Q_in_total / me%volume), modelConfig%timeStep / waterBodyConfig%minEstuaryTimestep)
         end if
-        dt = C%timeStep / nDisp                             ! Length of each displacement [s]
+        dt = modelConfig%timeStep / nDisp                             ! Length of each displacement [s]
         dQ_in = me%Q_in_total / nDisp
         dj_SPM_erosion = (me%j_spm%soilErosion + me%j_spm%bankErosion) / nDisp
         dj_spm_inflow = me%j_spm%inflow / nDisp
@@ -226,7 +232,7 @@ module EstuaryReachModule
         do i = 1, nDisp
             ! Calculate the timestep in hours from the displacement length, and pass to setDimensions
             ! to use to calculate tidal harmonics
-            call me%setDimensions((t -1)*C%timeStep/3600 + i*(int(dt)/3600))
+            call me%setDimensions((t -1)*modelConfig%timeStep/3600 + i*(int(dt)/3600))
             ! Calculate the change in volume between this displacement and the next
             changeInVolume = me%changeInVolume((t-1)*24 + (i-1)*(int(dt)/3600), (t-1)*24 + i*(int(dt)/3600))
             ! Water mass balance (outflow = all the inflows + change in volume)
@@ -298,7 +304,7 @@ module EstuaryReachModule
             dj_spm_resus = me%k_resus * me%bedSediment%Mf_bed_by_size() * dt
 
             ! Calculate the fraction of SPM from each size class that was deposited, for use in calculating mass of NM deposited
-            do j = 1, C%nSizeClassesSpm
+            do j = 1, nSizeClassesSpm
                 if (isZero(dj_spm_deposit(j))) then
                     fractionSpmDeposited(j) = 0
                 else
@@ -308,7 +314,7 @@ module EstuaryReachModule
             ! Update the deposition element of the SPM and NM flux array. Only heteroaggregated, 
             dj_nm_deposit = 0.0_dp
             dj_nm_transformed_deposit = 0.0_dp
-            do j = 1, C%nSizeClassesSpm
+            do j = 1, nSizeClassesSpm
                 dj_nm_deposit(:,:,2+j) = min(me%m_np(:,:,2+j)*fractionSpmDeposited(j), me%m_np(:,:,2+j))     ! Only deposit heteroaggregated NM (index 3+)
                 dj_nm_transformed_deposit(:,:,2+j) = min(me%m_transformed(:,:,2+j)*fractionSpmDeposited(j), &
                                                           me%m_transformed(:,:,2+j))
@@ -359,7 +365,7 @@ module EstuaryReachModule
                 if (rslt%hasCriticalError()) return
                 ! Fill bedSediment%delta_sed mass transfer matrix based on this passed deposition and resuspension
 
-                if (.not. C%ignoreNM) then
+                if (.not. modelConfig%ignoreNM) then
                     call me%bedSediment%getmatrix(dj_spm_deposit_perArea, dj_spm_resus_perArea)
                     ! The above must be called before transferNM so that delta_sed is set. TODO change this to be internal to bed sediment
                     ! Now actually transfer the NM between the layers (only if there is NM to deposit)
@@ -515,10 +521,10 @@ module EstuaryReachModule
         integer, intent(in) :: tHours             !! The current timestep (in hours)
         real(dp) :: depth
 
-        depth = DATASET%estuaryTidalS2 * cos(2.0_dp*C%pi*tHours/12.0_dp) + DATASET%estuaryTidalM2 &
-            * cos(2.0_dp*C%pi*tHours/12.42_dp) + (0.75_dp) * ((me%distanceToMouth * DATASET%estuaryTidalM2 ** 2) &
+        depth = DATASET%estuaryTidalS2 * cos(2.0_dp*kernel_pi*tHours/12.0_dp) + DATASET%estuaryTidalM2 &
+            * cos(2.0_dp*kernel_pi*tHours/12.42_dp) + (0.75_dp) * ((me%distanceToMouth * DATASET%estuaryTidalM2 ** 2) &
             / (me%meanDepth * 22356.0_dp * sqrt(9.81_dp * me%meanDepth))) &
-            * cos(2*C%pi*tHours/6.21_dp) + me%meanDepth
+            * cos(2*kernel_pi*tHours/6.21_dp) + me%meanDepth
         ! If the depth is negative (which it really shouldn't be...), set it to zero
         if (depth < 0) depth = 0.0_dp
     end function

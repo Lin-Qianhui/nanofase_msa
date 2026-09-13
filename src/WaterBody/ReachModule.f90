@@ -1,13 +1,17 @@
 !> Module containing definition of abstract base class `Reach`.
 module ReachModule
     use BedSedimentConfigModule, only: bedSedimentConfig
-    use GlobalsModule
-    use ResultModule, only: Result
+    use KernelModule, only: dp, kernel_g => g, kernel_n_river => n_river, &
+        kernel_rho_w => rho_w, kernel_nu_w => nu_w
+    use ModelDimensionsModule, only: npDim, nSizeClassesSpm, nSizeClassesNM, nFracCompsSpm, &
+        d_nm, d_spm, d_spm_low, d_spm_upp
+    use ModelConfigModule, only: modelConfig
+    use WaterBodyConfigModule, only: waterBodyConfig, defaultSlope
+    use ResultModule, only: Result, Result0D
     use ErrorInstanceModule
     use WaterBodyModule
     use netcdf
     use DataInputModule, only: DATASET
-    use DefaultsModule, only: defaultSlope
     implicit none
 
     !> `ReachPointer` used for `Reach` inflows array, so the elements within can
@@ -109,7 +113,7 @@ module ReachModule
         ! WaterBody initialises the variables common to all water bodies
         call me%WaterBody%allocateAndInitialise()
         ! Defaults
-        me%n = C%n_river
+        me%n = kernel_n_river
     end subroutine
 
     !> Parse the input data for this reach. This function is called at the start of every
@@ -128,9 +132,9 @@ module ReachModule
         if (.not. isZero(me%depth)) then
             ! SPM: Loop through the size classes and calculate settling velocity
             ! TODO make calculateSettlingVelocity an elemental function
-            do i = 1, C%nSizeClassesSpm
+            do i = 1, nSizeClassesSpm
                 me%W_settle_spm(i) = me%calculateSettlingVelocity( &
-                    C%d_spm(i), &
+                    d_spm(i), &
                     DATASET%spmDensityBySizeClass(i), &       ! Average of the fractional comps. TODO: Change to work with actual fractional comps.
                     T_water_t, &
                     alphaDep=DATASET%depositionAlpha(me%x, me%y), &
@@ -140,9 +144,9 @@ module ReachModule
             me%k_settle = me%W_settle_spm / me%depth
 
             ! NP: Calculate this to pass to Reactor
-            do i = 1, C%nSizeClassesNM
+            do i = 1, nSizeClassesNM
                 me%W_settle_np(i) = me%calculateSettlingVelocity( &
-                    C%d_nm(i), &
+                    d_nm(i), &
                     DATASET%nmDensity, &
                     T_water_t, &
                     alphaDep=DATASET%depositionAlpha(me%x, me%y), &
@@ -173,21 +177,21 @@ module ReachModule
         !   length                  [m]
         !   sedimentTransportCapacity   [kg/m2/timestep]
         ! The following also makes sure that b_stc isn't < 0, and that the resulting STC isn't < 0
-        me%sedimentTransportCapacity = max(C%timeStep &
+        me%sedimentTransportCapacity = max(modelConfig%timeStep &
             * me%a_stc * max((contributingArea * q_overland / me%length - me%b_stc), 0.0_dp) ** me%c_stc, 0.0_dp)
     end subroutine
 
     !> Scale the erosion yield by the sediment transport capacity, which is a function of the overland flow.
     function scaleErosionBySedimentTransportCapacityReach(me, erosionYield, q_overland, contributingArea) result(scaledErosionYield)
         class(Reach)    :: me                                       !! This SoilProfile instance
-        real(dp)        :: erosionYield(C%nSizeClassesSPM)          !! The un-scaled erosion yield [kg/timestep]
+        real(dp)        :: erosionYield(nSizeClassesSPM)          !! The un-scaled erosion yield [kg/timestep]
         real(dp)        :: q_overland                               !! Overland flow [m3/m2/timestep]
         real(dp)        :: contributingArea                         !! Area over which erosion occurs (e.g. soil profile area) [m2]
-        real(dp)        :: scaledErosionYield(C%nSizeClassesSPM)    !! The scaled erosion yield [kg/timestep]
+        real(dp)        :: scaledErosionYield(nSizeClassesSPM)    !! The scaled erosion yield [kg/timestep]
         ! Set the transport capacity
         call me%setSedimentTransportCapacity( &
             contributingArea=contributingArea / 1e6, &          ! Convert m2 to km2
-            q_overland=q_overland * 1e6 / C%timeStep &          ! Convert m3/m2/timestep to m3/km2/s
+            q_overland=q_overland * 1e6 / modelConfig%timeStep &          ! Convert m3/m2/timestep to m3/km2/s
         )
         ! Where sum of eroded sediment (over size classes) is > STC, scale it proportionally
         if (sum(erosionYield) > me%sedimentTransportCapacity * contributingArea) then
@@ -226,11 +230,11 @@ module ReachModule
     !! across size classes
     subroutine setErosionYieldsReach(me, soilErosionYield, q_overland, contributingArea, NMYield, NMTransformedYield)
         class(Reach)  :: me                                 !! This reach
-        real(dp) :: soilErosionYield(C%nSizeClassesSPM)     !! Soil erosion yield from the soil profile [kg/timestep]
+        real(dp) :: soilErosionYield(nSizeClassesSPM)     !! Soil erosion yield from the soil profile [kg/timestep]
         real(dp) :: q_overland                              !! Overland flow [m3/m2/timestep]
         real(dp) :: contributingArea                        !! Contributing area to this reach [m2]
-        real(dp) :: NMYield(C%npDim(1), C%npDim(2), C%npDim(3)) !! NM yield from soil erosion [kg/timestep]
-        real(dp) :: NMTransformedYield(C%npDim(1), C%npDim(2), C%npDim(3)) !! NM yield from soil erosion [kg/timestep]
+        real(dp) :: NMYield(npDim(1), npDim(2), npDim(3)) !! NM yield from soil erosion [kg/timestep]
+        real(dp) :: NMTransformedYield(npDim(1), npDim(2), npDim(3)) !! NM yield from soil erosion [kg/timestep]
         real(dp) :: ratio                                   ! Ratio of unscaled to scaled, to scale NM by
         ! We need to use the sediment transport capacity to scale eroded sediment. Sediment transport
         ! capacity is stored in me%sedimentTransportCapacity and has units of kg/m2/timestep
@@ -239,7 +243,7 @@ module ReachModule
         me%j_nm%soilErosion = flushToZero(ratio * NMYield)
         me%j_nm_transformed%soilErosion = flushToZero(ratio * NMTransformedYield)
         ! Calculate bank erosion rate, if we're meant to be modelling it
-        if (C%includeBankErosion) then
+        if (waterBodyConfig%includeBankErosion) then
             ! Calculate bank erosion based on the flow and use the sediment distribution to split
             me%j_spm%bankErosion = me%calculateBankErosionRate( &
                 abs(me%Q_in_total), &
@@ -257,19 +261,19 @@ module ReachModule
     !> Deposit SPM to the bed sediment, by passing a fine sediment object to the bed sediment object 
     function depositToBedReach(me, spmDep) result(rslt)
         class(Reach)        :: me                           !! This Reach instance
-        real(dp)            :: spmDep(C%nSizeClassesSpm)    !! The SPM to deposit [kg]
+        real(dp)            :: spmDep(nSizeClassesSpm)    !! The SPM to deposit [kg]
         type(Result)        :: rslt                         !! The data object to return any errors in
-        real(dp)            :: spmDep_perArea(C%nSizeClassesSpm)    ! The SPM to deposit, per unit area [kg/m2]
+        real(dp)            :: spmDep_perArea(nSizeClassesSpm)    ! The SPM to deposit, per unit area [kg/m2]
         type(Result0D)      :: depositRslt                  !! Result from the bed sediment's deposit procedure
         real(dp)            :: V_water_toDeposit            !! Volume of water to deposit to bed sediment [m3/m2]
-        type(FineSediment)  :: fineSed(C%nSizeClassesSpm)   ! FineSediment object to pass to BedSediment
+        type(FineSediment)  :: fineSed(nSizeClassesSpm)   ! FineSediment object to pass to BedSediment
         integer             :: n                            ! Loop iterator
         ! Create the FineSediment object and add deposited SPM to it
         ! (converting units of Mf_in to kg/m2), then give that object
         ! to the BedSediment
         spmDep_perArea = divideCheckZero(spmDep, me%bedArea)
-        do n = 1, C%nSizeClassesSpm
-            call fineSed(n)%create("FS", C%nFracCompsSpm)
+        do n = 1, nSizeClassesSpm
+            call fineSed(n)%create("FS", nFracCompsSpm)
             call fineSed(n)%set( &
                 Mf_in=spmDep_perArea(n), &
                 f_comp_in=real(DATASET%sedimentFractionalComposition, 8) &
@@ -304,7 +308,7 @@ module ReachModule
         real            :: T_water_t                    !! Water temperature on this timestep [deg C]
         real(dp)        :: d_max                        ! Maximum resuspendable particle size [m]
         integer         :: i                            ! Iterator
-        real(dp)        :: M_prop(C%nSizeClassesSpm)    ! Proportion of size class that can be resuspended [-]
+        real(dp)        :: M_prop(nSizeClassesSpm)    ! Proportion of size class that can be resuspended [-]
         real(dp)        :: omega                        ! Stream power per unit bed area [W m-2]
         real(dp)        :: f_fr                         ! Friction factor [-]
 
@@ -313,21 +317,21 @@ module ReachModule
             ! Calculate maximum resuspendable particle size and proportion of each
             ! size class that can be resuspended. Changes on each timestep as dependent
             ! on river depth
-            d_max = 9.994*sqrt(me%alpha_resus*C%g*me%depth*me%slope)**2.5208 
+            d_max = 9.994*sqrt(me%alpha_resus*kernel_g*me%depth*me%slope)**2.5208
             ! Calculate proportion of each size class that can be resuspended
-            do i = 1, C%nSizeClassesSpm
+            do i = 1, nSizeClassesSpm
                 ! Calculate the proportion of size class that can be resuspended
-                if (d_max < C%d_spm_low(i)) then
+                if (d_max < d_spm_low(i)) then
                     M_prop(i) = 0                                    ! None can be resuspended
-                else if (d_max > C%d_spm_upp(i)) then
+                else if (d_max > d_spm_upp(i)) then
                     M_prop(i) = 1                                    ! All can be resuspended
                 else
-                    M_prop(i) = (d_max - C%d_spm_low(i)) &           ! Only some can be resuspended
-                        / (C%d_spm_upp(i) - C%d_spm_low(i))     
+                    M_prop(i) = (d_max - d_spm_low(i)) &           ! Only some can be resuspended
+                        / (d_spm_upp(i) - d_spm_low(i))
                 end if
             end do
             ! Calculate the stream power per unit bed area
-            omega = C%rho_w(T_water_t) * C%g * abs(Q) * me%slope / me%width
+            omega = kernel_rho_w(T_water_t) * kernel_g * abs(Q) * me%slope / me%width
             f_fr = 4 * me%depth / (me%width + 2 * me%depth)
             ! Set k_resus using the above [/s]
             me%k_resus = me%calculateResuspension( &
@@ -368,12 +372,12 @@ module ReachModule
         real(dp) :: dStar                                       ! Dimensionless particle diameter.
         real(dp) :: dStarTerm                                   ! Local storage for d* term, to check if it's < 0
         ! Settling only occurs if SPM particle density is greater than density of water
-        if ((rho_particle > C%rho_w(T))) then
-            dStar = ((rho_particle/C%rho_w(T) - 1)*C%g/C%nu_w(T)**2)**(1.0_dp/3.0_dp) * d   ! Calculate the dimensionless particle diameter
+        if ((rho_particle > kernel_rho_w(T))) then
+            dStar = ((rho_particle/kernel_rho_w(T) - 1)*kernel_g/kernel_nu_w(T)**2)**(1.0_dp/3.0_dp) * d   ! Calculate the dimensionless particle diameter
             dStarTerm = alphaDep + betaDep * dStar ** (1.714285714_dp)
             if (dStarTerm > 0.0) then
                 W = max( &
-                    (C%nu_w(T)/d) * dStar**3 * (alphaDep + betaDep &                          ! Calculate the settling velocity
+                    (kernel_nu_w(T)/d) * dStar**3 * (alphaDep + betaDep &                          ! Calculate the settling velocity
                         * dStar**(1.714285714_dp))**(-0.875_dp), &
                     0.0_dp &
                 )
@@ -391,10 +395,10 @@ module ReachModule
         real(dp), intent(in) :: beta                            !! Calibration parameter \( \beta \) [s2/kg]
         real(dp), intent(in) :: L                               !! Reach length \( L = lf_{\text{m}} \) [m]
         real(dp), intent(in) :: W                               !! Reach width \( W \) [m]
-        real(dp), intent(in) :: M_prop(C%nSizeClassesSPM)       !! Proportion of this size class that is resuspenable \( M_{\text{prop}} \) [-]
+        real(dp), intent(in) :: M_prop(nSizeClassesSPM)       !! Proportion of this size class that is resuspenable \( M_{\text{prop}} \) [-]
         real(dp), intent(in) :: omega                           !! Stream power per unit bed area \( \omega \) [kg/m2]
         real(dp), intent(in) :: f_fr                            !! Friction factor \( f \) [-]
-        real(dp) :: k_res(C%nSizeClassesSpm)                    !! Calculated resuspension flux \( j_{\text{res}} \) [/s]
+        real(dp) :: k_res(nSizeClassesSpm)                    !! Calculated resuspension flux \( j_{\text{res}} \) [/s]
         k_res = beta * L * W * M_prop * omega * f_fr
     end function
 
@@ -412,7 +416,7 @@ module ReachModule
         real(dp)            :: length       !! Reach length [m]
         real(dp)            :: depth        !! Reach depth [m]
         real(dp)            :: j_spm_bank   !! Bank erosion rate [kg/timestep]
-        j_spm_bank = C%timeStep * length * depth * alpha_bank * Q ** beta_bank
+        j_spm_bank = modelConfig%timeStep * length * depth * alpha_bank * Q ** beta_bank
     end function
 
     function parseInflowsAndOutflowReach(me) result(rslt)
@@ -500,12 +504,13 @@ module ReachModule
         me%length = sqrt(dx**2 + dy**2)
         ! If a DEM was provided, then use the calculated dz to get the slope gradient. Otherwise,
         ! default to what is provided in DefaultsModule
+        ! Phase 7 note: defaultSlope now belongs to WaterBodyConfigModule.
         if (allocated(DATASET%dem)) then
             ! Rivers can't flow uphill, so if dz is negative, the gridding is causing too 
             ! much loss of data to reasonably calculate slope. If this is the case, we assume
             ! the slope must be small and set the minimum slope to that specified in config
             ! (which defaults to 0.0001)
-            me%slope = max(divideCheckZero(dz, me%length), C%minStreamSlope)           ! [m/m]
+            me%slope = max(divideCheckZero(dz, me%length), waterBodyConfig%minStreamSlope)           ! [m/m]
         else
             me%slope = defaultSlope     ! 0.0005 m/m
         end if
@@ -524,14 +529,14 @@ module ReachModule
     !> Return the SPM discahrge.
     function j_spm_outflow_finalReach(me) result(j_spm_outflow_final)
         class(Reach) :: me
-        real(dp) :: j_spm_outflow_final(C%nSizeClassesSpm)
+        real(dp) :: j_spm_outflow_final(nSizeClassesSpm)
         j_spm_outflow_final = me%j_spm_final%outflow
     end function
 
     !> Return the SPM discahrge.
     function j_np_outflow_finalReach(me) result(j_np_outflow_final)
         class(Reach) :: me
-        real(dp) :: j_np_outflow_final(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_np_outflow_final(npDim(1), npDim(2), npDim(3))
         j_np_outflow_final = me%j_nm_final%outflow
     end function
 
@@ -561,107 +566,107 @@ module ReachModule
 
     function j_spm_outflow(me)
         class(Reach) :: me
-        real(dp) :: j_spm_outflow(C%nSizeClassesSpm)
+        real(dp) :: j_spm_outflow(nSizeClassesSpm)
         j_spm_outflow = me%j_spm%outflow
     end function
 
     function j_spm_inflows(me)
         class(Reach) :: me
-        real(dp) :: j_spm_inflows(C%nSizeClassesSpm)
+        real(dp) :: j_spm_inflows(nSizeClassesSpm)
         j_spm_inflows = me%j_spm%inflow
     end function
 
     function j_spm_runoff(me)
         class(Reach) :: me
-        real(dp) :: j_spm_runoff(C%nSizeClassesSpm)
+        real(dp) :: j_spm_runoff(nSizeClassesSpm)
         j_spm_runoff = me%j_spm%soilErosion
     end function
 
     function j_spm_transfers(me)
         class(Reach) :: me
-        real(dp) :: j_spm_transfers(C%nSizeClassesSpm)
+        real(dp) :: j_spm_transfers(nSizeClassesSpm)
         j_spm_transfers = me%j_spm%transfers
     end function
 
     function j_spm_deposit(me)
         class(Reach) :: me
-        real(dp) :: j_spm_deposit(C%nSizeClassesSpm)
+        real(dp) :: j_spm_deposit(nSizeClassesSpm)
         j_spm_deposit = me%j_spm%deposition + me%j_spm%resuspension
     end function
 
     !> Get the outflow from NM flux array
     function j_np_outflow(me)
         class(Reach) :: me
-        real(dp) :: j_np_outflow(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_np_outflow(npDim(1), npDim(2), npDim(3))
         j_np_outflow = me%j_nm%outflow
     end function
 
     !> Get the inflowing NM from NM flux array
     function j_np_inflows(me)
         class(Reach) :: me
-        real(dp) :: j_np_inflows(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_np_inflows(npDim(1), npDim(2), npDim(3))
         j_np_inflows = me%j_nm%inflow
     end function
 
     !> Get the total runoff from NM flux array
     function j_np_runoff(me)
         class(Reach) :: me
-        real(dp) :: j_np_runoff(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_np_runoff(npDim(1), npDim(2), npDim(3))
         j_np_runoff = me%j_nm%soilErosion 
     end function
 
     !> Get the total diffuse source fluxes from NM flux array
     function j_np_transfer(me)
         class(Reach) :: me
-        real(dp) :: j_np_transfer(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_np_transfer(npDim(1), npDim(2), npDim(3))
         j_np_transfer = me%j_nm%transfers
     end function
 
     !> Get the total deposited NM (settling + resus) from NM flux array
     function j_np_deposit(me)
         class(Reach) :: me
-        real(dp) :: j_np_deposit(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_np_deposit(npDim(1), npDim(2), npDim(3))
         j_np_deposit = me%j_nm%deposition + me%j_nm%resuspension
     end function
 
     !> Get the total diffuse source fluxes from NM flux array
     function j_np_diffusesource(me)
         class(Reach) :: me
-        real(dp) :: j_np_diffusesource(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_np_diffusesource(npDim(1), npDim(2), npDim(3))
         j_np_diffuseSource = me%j_nm%diffuseSources
     end function
 
     !> Get the total point source fluxes from NM flux array
     function j_np_pointsource(me)
         class(Reach) :: me
-        real(dp) :: j_np_pointsource(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_np_pointsource(npDim(1), npDim(2), npDim(3))
         j_np_pointSource = me%j_nm%pointSources
     end function
 
     !> Get the outflow from transformed flux array
     function j_transformed_outflow(me)
         class(Reach) :: me
-        real(dp) :: j_transformed_outflow(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_transformed_outflow(npDim(1), npDim(2), npDim(3))
         j_transformed_outflow = me%j_nm_transformed%outflow
     end function
 
     function j_transformed_deposit(me)
         class(Reach) :: me
-        real(dp) :: j_transformed_deposit(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_transformed_deposit(npDim(1), npDim(2), npDim(3))
         j_transformed_deposit = me%j_nm_transformed%deposition + me%j_nm_transformed%resuspension
     end function
 
     !> Get the total diffuse source fluxes from NM flux array
     function j_transformed_diffusesource(me)
         class(Reach) :: me
-        real(dp) :: j_transformed_diffusesource(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_transformed_diffusesource(npDim(1), npDim(2), npDim(3))
         j_transformed_diffusesource = me%j_nm_transformed%diffuseSources
     end function
 
     !> Get the total point source fluxes from NM flux array
     function j_transformed_pointsource(me)
         class(Reach) :: me
-        real(dp) :: j_transformed_pointsource(C%npDim(1), C%npDim(2), C%npDim(3))
+        real(dp) :: j_transformed_pointsource(npDim(1), npDim(2), npDim(3))
         j_transformed_pointSource = me%j_nm_transformed%pointSources
     end function
 

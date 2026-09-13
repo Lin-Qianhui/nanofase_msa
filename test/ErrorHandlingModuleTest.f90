@@ -3,8 +3,8 @@ program ErrorHandlingModuleTest
     use ErrorInstanceModule, only: ErrorInstance
     implicit none
 
-    integer, parameter :: expectedCodes(13) = [ &
-        110, 200, 201, 300, 401, 402, 403, 404, 500, 501, 901, 902, 903 &
+    integer, parameter :: expectedCodes(7) = [ &
+        110, 200, 201, 300, 901, 902, 903 &
     ]
     type(ErrorInstance), allocatable :: errors(:)
     type(ErrorInstance) :: error
@@ -13,7 +13,7 @@ program ErrorHandlingModuleTest
     call initErrorHandling(.true., .true.)
 
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 24, "base registry size changed")
+    call assertTrue(size(errors) == 18, "base registry size changed")
     call assertTrue(.not. ERROR_HANDLER%errorExists(600), "Soil error was unexpectedly registered by the base handler")
 
     call assertTrue(.not. ERROR_HANDLER%errorExists(904), "BedSediment error was unexpectedly registered by the base handler")
@@ -27,8 +27,7 @@ program ErrorHandlingModuleTest
     call assertTrue(trim(error%message) == "", "default code-1 blank message changed")
     call assertTrue(error%isCritical, "default code-1 criticality changed")
 
-    error = ERROR_HANDLER%getErrorFromCode(500)
-    call assertTrue(.not. error%isCritical, "code 500 criticality changed")
+    call assertTrue(.not. ERROR_HANDLER%errorExists(500), "Base handler unexpectedly registered WaterBody error 500")
 
     error = ERROR_HANDLER%equal(value=1.0, criterion=1.0)
     call assertTrue(error%getCode() == 0, "ERROR_HANDLER is not preserving ErrorCriteria behavior")

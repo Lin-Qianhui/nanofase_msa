@@ -37,11 +37,11 @@ program BedSedimentConfigModuleTest
 
     call initErrorHandling(.true., .true.)
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 24, "Base registry count changed")
+    call assertTrue(size(errors) == 18, "Base registry count changed")
     call assertTrue(.not. ERROR_HANDLER%errorExists(904), "Base handler registered code 904")
     call soilConfig%init(trim(dimensionsPath))
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 25, "Soil registration count changed")
+    call assertTrue(size(errors) == 19, "Soil registration count changed")
 
     if (mode == 'missing') then
         print '(a)', 'Reading required BedSediment group'
@@ -85,7 +85,7 @@ program BedSedimentConfigModuleTest
         "Enrichment defaults changed values")
 
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 26, "BedSediment registration did not add exactly one error")
+    call assertTrue(size(errors) == 20, "BedSediment registration did not add exactly one error")
     bedErrorCount = 0
     do i = 1, size(errors)
         if (errors(i)%getCode() == 904) bedErrorCount = bedErrorCount + 1

@@ -81,10 +81,6 @@ module GlobalsModule
         ! Compartments
         integer             :: nSoilLayers                      !! Number of soil layers to be modelled
         integer             :: nSedimentLayers                  !! Number of sediment layers to be modelled
-        real                :: minStreamSlope                   !! Minimum stream slope, imposed where calculated stream slope is less than this value [m/m]
-        integer             :: minEstuaryTimestep               !! Minimum timestep (displacement) length for modelling estuarine dynamics [s]
-        logical             :: includeEstuary                   !! Should we simulate an estuary, or treat everything as a river?
-        logical             :: includeBankErosion               !! Should we simulate the inflow of sediment from bank erosion?
 
         ! Batch run
         integer                         :: nChunks = 1          !! Numbers of chunks to run

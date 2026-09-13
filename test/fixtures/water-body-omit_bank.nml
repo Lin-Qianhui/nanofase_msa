@@ -1,0 +1,5 @@
+&water
+min_stream_slope = 0.002
+min_estuary_timestep = 1800
+include_estuary = .false.
+/

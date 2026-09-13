@@ -5,6 +5,8 @@
 module DataInputModule
     use mo_netcdf
     use DefaultsModule
+    use WaterBodyConfigModule, only: waterBodyConfig, defaultSlope, defaultBankErosionAlpha, defaultBankErosionBeta, &
+        defaultMinWaterTemperature, defaultMaxWaterTemperature, defaultMinWaterTemperatureDayOfYear
     use BedSedimentConfigModule, only: defaultSedimentTransport_a, defaultSedimentTransport_b, &
         defaultSedimentTransport_c, defaultSedimentEnrichment_k, defaultSedimentEnrichment_a, &
         defaultDepositionAlpha, defaultDepositionBeta
@@ -273,7 +275,7 @@ module DataInputModule
         call var%getData(me%nWaterbodies)
         me%maxNWaterbodies = maxval(me%nWaterbodies)
         ! If we're meant to be including the estuary, then get the is_estuary variable
-        if (C%includeEstuary) then
+        if (waterBodyConfig%includeEstuary) then
             var = me%nc%getVariable('is_estuary')
             call var%getData(isEstuaryInt)
             me%isEstuary = ulgcl(isEstuaryInt)          ! Convert uint1 to logical

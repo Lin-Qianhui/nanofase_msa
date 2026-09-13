@@ -1,6 +1,5 @@
 !> Top-level model startup orchestration.
 module BootstrapModule
-    use DefaultsModule, only: iouConfig, configDefaults
     use KernelModule, only: iouLog
     use ModelDimensionsModule, only: initModelDimensions, dim_nSoilLayers => nSoilLayers, &
         dim_nSedimentLayers => nSedimentLayers, dim_nSizeClassesSpm => nSizeClassesSpm, &
@@ -15,6 +14,7 @@ module BootstrapModule
     use GlobalsModule, only: C
     use SoilConfigModule, only: soilConfig
     use BedSedimentConfigModule, only: bedSedimentConfig
+    use WaterBodyConfigModule, only: waterBodyConfig
     use SourceConfigModule, only: sourceConfig
     use LoggerModule, only: LOGR
     use UtilModule, only: printWelcome
@@ -56,7 +56,9 @@ module BootstrapModule
         call soilConfig%init(modelConfig%configFilePath)
         call bedSedimentConfig%init(modelConfig%configFilePath)
 
-        call initLegacyGlobalsFacade(trim(configFilePath))
+        call syncModelConfigToGlobals()
+        call waterBodyConfig%init(modelConfig%configFilePath)
+        call syncModelDimensionsToGlobals()
 
         ! Auditing the config. Must be done after error handler has been initialised.
         auditResult = modelConfig%audit()
@@ -86,28 +88,8 @@ module BootstrapModule
 
     !> Populate the compatibility facade and read config for domains that have
     !! not yet taken ownership of their namelist groups.
-    subroutine initLegacyGlobalsFacade(configFilePath)
-        character(len=*), intent(in) :: configFilePath
-        integer :: nmlIOStat                                ! IO status for namelist reading
-        integer :: min_estuary_timestep
-        real :: min_stream_slope
-        logical :: include_estuary, include_bank_erosion
-
-        ! Domain config namelists still owned by Globals until their domain phases.
-        namelist /water/ min_stream_slope, min_estuary_timestep, include_estuary, include_bank_erosion
-
-        min_stream_slope = configDefaults%minStreamSlope
-        min_estuary_timestep = configDefaults%minEstuaryTimestep
-        include_estuary = configDefaults%includeEstuary
-        include_bank_erosion = configDefaults%includeBankErosion
-        call syncModelConfigToGlobals()
-
-        open(iouConfig, file=trim(configFilePath), status="old")
-
-        read(iouConfig, nml=water, iostat=nmlIOStat); rewind(iouConfig)
-        if (nmlIOStat .ge. 0) read(iouConfig, nml=water); rewind(iouConfig)
-        close(iouConfig)
-
+    ! Phase 7 note: all domain reads have moved; this helper only copies dimensions for older consumers.
+    subroutine syncModelDimensionsToGlobals()
         ! Store dimension and domain data in the Globals facade.
         C%nSizeClassesNM = dim_nSizeClassesNM
         C%nFormsNM = dim_nFormsNM
@@ -125,10 +107,6 @@ module BootstrapModule
 
         C%nSoilLayers = dim_nSoilLayers
 
-        C%minStreamSlope = min_stream_slope
-        C%minEstuaryTimestep = min_estuary_timestep
-        C%includeEstuary = include_estuary
-        C%includeBankErosion = include_bank_erosion
 
         if (allocated(C%d_spm_low)) deallocate(C%d_spm_low)
         if (allocated(C%d_spm_upp)) deallocate(C%d_spm_upp)
