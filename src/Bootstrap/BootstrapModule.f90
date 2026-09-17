@@ -15,6 +15,7 @@ module BootstrapModule
     use SoilConfigModule, only: soilConfig
     use BedSedimentConfigModule, only: bedSedimentConfig
     use WaterBodyConfigModule, only: waterBodyConfig
+    use ReactorConfigModule, only: registerReactorErrors
     use SourceConfigModule, only: sourceConfig
     use LoggerModule, only: LOGR
     use UtilModule, only: printWelcome
@@ -58,6 +59,7 @@ module BootstrapModule
 
         call syncModelConfigToGlobals()
         call waterBodyConfig%init(modelConfig%configFilePath)
+        call registerReactorErrors()
         call syncModelDimensionsToGlobals()
 
         ! Auditing the config. Must be done after error handler has been initialised.

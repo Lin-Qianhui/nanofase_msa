@@ -210,3 +210,54 @@ set_target_properties(water_body_slope_test PROPERTIES
 target_include_directories(water_body_slope_test PRIVATE "${NETCDF_INCLUDES}")
 target_link_libraries(water_body_slope_test PRIVATE "${NETCDF_LIBRARIES_F90}")
 add_test(NAME water_body_slope COMMAND water_body_slope_test "${water_fixture_dir}/water-body-explicit.nml")
+
+# Reactor owns four constants and one error, with no configuration-file group.
+add_executable(reactor_config_module_test
+    vendor/feh/src/ErrorInstance.f90
+    vendor/feh/src/ErrorHandler.f90
+    vendor/feh/src/ErrorCriteria.f90
+    src/Kernel/KernelModule.f90
+    src/ModelDimensions/ModelDimensionsModule.f90
+    src/ErrorHandling/ErrorHandlingModule.f90
+    src/Soil/SoilConfigModule.f90
+    src/BedSediment/BedSedimentConfigModule.f90
+    src/WaterBody/WaterBodyConfigModule.f90
+    src/Reactor/ReactorConfigModule.f90
+    test/ReactorConfigModuleTest.f90
+)
+set_target_properties(reactor_config_module_test PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/reactor-config-test-modules"
+)
+add_test(NAME reactor_config
+    COMMAND reactor_config_module_test "${water_fixture_dir}/bed-sediment-config.nml" defaults
+)
+foreach(mode critical disabled_error)
+    if(mode STREQUAL "critical")
+        set(reactor_expected_exit 1)
+        set(reactor_expected_text "Invalid Reactor index provided.")
+        set(reactor_forbidden_text "Completed Reactor check")
+    else()
+        set(reactor_expected_exit 0)
+        set(reactor_expected_text "Completed Reactor check")
+        set(reactor_forbidden_text "Invalid Reactor index provided.")
+    endif()
+    add_test(NAME reactor_${mode}
+        COMMAND "${CMAKE_COMMAND}"
+            "-DTEST_EXECUTABLE=$<TARGET_FILE:reactor_config_module_test>"
+            "-DDIMENSIONS_FIXTURE=${water_fixture_dir}/bed-sediment-config.nml"
+            "-DMODE=${mode}" "-DEXPECTED_EXIT=${reactor_expected_exit}"
+            "-DEXPECTED_TEXT=${reactor_expected_text}" "-DFORBIDDEN_TEXT=${reactor_forbidden_text}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectReactor.cmake"
+    )
+endforeach()
+
+# Record the current mass-loss defect without changing the science in this migration.
+set(reactor_legacy_mass_sources ${sources})
+list(FILTER reactor_legacy_mass_sources EXCLUDE REGEX "/src/main\\.f90$")
+add_executable(reactor_legacy_mass_test ${reactor_legacy_mass_sources} test/ReactorLegacyMassTest.f90)
+set_target_properties(reactor_legacy_mass_test PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/reactor-legacy-mass-test-modules"
+)
+target_include_directories(reactor_legacy_mass_test PRIVATE "${NETCDF_INCLUDES}")
+target_link_libraries(reactor_legacy_mass_test PRIVATE "${NETCDF_LIBRARIES_F90}")
+add_test(NAME reactor_known_mass_loss COMMAND reactor_legacy_mass_test)

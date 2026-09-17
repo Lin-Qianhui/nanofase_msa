@@ -36,16 +36,16 @@ program WaterBodyConfigModuleTest
     call initModelDimensions(trim(dimensionsPath))
     call initErrorHandling(mode /= 'quiet_warning', mode /= 'disabled_error')
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 18, "Base registry count changed")
+    call assertTrue(size(errors) == 17, "Base registry count changed")
     do i = 1, size(codes)
         call assertTrue(.not. ERROR_HANDLER%errorExists(codes(i)), "Base handler registered a WaterBody error")
     end do
     call soilConfig%init(trim(dimensionsPath))
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 19, "Soil registry count changed")
+    call assertTrue(size(errors) == 18, "Soil registry count changed")
     call bedSedimentConfig%init(trim(dimensionsPath))
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 20, "BedSediment registry count changed")
+    call assertTrue(size(errors) == 19, "BedSediment registry count changed")
 
     ! Values already stored in the object must not replace the input defaults.
     waterBodyConfig%minStreamSlope = 0.9
@@ -91,7 +91,7 @@ program WaterBodyConfigModuleTest
         defaultMinWaterTemperatureDayOfYear == 32, "Minimum-temperature day fallback changed")
 
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 26, "WaterBody did not add exactly six errors")
+    call assertTrue(size(errors) == 25, "WaterBody did not add exactly six errors")
     do i = 1, size(codes)
         occurrences = 0
         do j = 1, size(errors)
@@ -104,8 +104,10 @@ program WaterBodyConfigModuleTest
     end do
     call assertTrue(.not. ERROR_HANDLER%errorExists(405), "Overwritten code 405 was unexpectedly restored")
     do i = 901, 904
+        if (i == 903) cycle
         call assertTrue(ERROR_HANDLER%errorExists(i), "WaterBody registration lost an existing error")
     end do
+    call assertTrue(.not. ERROR_HANDLER%errorExists(903), "WaterBody unexpectedly registered the Reactor error")
     call assertTrue(ERROR_HANDLER%errorExists(600), "WaterBody registration lost the Soil error")
     error = ERROR_HANDLER%getErrorFromCode(1)
     call assertTrue(error%message == '' .and. error%isCritical, "Legacy blank error changed")

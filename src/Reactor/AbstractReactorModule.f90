@@ -1,5 +1,5 @@
 module AbstractReactorModule
-    use GlobalsModule
+    use KernelModule, only: dp
     implicit none
     
     !> A `Reactor` objects deals with nanoparticle transformations
@@ -48,7 +48,7 @@ module AbstractReactorModule
         
         !> Run initialising procedures for the `AbstractReactor` object
         function createAbstractReactor(me, x, y, alpha_hetero) result(r)
-            use GlobalsModule
+            use KernelModule, only: dp
             use ResultModule, only: Result
             import AbstractReactor
             class(AbstractReactor) :: me        !! This `AbstractReactor` object
@@ -70,18 +70,19 @@ module AbstractReactorModule
                                W_settle_spm, &
                                G, &
                                volume) result(r)
-            use GlobalsModule
+            use KernelModule, only: dp
+            use ModelDimensionsModule, only: npDim, nSizeClassesNM, nSizeClassesSpm
             use ResultModule, only: Result
             import AbstractReactor
             class(AbstractReactor) :: me                        !! This `AbstractReactor1` object
             integer         :: t                                !! The current time step
-            real(dp)        :: m_np(C%npDim(1), C%npDim(2), C%npDim(3)) !! Mass of NP for this timestep [kg]
-            real(dp)        :: m_transformed(C%npDim(1), C%npDim(2), C%npDim(3)) !! Mass of transformed NM for this timestep [kg]
+            real(dp)        :: m_np(npDim(1), npDim(2), npDim(3)) !! Mass of NP for this timestep [kg]
+            real(dp)        :: m_transformed(npDim(1), npDim(2), npDim(3)) !! Mass of transformed NM for this timestep [kg]
             real(dp)        :: m_dissolved                      !! Mass of dissolved species for this timestep [kg]
-            real(dp)        :: C_spm(C%nSizeClassesSpm)         !! The current mass concentration of SPM [kg/m3]
+            real(dp)        :: C_spm(nSizeClassesSpm)         !! The current mass concentration of SPM [kg/m3]
             real            :: T_water                          !! The current water temperature [deg C]
-            real(dp)        :: W_settle_np(C%nSizeClassesNM)    !! NP settling velocity [m/s]
-            real(dp)        :: W_settle_spm(C%nSizeClassesSpm)  !! SPM settling velocity [m/s]
+            real(dp)        :: W_settle_np(nSizeClassesNM)    !! NP settling velocity [m/s]
+            real(dp)        :: W_settle_spm(nSizeClassesSpm)  !! SPM settling velocity [m/s]
             real            :: G                                !! Shear rate [/s]
             real(dp)        :: volume                           !! `RiverReach` volume on this timestep [m3]
             type(Result)    :: r
@@ -126,7 +127,8 @@ module AbstractReactorModule
         
         !> Calculate the collision rate of NPs to SPM
         function calculateCollisionRateAbstractReactor(me, T_water, G, W_settle_np, W_settle_spm) result(k_coll)
-            use GlobalsModule
+            use KernelModule, only: dp
+            use ModelDimensionsModule, only: nSizeClassesNM, nSizeClassesSpm
             use ResultModule, only: Result
             import AbstractReactor
             class(AbstractReactor)  :: me
@@ -134,12 +136,12 @@ module AbstractReactorModule
             real            :: G                   !! Shear rate [/s]
             real(dp)        :: W_settle_np(:)      !! NP settling velocity [m/s]
             real(dp)        :: W_settle_spm(:)     !! SPM settling velocity [m/s]
-            real(dp)        :: k_coll(C%nSizeClassesNM,C%nSizeClassesSpm)   !! The collision frequency to return [/s]
+            real(dp)        :: k_coll(nSizeClassesNM,nSizeClassesSpm)   !! The collision frequency to return [/s]
         end function
 
         !> Calculate a particle concentration from a mass concentration
         function calculateParticleConcentrationAbstractReactor(me, C_mass, rho_particle, d) result(C_particle)
-            use GlobalsModule
+            use KernelModule, only: dp
             import AbstractReactor
             class(AbstractReactor) :: me
             real(dp) :: C_mass

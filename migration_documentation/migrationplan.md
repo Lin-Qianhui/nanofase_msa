@@ -8,8 +8,9 @@ domain is self-contained and different teams can work in parallel without collid
 
 **Self-contained per domain** means each domain directory owns:
 
-1. **Config** — its own config module that reads *its own* namelist group directly
-   from `config.nml` (declares `namelist /soil/ …` and does the `read` itself).
+1. **Config** — where a domain has settings in `config.nml`, its own config module
+   reads that existing group directly (for example, `namelist /soil/ …`). A domain
+   without such settings does not need a configuration object or a new input group.
 2. **Defaults** — default config values and science constants live with the domain.
 3. **Errors & logging** — where a domain owns registered errors, their definitions
    and log messages belong to the domain that raises them. A domain with no assigned
@@ -102,6 +103,20 @@ other explicitly deferred defects remain current until their named follow-up pha
   `dem`, so their ordinary runs do not exercise `minStreamSlope`. Phase 7 preserves
   the outlet failure and tests the slope procedure directly on an interior reach.
   Repairing terrain access at outlets remains a separate behaviour change.
+- Phase 8 investigation reproduced a Reactor mass-loss defect when particles attach
+  to suspended sediment. The loop repeatedly scales the same temporary mass while
+  distributing it between sediment size classes. With two equal rates, pristine mass
+  falls from 100 to 75 and transformed mass from 50 to 37.5, although this operation
+  should only redistribute mass. Preserve these current results during migration;
+  correct the calculation in a separate, tested science change.
+- The shipped constants examples explicitly set all three water reaction rates to
+  zero. Ordinary example runs therefore cannot prove that active dissolution and
+  transformation have been preserved. Reactor verification must include nonzero
+  rates and omitted defaults.
+- Model-wide defaults still live in `DefaultsModule` and are read by
+  `ModelConfigModule`. Move them into the model configuration area before reducing
+  or removing `DefaultsModule`. Unused `C%T` stays for final cleanup; actual water
+  temperatures come from input data, not this field.
 
 ---
 
@@ -311,7 +326,7 @@ than the facade `C`. See the builder phase in §7.
 | **Source** (`src/Source/`) | `includePointSources` | — | — | `/sources/` |
 | **WaterBody** (`src/WaterBody/`) | `minStreamSlope`, `minEstuaryTimestep`, `includeEstuary`, `includeBankErosion` | `defaultSlope`, `defaultBankErosionAlpha/Beta`, `defaultMin/MaxWaterTemperature`, `defaultMinWaterTemperatureDayOfYear` | 401–404, 500–501; 405 intended but currently dropped | `/water/` |
 | **BedSediment** (`src/BedSediment/`) | `includeBedSediment`, `sedimentLayerDepth` | `defaultDepositionAlpha/Beta`, `defaultSedimentTransport_a/b/c`, `defaultSedimentEnrichment_k/a` | 904 | `/sediment/` (non-dimension part) |
-| **Reactor** (`src/Reactor/`) | — | `default_k_diss_pristine/transformed`, `default_k_transform_pristine`, `defaultShearRate`, `T` | 903 | (none yet) |
+| **Reactor** (`src/Reactor/`) | — | `default_k_diss_pristine/transformed`, `default_k_transform_pristine`, `defaultShearRate` | 903 | none |
 | **Biota** (`src/Biota/`) | — | — | 902 | (none yet) |
 
 > Note: dimension *counts* (`nSoilLayers`, `nSedimentLayers`) live in model-dimensions
@@ -333,6 +348,12 @@ than the facade `C`. See the builder phase in §7.
 > `/soil/`, `/sediment/`, and `/water/` groups respectively. All seven constants
 > remain `real(dp)`, while the existing local deposition buffers remain default
 > `real`. Neither those conversions nor spatial input overrides change in Phase 6.
+>
+> Reactor owns four default-real constants and `registerReactorErrors()`, without a
+> configuration object or file reader. DataInput continues to read reaction rates
+> and shear from the separate constants-file `/water/` group. The rates remain
+> double precision in the reader and stored data, while shear remains default real.
+> The unused `C%T` field is deferred to final cleanup and is not a Reactor setting.
 >
 > Error ownership in this table is conditional and provisional. Restoring code 405 to
 > WaterBody would change current diagnostic behaviour and is therefore deferred. Code
@@ -396,7 +417,9 @@ dimensions as needed for allocation, initialise `ModelConfig`, initialise the sh
 handler from the model-level diagnostics controls, then initialise domain configs and
 register their owned errors. Phase 7 places Soil initialisation immediately after the
 handler, then BedSediment, model-config copying into `C`, WaterBody initialisation,
-dimension copying into `C`, and the model audit. This preserves the later domain-read order. It is not the complete
+dimension copying into `C`, and the model audit. Phase 8 adds Reactor error
+registration immediately after WaterBody initialisation. This preserves the later
+domain-read order. It is not the complete
 startup failure order: model-dimensions already reads the full `/sediment/` group
 before Soil, so missing or malformed sediment input can fail at that earlier read.
 There must never be both a Globals-owned and diagnostics-owned handler.
@@ -409,13 +432,19 @@ the legacy array, reducing it to 15 slots and 24 effective base entries. Soil ad
 code 600 to reach 25; BedSediment adds the unchanged critical code 904 to reach 26.
 At the end of Phase 6, codes 901–903 remained in slots 13–15.
 
-Phase 7 moves the six effective WaterBody codes 401–404 and 500–501. The legacy array
-now has 9 slots, retaining blank slots 4–5 and codes 901–903 in slots 7–9. Effective
+Phase 7 moves the six effective WaterBody codes 401–404 and 500–501. At that stage the
+legacy array has 9 slots, retaining blank slots 4–5 and codes 901–903 in slots 7–9. Effective
 counts are 18 after shared-handler initialisation, 19 after Soil, 20 after
 BedSediment, and 26 after WaterBody. The original 405-then-500 overwrite moves into
 slot 5 of WaterBody's private six-entry list; only its final six entries are
 registered. Removing only the old code-500 assignment would incorrectly restore
 405. Correcting the blank entries and missing 405 remains a separate behaviour change.
+
+Phase 8 removes only code 903 from the legacy list and registers it through Reactor.
+The list now has eight slots; blank slots 4–5 and codes 901–902 in slots 7–8 remain.
+Effective counts are 17 after the shared handler, 18 after Soil, 19 after BedSediment,
+25 after WaterBody, and 26 after Reactor. Code 903 has no current science raising
+site; registration tests do not invent one.
 
 The configuration-file `/water/` group and all four of its members are optional.
 WaterBody owns their defaults and retains the original two-read/status-check logic.
@@ -544,6 +573,7 @@ subroutine bootstrap(env)
     call bedSedimentConfig%init(configFilePath) ! reads config /sediment/ and registers code 904
     call syncModelConfigToGlobals()          ! temporary copies for older consumers
     call waterBodyConfig%init(configFilePath) ! optional config /water/ and six effective errors
+    call registerReactorErrors()             ! code 903; no Reactor config-file group
     call syncModelDimensionsToGlobals()      ! remaining dimension copies
     auditResult = modelConfig%audit()
     call ERROR_HANDLER%trigger(errors=.errors.auditResult)
@@ -585,7 +615,7 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
-Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, and 7 are complete. Their authoritative
+Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, and 8 are complete. Their authoritative
 records are [phase0_kernel.md](phase0_kernel.md),
 [phase1_model_dimensions.md](phase1_model_dimensions.md),
 [phase2_model_config.md](phase2_model_config.md), and
@@ -594,8 +624,9 @@ records are [phase0_kernel.md](phase0_kernel.md),
 [phase4_bootstrap_diagnostics.md](phase4_bootstrap_diagnostics.md), and
 [phase5_soil.md](phase5_soil.md), plus
 [phase6_bed_sediment.md](phase6_bed_sediment.md), and
-[phase7_waterbody.md](phase7_waterbody.md). Remaining execution starts with
-Phase 8 Reactor.
+[phase7_waterbody.md](phase7_waterbody.md), and
+[phase8_reactor.md](phase8_reactor.md). Remaining execution starts with
+Phase 9 Biota.
 
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
@@ -760,11 +791,24 @@ phases below. It can run in parallel once `ModelDimensions` + `ModelConfig` exis
   [phase7_waterbody.md](phase7_waterbody.md) for commands, actual results, comment
   checks, the EOF-sensitive malformed-input detail, and remaining work.
 
-### Phase 8 — Reactor (next)
-- Migrate the water-column Reactor defaults and its assigned error without changing
-  reaction calculations.
+### Phase 8 — Reactor (complete)
+- Added `ReactorConfigModule` with the four existing default-real constants and
+  `registerReactorErrors()`. It has no configuration object or file reader.
+  DataInput still reads the constants-file `/water/` group in its original order.
+- Moved unchanged critical code 903 out of the shared list and registered it after
+  WaterBody. Counts are now 17/18/19/25/26 across shared handler, Soil, BedSediment,
+  WaterBody, and Reactor. No science raising site was added.
+- Removed direct Globals imports and `C%` reads from both Reactor science modules
+  and their abstract procedure declarations. Types, procedures, precision, shapes,
+  equations, operation order, and all original comments remain unchanged.
+- Kept unused `C%T` for final cleanup. The existing `isZero` helper still reads its
+  default tolerance through Util and remains for the shared-consumer phase.
+- **Verified:** clean build, 25 CTest cases, nine Reactor and fourteen WaterBody
+  exact comparisons, four expected failures, batch operation, and checkpoint
+  save/load. The known mass-loss result is explicitly preserved by a focused test.
+  See [phase8_reactor.md](phase8_reactor.md) for commands, results, and remaining work.
 
-### Phase 9 — Biota
+### Phase 9 — Biota (next)
 - Migrate Biota last, including the existing Soil-to-Biota relationship, without
   redesigning the science interfaces during the ownership move.
 
@@ -779,6 +823,9 @@ has assigned codes; a domain without assigned errors skips error registration.
   GridCell, Data, Output, Logger, Util, Checkpoint, and any other repo-wide consumer.
 - Input/output algorithms remain unchanged, but their imports of configuration and
   dimensions are in scope and must point to the owning modules.
+- Move the remaining model-wide defaults from `DefaultsModule` into the model
+  configuration area, retaining their values, precision, and comments. Repoint
+  `ModelConfigModule` and any other readers before reducing or removing the old module.
 - Verify that only the intentionally retained legacy registry/bootstrap shim still
   requires `GlobalsModule`.
 
@@ -815,6 +862,14 @@ has assigned codes; a domain without assigned errors skips error registration.
 - Fix the out-of-bounds access separately from domain migrations. Phase 7 keeps the
   failing full-model fixture and covers minimum-slope calculations on interior reaches.
 
+### Separate Reactor mass-loss correction
+- Correct the attachment calculation so that distributing mass between sediment
+  size classes preserves the total pristine and transformed mass. Test equal and
+  unequal rates, zero-rate classes, and partial and complete attachment.
+- Replace the Phase 8 known-defect expectations only in this separate change.
+  Scientific outputs are expected to change and need science review; an exact
+  comparison with the defective calculation is not the acceptance rule for this fix.
+
 ### Final phase — Cleanup
 - Remove the legacy flat registry only after all of its valid entries have moved in
   their owning phases and the separate registry-correction phase has resolved the
@@ -823,6 +878,8 @@ has assigned codes; a domain without assigned errors skips error registration.
 - Move remaining log messages to domain code (most are already inline).
 - Delete `type(GlobalsType) :: C` and the remaining transitional bootstrap facade
   helpers once no readers remain. `GLOBALS_INIT` was removed in Phase 4.
+- Include the unused `C%T` field in that cleanup; do not turn it into a new Reactor
+  setting. Preserve its original comments according to the per-phase comment rule.
 - Delete migrated parameters from `DefaultsModule` (keep only IO units there, or fold
   into kernel).
 - **Verify:** build + `verify_refactor.py --exact`; grep confirms zero `C%` /
@@ -840,25 +897,29 @@ they first appear. Earlier records are historical snapshots: do not rewrite thei
 
 For domain `X`:
 
-1. **Create `XConfigModule`** in `src/X/`: a `XConfigType` with the domain's config
-   fields + a `type(XConfigType) :: xConfig` singleton.
+1. **Create `XConfigModule`** in `src/X/`. Add `XConfigType` and the shared `xConfig`
+   object only when there are owned runtime settings to store. A domain such as
+   Reactor can expose constants and an error-registration procedure without an
+   empty configuration object.
 2. **Move existing defaults** into the domain without inventing new ones. Keep their
    declared kinds and values. Science constants become module `parameter`s. For local
    namelist variables, use executable assignments on every call: declaration
    initialisation gives a Fortran local variable saved state and can leak values from
    an earlier call. Delete the moved values from `DefaultsModule`.
-3. **Own the namelist:** declare `namelist /x/ …` inside `XConfig%init`, open
+3. **Own an existing namelist, where present:** declare `namelist /x/ …` inside `XConfig%init`, open
    `config.nml` with `newunit`, allocate arrays before reading, read, populate, and
    `close`. Preserve whether the group and each member are required or optional,
    including their current read-status handling. WaterBody must retain its optional
    reader rather than copying the required Soil or BedSediment reader. Distinguish a
    config-file group from any same-named group in another input
-   file; move only the group the domain currently owns.
+   file; move only the group the domain currently owns. Skip file reading when
+   there is no owned model-config group; Reactor's constants-file reader stays in DataInput.
 4. **Move existing audits only:** if `C%audit` already contains domain-specific
    checks, move them into `XConfig%audit`. Do not create new validation merely to fit
    the module template.
 5. **Register errors conditionally:** only if X has assigned codes, call
-   `ERROR_HANDLER%add(error=ErrorInstance(code=…, …))` in `XConfig%init` after the
+   `ERROR_HANDLER%add(error=ErrorInstance(code=…, …))` in `XConfig%init`, or a standalone
+   domain registration procedure when no configuration object is needed, after the
    shared handler is initialised, and remove exactly those entries from the legacy
    registry. A domain with no assigned codes skips this step. Preserve existing
    trigger/clear/propagation semantics; redesigning diagnostic flow is separate from
@@ -867,7 +928,8 @@ For domain `X`:
    reads of X-owned facade fields with `XConfigModule`; use `KernelModule`,
    `ModelDimensionsModule`, or `ModelConfigModule` for values owned by those layers.
    Domain-to-domain imports must be explicit, one-way, and acyclic.
-7. **Update bootstrap:** add `call xConfig%init(configFilePath)` in the right order.
+7. **Update bootstrap:** call the domain's config initializer or standalone error
+   registration procedure in the right order; do not pass an unused file path.
 8. **Drop facade fields:** remove domain fields from `GlobalsType` and the private
    bootstrap facade helper once no other code reads them (grep `C%fieldName`).
 9. **Preserve comments:** retain every original code comment and TODO verbatim where
@@ -910,6 +972,11 @@ For domain `X`:
   constants file, or spatial input. Test the applicable paths without accidentally
   hiding a moved default behind a spatial override. Preserve existing number kinds
   and conversions as well as the parameter values.
+- **Active Reactor coverage:** use `verification/verify_reactor.py capture/compare`
+  for omitted defaults, each nonzero reaction rate, combined river and estuary
+  reactions, and changed shear. Confirm that the intended water results change in
+  the reference runs. Keep the two-class mass-loss test explicitly labelled as
+  preserving a known defect; identical before/after output does not prove correct science.
 - **Focused config/error gate:** test existing required values and defaults in a
   separate process where shared singleton state requires it. Check both the base
   registry and the count after domain registration.
@@ -961,6 +1028,8 @@ For domain `X`:
   migration. Its complete behaviour needs a separate fix and dedicated tests (§7).
 - Correcting the terrain-height outlet failure or tightening optional Water input
   validation during a domain migration. Both require separately tested behaviour changes.
+- Correcting Reactor's known attachment mass loss during the ownership migration.
+  That calculation requires the separate science correction described in §7.
 - Proving exact checkpoint continuation while the existing warm-up/reinstate
   run-control semantics remain coupled; current checkpoint coverage is a smoke test.
 - Introducing Source dependency injection or a new `AbstractSource` interface. The

@@ -119,3 +119,48 @@ and minimum-slope behaviour on an interior reach. Full-model terrain-height outl
 behaviour and disabled river bed sediment remain known failures. See
 [the Phase 7 report](../migration_documentation/phase7_waterbody.md) for actual
 commands, results, preserved comments, and remaining work.
+
+## Repeatable Reactor Checks
+
+`verify_reactor.py` creates the nine Phase 8 inputs and compares their results
+exactly. It uses the helpers in `verify_refactor.py` and `verify_waterbody.py`,
+Python's standard library, and `ncdump`.
+
+Build unchanged Phase 7 revision `aaed497723225b05a52c94d101fa4225c998c418`
+in a separate checkout with the same compiler, build settings, and original
+version-file contents as the changed build. Save its executable, then run:
+
+```sh
+python3 -B verification/verify_reactor.py capture \
+  --exe /path/to/phase7/nanofase \
+  --work-dir /private/tmp/nanofase-reactor-check
+
+python3 -B verification/verify_reactor.py compare \
+  --exe build-debug/nanofase \
+  --work-dir /private/tmp/nanofase-reactor-check
+```
+
+Choose a new work directory for each run. The runner refuses to overwrite existing
+reference or candidate directories and checks saved input hashes before comparison.
+It records commands, executable hashes, per-case logs, results, and evidence that
+each active reaction or shear change affects water output. Record the reference
+executable's source revision and compiler settings separately when it comes from
+a different checkout; the capture revision identifies the checkout running the script.
+
+The scenarios cover river and estuary references, all four omitted defaults,
+each nonzero reaction rate, combined reactions in both water types, and increased
+shear. Omitted defaults must reproduce the explicit-default CSV results. Every
+before/after comparison uses `verify_refactor.py --exact` for CSV, summary, and
+NetCDF output under the timestamp rules above.
+
+For the complete Phase 8 check, also run the WaterBody runner against the same
+Phase 7 reference executable in a different work directory, and run CTest. The
+WaterBody runner includes the existing expected failures, batch operation, and
+checkpoint save/load checks. CTest covers Reactor defaults, error 903 and its
+reporting, registration counts, and the current attachment mass-loss result.
+
+The `reactor_known_mass_loss` test intentionally preserves a defect: with two equal
+attachment rates, mass falls from 100 to 75 and from 50 to 37.5. It does not establish
+correct science. A separate correction must conserve mass and update this test.
+See [the Phase 8 report](../migration_documentation/phase8_reactor.md) for actual
+results and remaining work.

@@ -5,6 +5,8 @@
 module DataInputModule
     use mo_netcdf
     use DefaultsModule
+    use ReactorConfigModule, only: default_k_diss_pristine, default_k_diss_transformed, &
+        default_k_transform_pristine, defaultShearRate
     use WaterBodyConfigModule, only: waterBodyConfig, defaultSlope, defaultBankErosionAlpha, defaultBankErosionBeta, &
         defaultMinWaterTemperature, defaultMaxWaterTemperature, defaultMinWaterTemperatureDayOfYear
     use BedSedimentConfigModule, only: defaultSedimentTransport_a, defaultSedimentTransport_b, &
