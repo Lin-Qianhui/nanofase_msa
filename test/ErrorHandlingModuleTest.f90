@@ -3,17 +3,18 @@ program ErrorHandlingModuleTest
     use ErrorInstanceModule, only: ErrorInstance
     implicit none
 
-    integer, parameter :: expectedCodes(6) = [ &
-        110, 200, 201, 300, 901, 902 &
+    integer, parameter :: expectedCodes(5) = [ &
+        110, 200, 201, 300, 901 &
     ]
     type(ErrorInstance), allocatable :: errors(:)
     type(ErrorInstance) :: error
     integer :: i
 
     call initErrorHandling(.true., .true.)
+    call assertTrue(.not. ERROR_HANDLER%errorExists(902), "Base handler unexpectedly registered Biota error 902")
 
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 17, "base registry size changed")
+    call assertTrue(size(errors) == 16, "base registry size changed")
     call assertTrue(.not. ERROR_HANDLER%errorExists(903), "Reactor error was unexpectedly registered by the base handler")
     call assertTrue(.not. ERROR_HANDLER%errorExists(600), "Soil error was unexpectedly registered by the base handler")
 

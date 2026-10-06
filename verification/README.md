@@ -164,3 +164,73 @@ attachment rates, mass falls from 100 to 75 and from 50 to 37.5. It does not est
 correct science. A separate correction must conserve mass and update this test.
 See [the Phase 8 report](../migration_documentation/phase8_reactor.md) for actual
 results and remaining work.
+
+## Repeatable Biota Checks
+
+`verify_biota.py` compares the concentrations stored in organisms as well as the
+ordinary model outputs. The shipped constants have no Biota groups, and the
+ordinary outputs do not report organism concentrations, so both kinds of check
+are required.
+
+Use unchanged Phase 8 revision `c1e73e0fc41bc1b3568864366933e4638c387812` for the
+reference. Build with the same compiler, flags, and saved version-file contents
+as the candidate. Two test programs must be identical in both builds:
+
+- `test/BiotaScienceTest.f90` calls the actual soil and water Biota procedures.
+- `test/BiotaIntegrationTest.f90` uses normal startup, warm-up, environment updates,
+  and batch switching, then records the organisms inside soil layers and reaches.
+
+To build these programs on Phase 8, copy those two test files and append only the
+CMake block starting with `# These probes use existing public procedures` and
+ending with `add_test(NAME biota_science COMMAND biota_science_test)` to its
+original CMake file. Do not copy the separate Biota error-registration target,
+which depends on the new Phase 9 module. Give each build its own build directory.
+The test programs each have a separate directory for compiled Fortran modules.
+Restore the saved version-file contents after configuring and before building.
+
+Run from the candidate repository root:
+
+```sh
+python3 -B verification/verify_biota.py capture \
+  --exe /path/to/phase8/nanofase \
+  --science-exe /path/to/phase8/biota_science_test \
+  --integration-exe /path/to/phase8/biota_integration_test \
+  --work-dir /private/tmp/nanofase-biota-check
+
+python3 -B verification/verify_biota.py compare \
+  --exe build-debug/nanofase \
+  --science-exe build-debug/biota_science_test \
+  --integration-exe build-debug/biota_integration_test \
+  --work-dir /private/tmp/nanofase-biota-check
+```
+
+Choose a new work directory for each capture. The runner refuses to overwrite
+reference or candidate results, checks that inputs and test sources have not
+changed, and records executable hashes, commands, logs, and coverage evidence.
+Record the reference source revision and compiler settings separately when its
+executables come from a different checkout; the capture revision identifies the
+checkout running the script.
+
+The direct test covers creation, all six uptake spellings, the different soil and
+water attachment positions, all three material types, storage fractions, zero
+growth/death, timestep duration, harvesting, and changed start dates. It emits 50
+full-precision concentration records and checks that intended differences occur.
+
+Six integration cases cover absent Biota, soil only, water only, mixed organisms,
+the estuary example, and a three-chunk batch crossing February's harvest period
+and recovering in March. Each case checks organism counts and selected input
+indices, requires evidence of updates, and compares state records exactly. All
+six ordinary model output sets also use the existing exact comparison rules.
+
+For a complete Phase 9 check, run CTest and both existing Reactor and WaterBody
+runners against the same fresh Phase 8 reference. CTest verifies the full error
+registration sequence and that critical error 902 stops only when error output
+is enabled. The WaterBody runner retains the four expected failures and the
+batch/checkpoint save/load checks.
+
+The checkpoint checks do not establish exact continuation: organism concentrations
+are not saved or restored, and the existing warm-up timing issue remains. The
+Biota tests also preserve the current one-day-per-step harvest calendar, repeated
+resets during the harvest month, and zero-growth/death storage behaviour. Invalid
+uptake forms can lead to unset-variable calculations; these unstable numbers are
+not used as reference expectations. See [the Phase 9 report](../migration_documentation/phase9_biota.md).

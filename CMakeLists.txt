@@ -261,3 +261,59 @@ set_target_properties(reactor_legacy_mass_test PROPERTIES
 target_include_directories(reactor_legacy_mass_test PRIVATE "${NETCDF_INCLUDES}")
 target_link_libraries(reactor_legacy_mass_test PRIVATE "${NETCDF_LIBRARIES_F90}")
 add_test(NAME reactor_known_mass_loss COMMAND reactor_legacy_mass_test)
+
+# These probes use existing public procedures so the identical test sources can
+# capture Phase 8 state before any Biota production code is changed.
+set(biota_probe_sources ${sources})
+list(FILTER biota_probe_sources EXCLUDE REGEX "/src/main\\.f90$")
+foreach(probe Science Integration)
+    string(TOLOWER "${probe}" probe_lower)
+    add_executable(biota_${probe_lower}_test ${biota_probe_sources} test/Biota${probe}Test.f90)
+    set_target_properties(biota_${probe_lower}_test PROPERTIES
+        Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/biota-${probe_lower}-test-modules"
+    )
+    target_include_directories(biota_${probe_lower}_test PRIVATE "${NETCDF_INCLUDES}")
+    target_link_libraries(biota_${probe_lower}_test PRIVATE "${NETCDF_LIBRARIES_F90}")
+endforeach()
+add_test(NAME biota_science COMMAND biota_science_test)
+
+# Biota has no model-config group; only its existing error changes owner.
+add_executable(biota_config_module_test
+    vendor/feh/src/ErrorInstance.f90
+    vendor/feh/src/ErrorHandler.f90
+    vendor/feh/src/ErrorCriteria.f90
+    src/Kernel/KernelModule.f90
+    src/ModelDimensions/ModelDimensionsModule.f90
+    src/ErrorHandling/ErrorHandlingModule.f90
+    src/Soil/SoilConfigModule.f90
+    src/BedSediment/BedSedimentConfigModule.f90
+    src/WaterBody/WaterBodyConfigModule.f90
+    src/Reactor/ReactorConfigModule.f90
+    src/Biota/BiotaConfigModule.f90
+    test/BiotaConfigModuleTest.f90
+)
+set_target_properties(biota_config_module_test PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/biota-config-test-modules"
+)
+add_test(NAME biota_registry
+    COMMAND biota_config_module_test "${water_fixture_dir}/bed-sediment-config.nml" registry
+)
+foreach(mode critical disabled_error)
+    if(mode STREQUAL "critical")
+        set(biota_expected_exit 1)
+        set(biota_expected_text "Invalid Biota index provided.")
+        set(biota_forbidden_text "Completed Biota check")
+    else()
+        set(biota_expected_exit 0)
+        set(biota_expected_text "Completed Biota check")
+        set(biota_forbidden_text "Invalid Biota index provided.")
+    endif()
+    add_test(NAME biota_${mode}
+        COMMAND "${CMAKE_COMMAND}"
+            "-DTEST_EXECUTABLE=$<TARGET_FILE:biota_config_module_test>"
+            "-DDIMENSIONS_FIXTURE=${water_fixture_dir}/bed-sediment-config.nml"
+            "-DMODE=${mode}" "-DEXPECTED_EXIT=${biota_expected_exit}"
+            "-DEXPECTED_TEXT=${biota_expected_text}" "-DFORBIDDEN_TEXT=${biota_forbidden_text}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectBiota.cmake"
+    )
+endforeach()

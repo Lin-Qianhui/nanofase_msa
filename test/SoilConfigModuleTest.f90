@@ -19,6 +19,7 @@ program SoilConfigModuleTest
     call assertTrue(nSoilLayers == 3, "Soil layer count was not initialised from the fixture")
 
     call initErrorHandling(.true., .true.)
+    call assertTrue(.not. ERROR_HANDLER%errorExists(902), "Base handler unexpectedly registered Biota error 902")
     call soilConfig%init(trim(configFilePath))
 
     call assertTrue(allocated(soilConfig%soilLayerDepth), "Soil layer depths were not allocated")
@@ -39,7 +40,7 @@ program SoilConfigModuleTest
     call assertTrue(defaultSoilDarcyVelocity == 9e-6, "Soil Darcy velocity default changed")
 
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 18, "Soil registration did not add exactly one error")
+    call assertTrue(size(errors) == 17, "Soil registration did not add exactly one error")
     call assertTrue(.not. ERROR_HANDLER%errorExists(903), "Soil unexpectedly registered the Reactor error")
     call assertTrue(ERROR_HANDLER%errorExists(600), "Soil error code 600 was not registered")
 
@@ -55,6 +56,8 @@ program SoilConfigModuleTest
     call assertTrue(trim(error%message) == "All water removed from SoilLayer.", &
         "Soil error code 600 message changed")
     call assertTrue(.not. error%isCritical, "Soil error code 600 criticality changed")
+
+    call assertTrue(.not. ERROR_HANDLER%errorExists(902), "Another domain registered Biota error 902")
 
   contains
 

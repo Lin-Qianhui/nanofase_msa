@@ -33,18 +33,19 @@ program ReactorConfigModuleTest
     call initModelDimensions(trim(dimensionsPath))
     ! Suppressing warnings must not suppress the critical Reactor error.
     call initErrorHandling(.false., mode /= 'disabled_error')
-    call checkBeforeReactor(17)
+    call assertTrue(.not. ERROR_HANDLER%errorExists(902), "Base handler unexpectedly registered Biota error 902")
+    call checkBeforeReactor(16)
     call soilConfig%init(trim(dimensionsPath))
-    call checkBeforeReactor(18)
+    call checkBeforeReactor(17)
     call bedSedimentConfig%init(trim(dimensionsPath))
-    call checkBeforeReactor(19)
+    call checkBeforeReactor(18)
     call waterBodyConfig%init(trim(dimensionsPath))
-    call checkBeforeReactor(25)
+    call checkBeforeReactor(24)
 
     errorsBefore = ERROR_HANDLER%getErrors()
     call registerReactorErrors()
     errorsAfter = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errorsAfter) == 26, "Reactor did not add exactly one error")
+    call assertTrue(size(errorsAfter) == 25, "Reactor did not add exactly one error")
     occurrences = 0
     do i = 1, size(errorsAfter)
         if (errorsAfter(i)%getCode() == 903) occurrences = occurrences + 1
@@ -71,6 +72,8 @@ program ReactorConfigModuleTest
         call ERROR_HANDLER%trigger(errors=[ERROR_HANDLER%getErrorFromCode(903)])
     end if
     print '(a)', 'Completed Reactor check'
+
+    call assertTrue(.not. ERROR_HANDLER%errorExists(902), "Another domain registered Biota error 902")
 
   contains
 

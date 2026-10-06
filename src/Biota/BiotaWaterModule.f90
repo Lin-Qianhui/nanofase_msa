@@ -1,9 +1,12 @@
 module BiotaWaterModule
-    use AbstractBiotaModule
+    use AbstractBiotaModule, only: AbstractBiota
     use ResultModule, only: Result
-    use GlobalsModule
-    use DataInputModule
-    use datetime_module
+    use KernelModule, only: dp
+    use ModelConfigModule, only: modelConfig
+    use ErrorInstanceModule, only: ErrorInstance
+    use DataInputModule, only: DATASET
+    use UtilModule, only: str, isZero
+    use datetime_module, only: datetime, timedelta
     implicit none
 
     type, public, extends(AbstractBiota) :: BiotaWater
@@ -47,7 +50,7 @@ module BiotaWaterModule
         type(datetime) :: currentDate
         
         ! Get the current date
-        currentDate = C%startDate + timedelta(days=t-1)
+        currentDate = modelConfig%startDate + timedelta(days=t-1)
         ! If it's the month this harvesting is to occur, set concentrations
         ! to zero
         if (me%harvestInMonth == currentDate%getMonth()) then
@@ -86,7 +89,7 @@ module BiotaWaterModule
             ! Calculate C_active, converting time step to days (because rate constants are /day)
             me%C_active = gamma_np + gamma_transformed + gamma_dissolved &
                 + (me%C_active - gamma_np - gamma_transformed - gamma_dissolved) &
-                * exp(-(k_elim + me%k_growth + me%k_death) * C%timeStep/86400)
+                * exp(-(k_elim + me%k_growth + me%k_death) * modelConfig%timeStep/86400)
 
             if (.not. isZero(me%k_growth + me%k_death)) then
                 gamma_np = me%k_uptake_np * me%storedFraction * C_env_np_sum &
@@ -103,7 +106,7 @@ module BiotaWaterModule
 
             me%C_stored = gamma_np + gamma_transformed + gamma_dissolved &
                 + (me%C_stored - gamma_np - gamma_transformed - gamma_dissolved) &
-                * exp(-(me%k_growth + me%k_death) * C%timeStep/86400)
+                * exp(-(me%k_growth + me%k_death) * modelConfig%timeStep/86400)
         end if
 
     end function

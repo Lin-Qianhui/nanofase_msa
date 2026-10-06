@@ -113,6 +113,18 @@ other explicitly deferred defects remain current until their named follow-up pha
   zero. Ordinary example runs therefore cannot prove that active dissolution and
   transformation have been preserved. Reactor verification must include nonzero
   rates and omitted defaults.
+- The shipped constants examples contain no Biota groups, and ordinary model output
+  does not report organism concentrations. Phase 9 therefore checks concentrations
+  directly and through the running model; ordinary output comparisons alone cannot
+  establish that Biota calculations have been preserved.
+- Biota's current harvest calendar advances one day per timestep even when the
+  timestep is shorter than a day, and resets concentrations on every update in the
+  selected month. An invalid uptake form records an error but continues using unset
+  concentration sums. Phase 9 preserves these behaviours; unstable invalid-input
+  numbers are not suitable reference expectations. Any correction needs separate tests.
+- Checkpoints do not save or restore Biota concentrations. Exact continuation needs
+  both the missing organism state and the already documented warm-up/reinstatement
+  timing to be addressed. Successful save/load checks prove neither of these.
 - Model-wide defaults still live in `DefaultsModule` and are read by
   `ModelConfigModule`. Move them into the model configuration area before reducing
   or removing `DefaultsModule`. Unused `C%T` stays for final cleanup; actual water
@@ -327,7 +339,7 @@ than the facade `C`. See the builder phase in §7.
 | **WaterBody** (`src/WaterBody/`) | `minStreamSlope`, `minEstuaryTimestep`, `includeEstuary`, `includeBankErosion` | `defaultSlope`, `defaultBankErosionAlpha/Beta`, `defaultMin/MaxWaterTemperature`, `defaultMinWaterTemperatureDayOfYear` | 401–404, 500–501; 405 intended but currently dropped | `/water/` |
 | **BedSediment** (`src/BedSediment/`) | `includeBedSediment`, `sedimentLayerDepth` | `defaultDepositionAlpha/Beta`, `defaultSedimentTransport_a/b/c`, `defaultSedimentEnrichment_k/a` | 904 | `/sediment/` (non-dimension part) |
 | **Reactor** (`src/Reactor/`) | — | `default_k_diss_pristine/transformed`, `default_k_transform_pristine`, `defaultShearRate` | 903 | none |
-| **Biota** (`src/Biota/`) | — | — | 902 | (none yet) |
+| **Biota** (`src/Biota/`) | — | — | 902 | none in `config.nml`; constants-file groups stay in DataInput |
 
 > Note: dimension *counts* (`nSoilLayers`, `nSedimentLayers`) live in model-dimensions
 > because they shape arrays across domains and in checkpoint; the *depths*
@@ -354,6 +366,11 @@ than the facade `C`. See the builder phase in §7.
 > and shear from the separate constants-file `/water/` group. The rates remain
 > double precision in the reader and stored data, while shear remains default real.
 > The unused `C%T` field is deferred to final cleanup and is not a Reactor setting.
+>
+> Biota owns `registerBiotaErrors()` without a configuration object, fallback
+> constants, or file reader. The existing `/n_biota_grp/` and `/biota/` groups belong
+> to the separate constants file and remain read and stored by DataInput. Their
+> absence in `config.nml` does not mean that organism inputs are absent from the model.
 >
 > Error ownership in this table is conditional and provisional. Restoring code 405 to
 > WaterBody would change current diagnostic behaviour and is therefore deferred. Code
@@ -419,7 +436,8 @@ register their owned errors. Phase 7 places Soil initialisation immediately afte
 handler, then BedSediment, model-config copying into `C`, WaterBody initialisation,
 dimension copying into `C`, and the model audit. Phase 8 adds Reactor error
 registration immediately after WaterBody initialisation. This preserves the later
-domain-read order. It is not the complete
+domain-read order. Phase 9 registers Biota immediately after Reactor, before copying
+dimensions. It is not the complete
 startup failure order: model-dimensions already reads the full `/sediment/` group
 before Soil, so missing or malformed sediment input can fail at that earlier read.
 There must never be both a Globals-owned and diagnostics-owned handler.
@@ -441,10 +459,16 @@ registered. Removing only the old code-500 assignment would incorrectly restore
 405. Correcting the blank entries and missing 405 remains a separate behaviour change.
 
 Phase 8 removes only code 903 from the legacy list and registers it through Reactor.
-The list now has eight slots; blank slots 4–5 and codes 901–902 in slots 7–8 remain.
+At that stage the list has eight slots; blank slots 4–5 and codes 901–902 in slots 7–8 remain.
 Effective counts are 17 after the shared handler, 18 after Soil, 19 after BedSediment,
 25 after WaterBody, and 26 after Reactor. Code 903 has no current science raising
 site; registration tests do not invent one.
+
+Phase 9 removes only code 902 and registers it through Biota. The remaining list
+has seven slots, retaining blank slots 4–5 and code 901 in slot 7. Effective counts
+are 16 after the shared handler, 17 after Soil, 18 after BedSediment, 24 after
+WaterBody, 25 after Reactor, and 26 after Biota. Code 902 has no current science
+raising site; the existing inline invalid-uptake-form error remains unchanged.
 
 The configuration-file `/water/` group and all four of its members are optional.
 WaterBody owns their defaults and retains the original two-read/status-check logic.
@@ -574,6 +598,7 @@ subroutine bootstrap(env)
     call syncModelConfigToGlobals()          ! temporary copies for older consumers
     call waterBodyConfig%init(configFilePath) ! optional config /water/ and six effective errors
     call registerReactorErrors()             ! code 903; no Reactor config-file group
+    call registerBiotaErrors()               ! code 902; constants-file inputs stay in DataInput
     call syncModelDimensionsToGlobals()      ! remaining dimension copies
     auditResult = modelConfig%audit()
     call ERROR_HANDLER%trigger(errors=.errors.auditResult)
@@ -615,7 +640,7 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
-Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, and 8 are complete. Their authoritative
+Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, 8, and 9 are complete. Their authoritative
 records are [phase0_kernel.md](phase0_kernel.md),
 [phase1_model_dimensions.md](phase1_model_dimensions.md),
 [phase2_model_config.md](phase2_model_config.md), and
@@ -625,8 +650,9 @@ records are [phase0_kernel.md](phase0_kernel.md),
 [phase5_soil.md](phase5_soil.md), plus
 [phase6_bed_sediment.md](phase6_bed_sediment.md), and
 [phase7_waterbody.md](phase7_waterbody.md), and
-[phase8_reactor.md](phase8_reactor.md). Remaining execution starts with
-Phase 9 Biota.
+[phase8_reactor.md](phase8_reactor.md), and
+[phase9_biota.md](phase9_biota.md). Remaining migration starts with the shared
+facade-consumer phase below: move remaining readers of `C` to their owning modules.
 
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
@@ -808,9 +834,26 @@ phases below. It can run in parallel once `ModelDimensions` + `ModelConfig` exis
   save/load. The known mass-loss result is explicitly preserved by a focused test.
   See [phase8_reactor.md](phase8_reactor.md) for commands, results, and remaining work.
 
-### Phase 9 — Biota (next)
-- Migrate Biota last, including the existing Soil-to-Biota relationship, without
-  redesigning the science interfaces during the ownership move.
+### Phase 9 — Biota (complete)
+- Added `BiotaConfigModule` exposing only `registerBiotaErrors()`. Critical code 902
+  moved unchanged from the shared list and is registered immediately after Reactor.
+  No configuration object, defaults, input group, or science raising site was added.
+- Removed direct Globals imports and `C%` reads from all three Biota modules. The
+  science reads precision from Kernel and current timing from ModelConfig, with
+  explicit imports for errors, results, dates, input data, and utility functions.
+- Preserved the constants-file readers and the SoilLayer, RiverReach, and
+  EstuaryReach creation/update calls. Public types, procedures, number precision,
+  calculation order, and every original comment remain unchanged.
+- Added direct concentration checks and a model-state test program, both run
+  unchanged against Phase 8 and Phase 9. The repeatable Biota capture/compare runner
+  covers absent, soil-only, water-only, mixed, estuary, and changing batch-date inputs.
+- **Verified:** clean build, 29 CTest cases, 50 exact direct concentration records,
+  six exact model-state comparisons, and 29 exact ordinary output comparisons
+  across Biota, Reactor, and WaterBody scenarios. Four expected failures, batch
+  operation, and checkpoint save/load also passed. See [phase9_biota.md](phase9_biota.md).
+- Missing checkpointed Biota state, current harvest timing, and invalid-form
+  calculations remain separate follow-up work; saving/loading does not prove
+  correct continuation of organism concentrations.
 
 Each domain phase follows the **per-domain checklist** (§8), including migration of
 all repository consumers of the domain's fields. Errors move only when that domain
@@ -869,6 +912,17 @@ has assigned codes; a domain without assigned errors skips error registration.
 - Replace the Phase 8 known-defect expectations only in this separate change.
   Scientific outputs are expected to change and need science review; an exact
   comparison with the defective calculation is not the acceptance rule for this fix.
+
+### Separate Biota behaviour and checkpoint corrections
+- Define harvest dates for non-daily timesteps and whether harvesting should reset
+  concentrations once or on every update in the selected month. Test these choices
+  separately before changing the existing calculations.
+- Stop invalid uptake forms from reaching calculations with unset concentration
+  sums in a separately tested error-handling change. Do not preserve undefined
+  numeric results as a reference for that repair.
+- Save and restore both organism concentrations for soil and water Biota, with
+  explicit checkpoint-format compatibility tests. Resolve the existing warm-up and
+  reinstatement timing as well before claiming exact checkpoint continuation.
 
 ### Final phase — Cleanup
 - Remove the legacy flat registry only after all of its valid entries have moved in
@@ -980,10 +1034,18 @@ For domain `X`:
 - **Focused config/error gate:** test existing required values and defaults in a
   separate process where shared singleton state requires it. Check both the base
   registry and the count after domain registration.
+- **Active Biota coverage:** use `verification/verify_biota.py capture/compare` with
+  identical direct and integration test programs built against each source version.
+  Compare organism counts, selected input indices, and both concentrations, and
+  require evidence that organisms are updated. Cover soil, river, estuary, all
+  accepted uptake forms, storage, growth/death, timestep duration, and harvest/batch
+  dates. Normal outputs do not contain organism concentrations and are insufficient
+  by themselves. The runner also compares six ordinary output sets exactly.
 - **Checkpoint smoke gate:** run the existing checkpoint save/reinstate smoke path
   after relevant phases. Exact continuation equivalence remains unresolved because
-  warm-up/reinstate run-control semantics have not yet been separated; do not report
-  the smoke test as proof of checkpoint continuation correctness.
+  warm-up/reinstate run-control semantics have not yet been separated and Biota
+  concentrations are not saved/restored; do not report the smoke test as proof of
+  checkpoint continuation correctness.
 - **Batch smoke gate:** run the existing batch path whenever assembly, source snapping,
   config paths, or runtime-mutated model config are touched.
 - **Tracked-file gate:** some CMake configurations rewrite tracked
@@ -1031,7 +1093,11 @@ For domain `X`:
 - Correcting Reactor's known attachment mass loss during the ownership migration.
   That calculation requires the separate science correction described in §7.
 - Proving exact checkpoint continuation while the existing warm-up/reinstate
-  run-control semantics remain coupled; current checkpoint coverage is a smoke test.
+  run-control semantics remain coupled and Biota concentrations are absent from the
+  saved state; current checkpoint coverage is a smoke test.
+- Correcting Biota harvest timing, repeated resets, invalid-form calculations, or
+  missing checkpoint state during the ownership migration. These need separate
+  behaviour and compatibility tests.
 - Introducing Source dependency injection or a new `AbstractSource` interface. The
   current explicit one-way Source dependency is acceptable and acyclic.
 - Generalising the contaminant-specific accessor interfaces on the spatial containers
