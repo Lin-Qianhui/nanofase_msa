@@ -1,0 +1,48 @@
+&data
+input_file = 'explicit-input.nc'
+constants_file = 'explicit-constants.nml'
+output_path = 'explicit-output/'
+/
+&output
+write_csv = .false.
+write_netcdf = .true.
+netcdf_write_mode = 'itr'
+write_metadata_as_comment = .false.
+write_compartment_stats = .true.
+include_waterbody_breakdown = .false.
+include_sediment_layer_breakdown = .false.
+include_soil_layer_breakdown = .false.
+include_soil_state_breakdown = .true.
+include_sediment_fluxes = .true.
+include_soil_erosion_yields = .true.
+include_spm_size_class_breakdown = .true.
+soil_pec_units = 'kg/m3'
+sediment_pec_units = 'kg/m3'
+/
+&run
+timestep = 43200
+n_timesteps = 12
+start_date = '2016-02-03'
+description = 'Explicit configuration'
+epsilon = 0.125
+warm_up_period = 2
+write_to_log = .false.
+bash_colors = .false.
+trigger_warnings = .true.
+error_output = .false.
+simulation_mask = 'explicit-mask.nc'
+ignore_nm = .true.
+output_hash = '_test'
+/
+&checkpoint
+checkpoint_file = 'explicit-checkpoint.dat'
+save_checkpoint = .true.
+save_checkpoint_after_warm_up = .true.
+reinstate_checkpoint = .true.
+preserve_timestep = .true.
+/
+&steady_state
+run_to_steady_state = .true.
+mode = 'sediment_size_distribution'
+delta = 0.25
+/

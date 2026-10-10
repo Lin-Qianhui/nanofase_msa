@@ -4,7 +4,6 @@
 !! accessible throughout the model.
 module DataInputModule
     use mo_netcdf
-    use DefaultsModule
     use ReactorConfigModule, only: default_k_diss_pristine, default_k_diss_transformed, &
         default_k_transform_pristine, defaultShearRate
     use WaterBodyConfigModule, only: waterBodyConfig, defaultSlope, defaultBankErosionAlpha, defaultBankErosionBeta, &
@@ -13,7 +12,8 @@ module DataInputModule
         defaultSedimentTransport_c, defaultSedimentEnrichment_k, defaultSedimentEnrichment_a, &
         defaultDepositionAlpha, defaultDepositionBeta
     use SoilConfigModule, only: defaultSoilAttachmentEfficiency, defaultSoilDarcyVelocity
-    use GlobalsModule
+    use KernelModule, only: dp, pi, COLOR_GREEN, COLOR_RESET, iouConstants
+    use ErrorHandlingModule, only: ERROR_HANDLER
     use ModelConfigModule, only: modelConfig
     use ResultModule, only: Result
     use ErrorInstanceModule, only: ErrorInstance
@@ -308,8 +308,8 @@ module DataInputModule
         call me%nc%close()
 
         ! Has a simulation mask been provided?
-        if (C%hasSimulationMask) then
-            nc_simulationMask = NcDataset(C%simulationMaskPath, 'r')
+        if (modelConfig%hasSimulationMask) then
+            nc_simulationMask = NcDataset(modelConfig%simulationMaskPath, 'r')
             var = nc_simulationMask%getVariable('simulation_mask')
             call var%getData(simulationMask)
             me%simulationMask = ulgcl(simulationMask)
@@ -337,14 +337,14 @@ module DataInputModule
 
         ! Get the config options for this chunk and mirror them into the
         ! compatibility facade for unmigrated call sites.
+        ! Phase 10: consumers now read modelConfig directly; no runtime copy is needed.
         call modelConfig%selectBatchChunk(k)
-        call syncRuntimeModelConfigToGlobals()
 
         ! Read in the new constants file
-        call me%parseConstants(C%constantsFile)
+        call me%parseConstants(modelConfig%constantsFile)
 
         ! Open the new dataset
-        me%nc = NcDataset(C%inputFile, 'r')
+        me%nc = NcDataset(modelConfig%inputFile, 'r')
 
         ! Deallocate the previous chunk's variables
         deallocate(me%t)
@@ -433,7 +433,7 @@ module DataInputModule
             call var%getData(me%evap)
         else
             if (allocated(me%evap)) deallocate(me%evap)
-            allocate(me%evap(me%gridShape(1), me%gridShape(2), C%nTimesteps))
+            allocate(me%evap(me%gridShape(1), me%gridShape(2), modelConfig%nTimesteps))
             me%evap = 0.0
         end if
 
@@ -1134,7 +1134,7 @@ module DataInputModule
         ! Integer range of days in year
         days = [(i, i = 1, 366, 1)]
         ! Calculate the water temperature timeseries using cos function
-        waterTemperature = - 0.5 * (maxTemp - minTemp) * cos(days * 2 * C%pi / 366 - minTempDay) &
+        waterTemperature = - 0.5 * (maxTemp - minTemp) * cos(days * 2 * pi / 366 - minTempDay) &
                            + (maxTemp + minTemp) / 2
     end function
 
@@ -1147,7 +1147,7 @@ module DataInputModule
         logical         :: simulationMaskError = .false.
 
         ! Is the simulation mask self-contained (no inflows to area to simulate)?
-        if (C%hasSimulationMask) then
+        if (modelConfig%hasSimulationMask) then
             do y = 1, me%gridShape(2)
                 do x = 1, me%gridShape(1)
                    if (me%simulationMask(x,y)) then

@@ -1,7 +1,7 @@
 module LoggerModule
-    use UtilModule
-    use ErrorInstanceModule
-    use GlobalsModule
+    use ErrorInstanceModule, only: ErrorInstance
+    use KernelModule, only: COLOR_RESET
+    use ModelConfigModule, only: modelConfig
     implicit none
 
     !> The `Logger` object is responsible to outputting messages
@@ -60,7 +60,7 @@ module LoggerModule
         character(*), optional  :: color            !! Color to log to console
         character(8)            :: colorCode        ! The color code for the specified colour
         character(7)            :: resetCode
-        if (present(color) .and. C%bashColors) then
+        if (present(color) .and. modelConfig%bashColors) then
             colorCode = color
         else
             colorCode = ""

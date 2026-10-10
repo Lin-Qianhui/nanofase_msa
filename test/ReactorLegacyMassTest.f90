@@ -11,6 +11,8 @@ program ReactorLegacyMassTest
     type(Result) :: outcome
     real(dp) :: collisions(1,2)
 
+    ! Shared utilities require model settings to be initialised before use.
+    call modelConfig%clear()
     nSizeClassesNM = 1
     nSizeClassesSpm = 2
     npDim = [1,1,4]

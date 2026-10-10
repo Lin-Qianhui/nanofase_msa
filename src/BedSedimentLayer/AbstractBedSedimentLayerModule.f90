@@ -1,5 +1,6 @@
 !> Module container for `AbstractBedSedimentLayer` abstract superclass
 module AbstractBedSedimentLayerModule
+    use mo_netcdf, only: NcGroup
     use KernelModule, only: dp
     use ResultModule, only: Result, Result0D                        ! error handling classes, required for
     use ErrorInstanceModule                                         ! generation of trace error messages

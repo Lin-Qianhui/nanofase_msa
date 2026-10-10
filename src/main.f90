@@ -19,6 +19,7 @@ program main
     use BootstrapModule, only: bootstrap
     use ErrorHandlingModule, only: ERROR_HANDLER
     use KernelModule, only: dp, COLOR_BLUE, COLOR_GREEN, COLOR_YELLOW
+    use mo_types, only: i64
     use ModelConfigModule, only: modelConfig
     use UtilModule
     use ResultModule

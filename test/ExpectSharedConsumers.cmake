@@ -1,0 +1,11 @@
+execute_process(COMMAND "${TEST_EXECUTABLE}" "${EXPLICIT_FIXTURE}" "${OMITTED_FIXTURE}"
+    RESULT_VARIABLE status OUTPUT_VARIABLE output ERROR_VARIABLE error)
+if(NOT status EQUAL 0)
+    message(FATAL_ERROR "Shared consumer test failed (${status}):\n${output}\n${error}")
+endif()
+string(ASCII 27 esc)
+string(FIND "${output}" "${esc}[32mLOGGER_OWNER_ON${esc}[0m" enabled)
+string(FIND "${output}" "\nLOGGER_OWNER_OFF${esc}[0m" disabled)
+if(enabled LESS 0 OR disabled LESS 0)
+    message(FATAL_ERROR "Logger did not read current owner settings: ${output}")
+endif()

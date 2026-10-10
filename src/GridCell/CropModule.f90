@@ -1,7 +1,7 @@
 !> Module for class definition for class representing an area of a crop.
 !! TODO: What crop info do we need from demands data? 
 module CropModule
-    use GlobalsModule
+    use KernelModule, only: dp
     implicit none
     private
     

@@ -180,6 +180,38 @@ foreach(mode explicit empty missing partial omit_slope omit_timestep omit_estuar
     )
 endforeach()
 
+# Read the same input/checkpoint state against the pre-phase and migrated sources.
+# The capture/compare runner supplies its generated inputs and checks the records.
+set(shared_consumer_probe_sources ${sources})
+list(FILTER shared_consumer_probe_sources EXCLUDE REGEX "/src/main\\.f90$")
+add_executable(shared_consumer_integration_test
+    ${shared_consumer_probe_sources} test/SharedConsumerIntegrationTest.f90)
+set_target_properties(shared_consumer_integration_test PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/shared-consumer-integration-test-modules")
+target_include_directories(shared_consumer_integration_test PRIVATE "${NETCDF_INCLUDES}")
+target_link_libraries(shared_consumer_integration_test PRIVATE "${NETCDF_LIBRARIES_F90}")
+
+# Direct checks write only the real owners, deliberately leaving C untouched.
+add_executable(shared_consumer_module_test ${shared_consumer_probe_sources} test/SharedConsumerModuleTest.f90)
+set_target_properties(shared_consumer_module_test PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/shared-consumer-module-test-modules")
+target_include_directories(shared_consumer_module_test PRIVATE "${NETCDF_INCLUDES}")
+target_link_libraries(shared_consumer_module_test PRIVATE "${NETCDF_LIBRARIES_F90}")
+add_test(NAME shared_consumer_owners
+    COMMAND "${CMAKE_COMMAND}"
+        "-DTEST_EXECUTABLE=$<TARGET_FILE:shared_consumer_module_test>"
+        "-DEXPLICIT_FIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/model-config-explicit.nml"
+        "-DOMITTED_FIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/model-config-omitted.nml"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectSharedConsumers.cmake")
+foreach(group data output run)
+    add_test(NAME model_config_missing_${group}
+        COMMAND "${CMAKE_COMMAND}"
+            "-DTEST_EXECUTABLE=$<TARGET_FILE:shared_consumer_module_test>"
+            "-DFIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures/model-config-omitted.nml"
+            "-DMISSING_GROUP=${group}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectModelConfigMissing.cmake")
+endforeach()
+
 function(add_water_body_diagnostic_test mode fixture expected_exit expected_text)
     add_test(NAME water_body_${mode}
         COMMAND "${CMAKE_COMMAND}"

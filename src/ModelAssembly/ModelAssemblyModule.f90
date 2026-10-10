@@ -1,6 +1,6 @@
 !> Top-level model assembly for constructing and wiring the live object graph.
 module ModelAssemblyModule
-    use GlobalsModule, only: ERROR_HANDLER
+    use ErrorHandlingModule, only: ERROR_HANDLER
     use KernelModule, only: COLOR_GREEN, COLOR_RESET
     use LoggerModule, only: LOGR
     use ResultModule, only: Result

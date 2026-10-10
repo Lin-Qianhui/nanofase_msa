@@ -8,7 +8,7 @@ module ModelConfigModule
     use mod_strptime, only: f_strptime
     use VersionModule, only: MODEL_VERSION
     use KernelModule, only: dp
-    use DefaultsModule, only: configDefaults
+    use ModelDefaultsModule, only: configDefaults
     use ErrorInstanceModule, only: ErrorInstance
     use ResultModule, only: Result
     implicit none
@@ -101,6 +101,7 @@ module ModelConfigModule
     !> Reset model-wide config state before reading a config.
     !! This is the default-ownership boundary for Phase 2: model-level defaults
     !! still held in DefaultsModule are copied from configDefaults here.
+    ! Phase 10: configDefaults now comes directly from ModelDefaultsModule.
     subroutine clearModelConfig(me)
         class(ModelConfigType), intent(inout) :: me
 

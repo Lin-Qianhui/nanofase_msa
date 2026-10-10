@@ -2,8 +2,8 @@ module CheckpointModule
     use AbstractEnvironmentModule, only: EnvironmentPointer
     use EnvironmentModule
     use KernelModule, only: dp, COLOR_GREEN, COLOR_RESET
-    use DefaultsModule, only: iouCheckpoint
-    use GlobalsModule, only: C, ERROR_HANDLER, syncRuntimeModelConfigToGlobals
+    use KernelModule, only: iouCheckpoint
+    use ErrorHandlingModule, only: ERROR_HANDLER
     use ModelDimensionsModule, only: npDim, nSoilLayers, nSedimentLayers, nSizeClassesSpm, nFracCompsSpm
     use ModelConfigModule, only: modelConfig
     use DataInputModule, only: DATASET
@@ -277,13 +277,13 @@ module CheckpointModule
         open(iouCheckpoint, file=trim(me%checkpointFile), form='unformatted', status='old')
         read(iouCheckpoint) gridBounds, gridRes
 
-        if (any(abs(gridBounds - DATASET%gridBounds) > C%epsilon)) then
+        if (any(abs(gridBounds - DATASET%gridBounds) > modelConfig%epsilon)) then
             call ERROR_HANDLER%trigger( &
                 error=ErrorInstance(message="Grid bounds of checkpoint and current simulation do not match. " // &
                     "Grid setup must be identical to reinstate a checkpoint. Checkpoint bounds: " // &
                     trim(adjustl(str(gridBounds))) // ". Simulation bounds: " // trim(adjustl(str(DATASET%gridBounds))) // ".") &
             )
-        else if (any(abs(gridRes - DATASET%gridRes) > C%epsilon)) then
+        else if (any(abs(gridRes - DATASET%gridRes) > modelConfig%epsilon)) then
             call ERROR_HANDLER%trigger( &
                 error=ErrorInstance(message="Grid resolution of checkpoint and current simulation do not match. " // &
                     "Grid setup must be identical to reinstate a checkpoint. Checkpoint resolution: " // &
@@ -313,7 +313,6 @@ module CheckpointModule
         ! First, should we reinstate the model timestep from the checkpoint?
         if (preserve_timestep) then
             call modelConfig%setT0(t)
-            call syncRuntimeModelConfigToGlobals()
         end if
 
         ! Loop through all the grid cells and use the checkpoint data to set

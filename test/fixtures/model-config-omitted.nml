@@ -1,0 +1,12 @@
+&data
+input_file = 'unused-input.nc'
+constants_file = 'unused-constants.nml'
+output_path = 'unused-output/'
+/
+&output
+/
+&run
+timestep = 86400
+n_timesteps = 10
+start_date = '2015-01-01'
+/

@@ -1,6 +1,8 @@
 !> Module with a handful of useful globally-available procedures
 module UtilModule
-    use GlobalsModule
+    use KernelModule, only: dp
+    use ModelDimensionsModule, only: npDim, nSizeClassesNM
+    use ModelConfigModule, only: modelConfig
     use netcdf
     implicit none
 
@@ -67,7 +69,7 @@ module UtilModule
             write(*,'(A)') "               |  \| |/ _` | '_ \ / _ \| |_ / _ \ \___ \|  _|  "
             write(*,'(A)') "               | |\  | (_| | | | | (_) |  _/ ___ \ ___) | |___ "
             write(*,'(A)') "Welcome to the |_| \_|\__,_|_| |_|\___/|_|/_/   \_\____/|_____| model"
-            write(*,'(A)') "...version: " // C%modelVersion
+            write(*,'(A)') "...version: " // modelConfig%modelVersion
             write(*,'(A)') "_____________________________________________________________________"
             write(*,'(A)') ""
         end subroutine
@@ -251,7 +253,7 @@ module UtilModule
             logical :: isZeroReal
             isZeroReal = .false.
             if (.not. present(epsilon)) then
-                e = C%epsilon
+                e = modelConfig%epsilon
             else
                 e = epsilon
             end if
@@ -266,7 +268,7 @@ module UtilModule
             logical                         :: isZeroDp     !! The logical to return
             isZeroDp = .false.
             if (.not. present(epsilon)) then
-                e = C%epsilon
+                e = modelConfig%epsilon
             else
                 e = epsilon
             end if
@@ -281,7 +283,7 @@ module UtilModule
             logical                         :: isZeroDp3D       !! The logical to return
             isZeroDp3D = .true.
             if (.not. present(epsilon)) then
-                e = C%epsilon
+                e = modelConfig%epsilon
             else
                 e = epsilon
             end if
@@ -304,7 +306,7 @@ module UtilModule
             logical :: isLessThanZeroReal
             isLessThanZeroReal = .false.
             if (.not. present(epsilon)) then
-                e = C%epsilon
+                e = modelConfig%epsilon
             else
                 e = epsilon
             end if
@@ -318,7 +320,7 @@ module UtilModule
             logical :: isLessThanZeroDp
             isLessThanZeroDp = .false.
             if (.not. present(epsilon)) then
-                e = C%epsilon
+                e = modelConfig%epsilon
             else
                 e = epsilon
             end if
@@ -380,7 +382,7 @@ module UtilModule
         pure elemental function flushToZeroReal(x) result(y)
             real, intent(in)    :: x
             real                :: y
-            if (abs(x) < C%epsilon) then
+            if (abs(x) < modelConfig%epsilon) then
                 y = 0.0
             else
                 y = x
@@ -390,7 +392,7 @@ module UtilModule
         pure elemental function flushToZeroDp(x) result(y)
             real(dp), intent(in)    :: x
             real(dp)                :: y
-            if (abs(x) < C%epsilon) then
+            if (abs(x) < modelConfig%epsilon) then
                 y = 0.0_dp
             else
                 y = x
@@ -452,20 +454,20 @@ module UtilModule
 ! Functions without interfaces
 
         function freeNM(x) result(free)
-            real(dp), intent(in)    :: x(C%npDim(1), C%npDim(2), C%npDim(3))
-            real(dp)                :: free(C%nSizeClassesNM)
+            real(dp), intent(in)    :: x(npDim(1), npDim(2), npDim(3))
+            real(dp)                :: free(nSizeClassesNM)
             free = x(:,1,1)
         end function
 
         function attachedNM(x) result(attached)
-            real(dp), intent(in)    :: x(C%npDim(1), C%npDim(2), C%npDim(3))
-            real(dp)                :: attached(C%nSizeClassesNM)
+            real(dp), intent(in)    :: x(npDim(1), npDim(2), npDim(3))
+            real(dp)                :: attached(nSizeClassesNM)
             attached = x(:,1,2)
         end function
 
         function heteroaggregatedNM(x) result(heteroaggregated)
-            real(dp), intent(in)    :: x(C%npDim(1), C%npDim(2), C%npDim(3))
-            real(dp)                :: heteroaggregated(C%nSizeClassesNM)
+            real(dp), intent(in)    :: x(npDim(1), npDim(2), npDim(3))
+            real(dp)                :: heteroaggregated(nSizeClassesNM)
             heteroaggregated = sum(x(:,1,3:), dim=1)
         end function
 

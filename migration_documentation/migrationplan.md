@@ -124,11 +124,18 @@ other explicitly deferred defects remain current until their named follow-up pha
   numbers are not suitable reference expectations. Any correction needs separate tests.
 - Checkpoints do not save or restore Biota concentrations. Exact continuation needs
   both the missing organism state and the already documented warm-up/reinstatement
-  timing to be addressed. Successful save/load checks prove neither of these.
-- Model-wide defaults still live in `DefaultsModule` and are read by
-  `ModelConfigModule`. Move them into the model configuration area before reducing
-  or removing `DefaultsModule`. Unused `C%T` stays for final cleanup; actual water
-  temperatures come from input data, not this field.
+  timing to be addressed. The main loop also starts at 1 and never reads restored
+  `t0`; the older smoke test saves timestep zero. Phase 10 verifies nonzero stored
+  timestep restoration, not correct continuation of the simulation.
+- Phase 10 moved model-wide defaults into `ModelDefaultsModule`. `DefaultsModule`
+  now exposes the same object for compatibility, with no duplicate values.
+  Unused `C%T` stays for final cleanup; actual water temperatures come from input
+  data, not this field.
+- Phase 10 confirmed that compartment statistics currently creates an empty CSV:
+  its writer is a commented-out stub. Preserve that result during migration.
+- Some unused reach positions in checkpoint arrays are never initialised. Compare
+  record layout and all values for existing reaches; raw checkpoint bytes are not
+  a stable reference. Initialising these unused positions is separate cleanup.
 
 ---
 
@@ -427,6 +434,13 @@ Phase 2 adds `ModelConfigModule` as the source of truth for model-level config, 
 `nTimeSteps`, `startDate`, `t0`) must be changed through `ModelConfigModule` helpers
 and mirrored back into `C` until all readers migrate.
 
+Phase 10 completed that reader migration. DataInput and Checkpoint still update
+`modelConfig` through the same helpers, but no longer copy changes into `C`.
+Bootstrap's startup copies and the unused runtime-copy helper remain for final
+cleanup. Only Bootstrap imports Globals in production. The unchanged historical
+Biota science test remains the explicit test exception so its Phase 8/9 comparisons
+stay repeatable; new tests initialise only the real owners.
+
 Phase 4 introduced `ErrorHandlingModule` before any error-owning domain phase and made
 it the sole owner of `ERROR_HANDLER`. `GlobalsModule` temporarily re-exports that
 singleton for untouched consumers. The bootstrap order is: initialise model
@@ -640,7 +654,7 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
-Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, 8, and 9 are complete. Their authoritative
+Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, 8, 9, and 10 are complete. Their authoritative
 records are [phase0_kernel.md](phase0_kernel.md),
 [phase1_model_dimensions.md](phase1_model_dimensions.md),
 [phase2_model_config.md](phase2_model_config.md), and
@@ -651,8 +665,11 @@ records are [phase0_kernel.md](phase0_kernel.md),
 [phase6_bed_sediment.md](phase6_bed_sediment.md), and
 [phase7_waterbody.md](phase7_waterbody.md), and
 [phase8_reactor.md](phase8_reactor.md), and
-[phase9_biota.md](phase9_biota.md). Remaining migration starts with the shared
-facade-consumer phase below: move remaining readers of `C` to their owning modules.
+[phase9_biota.md](phase9_biota.md), and
+[phase10_shared_consumers.md](phase10_shared_consumers.md). The next migration
+phase is the separate diagnostic-registry correction below. Final compatibility
+cleanup still follows that correction; the separately listed science and build
+repairs must not be folded into ownership migration.
 
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
@@ -859,27 +876,35 @@ Each domain phase follows the **per-domain checklist** (§8), including migratio
 all repository consumers of the domain's fields. Errors move only when that domain
 has assigned codes; a domain without assigned errors skips error registration.
 
-### Cross-cutting facade-consumer phase
-- Run this after Phase 9. Migrate the remaining global `C` readers before attempting
-  final removal of the compatibility object.
-- Migrate the remaining `ModelConfig` and `ModelDimensions` facade readers in
-  GridCell, Data, Output, Logger, Util, Checkpoint, and any other repo-wide consumer.
-- Input/output algorithms remain unchanged, but their imports of configuration and
-  dimensions are in scope and must point to the owning modules.
-- Move the remaining model-wide defaults from `DefaultsModule` into the model
-  configuration area, retaining their values, precision, and comments. Repoint
-  `ModelConfigModule` and any other readers before reducing or removing the old module.
-- Verify that only the intentionally retained legacy registry/bootstrap shim still
-  requires `GlobalsModule`.
+### Phase 10 — Cross-cutting facade consumers (complete)
+- Moved all active shared-setting readers in GridCell, Crop, Data, output, Logger,
+  Util, and Checkpoint to ModelConfig, ModelDimensions, Kernel, and ErrorHandling.
+  ModelAssembly now imports the handler directly. Indirect NetCDF type and integer
+  kind imports were made explicit where needed.
+- Moved the model-default declarations and comments verbatim to ModelDefaultsModule.
+  DefaultsModule exposes that same object and Kernel file units for compatibility.
+- Removed runtime copying from DataInput and Checkpoint, preserving batch selection
+  and `setT0` order. Globals, its fields/helpers, and Bootstrap's startup copies remain
+  for final cleanup. The error registry already belongs to ErrorHandling and does
+  not depend on Globals.
+- Preserved all original comments, public science interfaces, calculations, input
+  readers, output formats, and checkpoint records. The historical Biota test is the
+  named Globals exception; new direct tests leave `C` untouched.
+- **Verified:** clean build, 33 CTest cases, 18 new exact output comparisons plus
+  the existing 29 WaterBody/Reactor/Biota comparisons, exact Biota concentration
+  records, logging, mask/batch state, diagnostics, and checkpoint layout/defined
+  values. See [phase10_shared_consumers.md](phase10_shared_consumers.md).
 
 ### Separate diagnostic-registry correction phase (behaviour change)
 - Add focused tests that capture the intended diagnostics, then correct the two
   unassigned legacy `errors(4:5)` entries, the overwritten code 405 now in WaterBody
   registration slot 5 (formerly legacy slot 11), and the
   incorrect association of code 901 with BedSediment.
-- Determine explicit owners for codes 110, 200, 201, and 300 from their raising sites,
-  then move them to those owners. Do not bundle these behaviour changes into a pure
-  config/domain refactor.
+- Determine explicit owners for codes 110, 200, 201, 300, and 901 from their meaning
+  and intended responsibility. They have no current production raising sites, so
+  call-site searches alone cannot settle ownership. Explicitly test any decision to
+  retain, relocate, or retire them; do not invent science raising sites to fit a map.
+  Do not bundle these behaviour changes into a pure config/domain refactor.
 - Re-run exact valid-config regression tests and dedicated error-path assertions;
   valid scientific output remains unchanged while the corrected diagnostics are
   intentionally different.
@@ -922,7 +947,8 @@ has assigned codes; a domain without assigned errors skips error registration.
   numeric results as a reference for that repair.
 - Save and restore both organism concentrations for soil and water Biota, with
   explicit checkpoint-format compatibility tests. Resolve the existing warm-up and
-  reinstatement timing as well before claiming exact checkpoint continuation.
+  reinstatement timing and the main loop's unused restored `t0` as well before
+  claiming exact checkpoint continuation.
 
 ### Final phase — Cleanup
 - Remove the legacy flat registry only after all of its valid entries have moved in
@@ -936,8 +962,9 @@ has assigned codes; a domain without assigned errors skips error registration.
   setting. Preserve its original comments according to the per-phase comment rule.
 - Delete migrated parameters from `DefaultsModule` (keep only IO units there, or fold
   into kernel).
-- **Verify:** build + `verify_refactor.py --exact`; grep confirms zero `C%` /
-  `use GlobalsModule`.
+- **Verify:** build + exact output/state checks; source checks confirm zero executable
+  `C%` references and active `use GlobalsModule` imports. Preserve historical code
+  comments rather than deleting them to satisfy a literal-text search.
 
 Every phase adds a plain-language file in `migration_documentation/` recording what
 was implemented, actual verification commands and results, preserved public behaviour
@@ -1046,6 +1073,19 @@ For domain `X`:
   warm-up/reinstate run-control semantics have not yet been separated and Biota
   concentrations are not saved/restored; do not report the smoke test as proof of
   checkpoint continuation correctness.
+- **Shared-consumer gate:** use `verification/verify_shared_consumers.py capture/compare`
+  against a fresh pre-phase reference, with the identical integration test program.
+  Compare the complete expected output set, including disabled outputs, suffixes,
+  empty statistics, and steady-state CSV. Check both NetCDF modes/layouts, optional
+  columns/units, logs/colors, simulation masks, and changing batch state. Compare
+  all defined checkpoint values and record sizes, excluding only uninitialised
+  positions for nonexistent reaches. Verify nonzero `t0` and tolerance checks, while
+  retaining the distinction between restored state and correct continuation.
+- **Direct-owner gate:** initialise ModelConfig and ModelDimensions in standalone
+  tests before using utilities. Check tolerance boundaries, explicit overrides,
+  array shapes, repeated config reads, required groups, logger settings, and that
+  the legacy defaults import exposes the same object. Do not initialise `C` in
+  these new tests. Keep the existing Biota comparison sources/hash checks unchanged.
 - **Batch smoke gate:** run the existing batch path whenever assembly, source snapping,
   config paths, or runtime-mutated model config are touched.
 - **Tracked-file gate:** some CMake configurations rewrite tracked
@@ -1053,8 +1093,11 @@ For domain `X`:
   rewrites it, restore the exact content, rebuild without configuring again, and
   confirm the hash and regression results. Correcting this build-system mutation is a
   separate cleanup task.
-- **Grep gates** (final phase): `grep -rn "use GlobalsModule" src` → 0;
-  `grep -rn "C%" src` → 0.
+- **Source gates:** search case-insensitively and distinguish executable statements
+  from comments and strings. After Phase 10 only retained Bootstrap/Globals code
+  may use `C`; only Bootstrap imports Globals in production. BiotaScienceTest is
+  the explicit historical test exception. Final cleanup removes these active
+  dependencies too, while retaining original comments.
 
 ---
 
@@ -1067,7 +1110,7 @@ For domain `X`:
 | IO-unit collisions when domains read independently | Use `open(newunit=…)`; retire the central `iou*` registry |
 | Malformed/unowned legacy registry entries carried into domains | Preserve them during pure refactors; fix legacy `errors(4:5)`, WaterBody's code-405 overwrite (formerly `errors(11)`), code 901, and unowned 110/200/201/300 only in the separately tested diagnostic phase |
 | Silent behaviour change during refactor | `verify_refactor.py --exact` regression gate after every phase |
-| Checkpoint depends on dimensions | Dimension reads moved in Phase 1; remaining model-wide state still uses the compatibility object. Save/reinstate remains a smoke test until continuation semantics receive a dedicated test |
+| Checkpoint depends on dimensions and run state | Dimensions moved in Phase 1 and remaining shared reads in Phase 10. Defined saved values and loading are checked; the main loop's unused restored timestep, warm-up timing, and missing Biota state still prevent claims of correct continuation |
 | Layer-depth vs count split (soil/sediment) | Counts → model-dimensions; depths → domain, which queries the count to allocate |
 | Builder must `use` concrete domain types (reverse arrow) | Builder is a *top* layer (above domains); nothing below depends on it, so no cycle — see §3b |
 | Source is consumed by GridCell/WaterBody | Allow the explicit one-way dependency onto lower-level Source; forbid the reverse edge and defer speculative `AbstractSource`/DI work |
