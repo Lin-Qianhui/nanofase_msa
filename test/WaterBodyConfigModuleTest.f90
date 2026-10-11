@@ -12,21 +12,24 @@ program WaterBodyConfigModuleTest
 
     character(len=1024) :: dimensionsPath, waterPath
     character(len=32) :: mode
-    integer, parameter :: codes(6) = [401, 402, 403, 404, 500, 501]
-    character(len=256), parameter :: messages(6) = [character(len=256) :: &
+    integer, parameter :: codes(8) = [401, 402, 403, 404, 405, 500, 501, 901]
+    character(len=256), parameter :: messages(8) = [character(len=256) :: &
         "Invalid RiverReach inflow reference. Inflow must be from a neighbouring RiverReach.", &
         "Invalid RiverReach inflow reference. If multiple inflows are specified, they must " // &
             "be inflows to the GridCell and all come from the same GridCell.", &
         "RiverReach cannot have more than 5 inflows.", &
         "RiverReach outflow could not be determined. Reaches must either be specified as " // &
             "inflow to downstream reach, or have a model domain outflow specified.", &
+        "RiverReach lengths specified in input data sum to greater than straight-line river branch " // &
+            "length. Are you sure this is intended?", &
         "All SPM advected from RiverReach.", &
-        "No input data provided for required SubRiver - check nSubRivers is correct." &
+        "No input data provided for required SubRiver - check nSubRivers is correct.", &
+        "Invalid RiverReach type index provided." &
     ]
-    type(ErrorInstance), allocatable :: errors(:)
+    type(ErrorInstance), allocatable :: errors(:), baseErrors(:), beforeWater(:)
     type(ErrorInstance) :: error
     real :: expectedSlope
-    integer :: expectedTimestep, i, j, occurrences
+    integer :: expectedTimestep, i, j, occurrences, soilCount
     logical :: expectedEstuary, expectedBank
 
     call get_command_argument(1, dimensionsPath)
@@ -34,19 +37,14 @@ program WaterBodyConfigModuleTest
     call get_command_argument(3, waterPath)
     call assertTrue(len_trim(waterPath) > 0, "WaterBody fixture path was not provided")
     call initModelDimensions(trim(dimensionsPath))
-    call initErrorHandling(mode /= 'quiet_warning', mode /= 'disabled_error')
+    call initErrorHandling(index(mode, 'quiet_') /= 1, index(mode, 'disabled_') /= 1)
     call assertTrue(.not. ERROR_HANDLER%errorExists(902), "Base handler unexpectedly registered Biota error 902")
-    errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 16, "Base registry count changed")
-    do i = 1, size(codes)
-        call assertTrue(.not. ERROR_HANDLER%errorExists(codes(i)), "Base handler registered a WaterBody error")
-    end do
+    baseErrors = ERROR_HANDLER%getErrors()
     call soilConfig%init(trim(dimensionsPath))
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 17, "Soil registry count changed")
+    soilCount = size(errors)
     call bedSedimentConfig%init(trim(dimensionsPath))
-    errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 18, "BedSediment registry count changed")
+    beforeWater = ERROR_HANDLER%getErrors()
 
     ! Values already stored in the object must not replace the input defaults.
     waterBodyConfig%minStreamSlope = 0.9
@@ -57,6 +55,14 @@ program WaterBodyConfigModuleTest
     flush(output_unit)
     call waterBodyConfig%init(trim(waterPath))
     call assertTrue(mode /= 'unknown' .and. mode /= 'malformed', "Invalid WaterBody input was accepted")
+    call assertTrue(ERROR_HANDLER%errorExists(405), "WaterBody must register restored warning 405")
+    call assertTrue(size(baseErrors) == 15, "Base registry count changed")
+    call assertTrue(soilCount == 16, "Soil registry count changed")
+    call assertTrue(size(beforeWater) == 17, "BedSediment registry count changed")
+    do i = 1, size(codes)
+        call assertTrue(count(baseErrors%code == codes(i)) == 0, "Base handler registered a WaterBody error")
+        call assertTrue(count(beforeWater%code == codes(i)) == 0, "Another domain registered a WaterBody error")
+    end do
 
     expectedSlope = 0.0001
     expectedTimestep = 3600
@@ -92,7 +98,7 @@ program WaterBodyConfigModuleTest
         defaultMinWaterTemperatureDayOfYear == 32, "Minimum-temperature day fallback changed")
 
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 24, "WaterBody did not add exactly six errors")
+    call assertTrue(size(errors) == 25, "WaterBody did not add exactly eight errors")
     do i = 1, size(codes)
         occurrences = 0
         do j = 1, size(errors)
@@ -101,9 +107,15 @@ program WaterBodyConfigModuleTest
         call assertTrue(occurrences == 1, "WaterBody error was not registered exactly once")
         error = ERROR_HANDLER%getErrorFromCode(codes(i))
         call assertTrue(error%message == messages(i), "WaterBody error message changed")
-        call assertTrue(error%isCritical .eqv. (codes(i) /= 500), "WaterBody error criticality changed")
+        call assertTrue(error%isCritical .eqv. (codes(i) /= 405 .and. codes(i) /= 500), &
+            "WaterBody error criticality changed")
     end do
-    call assertTrue(.not. ERROR_HANDLER%errorExists(405), "Overwritten code 405 was unexpectedly restored")
+    do i = 1, size(beforeWater)
+        call assertTrue(count(errors%code == beforeWater(i)%code) == 1, "WaterBody lost or duplicated another error")
+        error = ERROR_HANDLER%getErrorFromCode(beforeWater(i)%code)
+        call assertTrue(error%message == beforeWater(i)%message, "WaterBody changed another error message")
+        call assertTrue(error%isCritical .eqv. beforeWater(i)%isCritical, "WaterBody changed another error severity")
+    end do
     do i = 901, 904
         if (i == 902 .or. i == 903) cycle
         call assertTrue(ERROR_HANDLER%errorExists(i), "WaterBody registration lost an existing error")
@@ -120,6 +132,17 @@ program WaterBodyConfigModuleTest
     else if (mode == 'critical' .or. mode == 'disabled_error') then
         call ERROR_HANDLER%trigger(errors=[ERROR_HANDLER%getErrorFromCode(401)])
     end if
+    select case (mode)
+    case ('warning405_code', 'quiet_405', 'disabled_405')
+        call ERROR_HANDLER%trigger(code=405)
+    case ('warning405_instance')
+        error = ERROR_HANDLER%getErrorFromCode(405)
+        call ERROR_HANDLER%trigger(error=error)
+    case ('warning405_array')
+        call ERROR_HANDLER%trigger(errors=[ERROR_HANDLER%getErrorFromCode(405)])
+    case ('critical901', 'quiet_901', 'disabled_901')
+        call ERROR_HANDLER%trigger(code=901)
+    end select
     print '(a)', 'Completed WaterBody check'
 
     call assertTrue(.not. ERROR_HANDLER%errorExists(902), "Another domain registered Biota error 902")

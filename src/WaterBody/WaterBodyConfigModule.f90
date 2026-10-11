@@ -65,11 +65,13 @@ module WaterBodyConfigModule
     end subroutine
 
     !> Register the six effective WaterBody errors after the shared handler exists.
+    ! Phase 11 note: there are now eight entries, including restored 405 and WaterBody-owned 901.
     subroutine registerWaterBodyErrors()
-        type(ErrorInstance) :: errors(6)
+        type(ErrorInstance) :: errors(8)
         integer :: i
 
         ! Phase 7 note: retain the historical 405-then-500 overwrite. Restoring 405 is a separate change.
+        ! Phase 11 note: that separate correction is now applied; 405 and 500 have distinct slots.
         ! Grid and geography
         errors(1) = ErrorInstance(code=401, &
             message="Invalid RiverReach inflow reference. Inflow must be from a neighbouring RiverReach.")
@@ -85,10 +87,12 @@ module WaterBodyConfigModule
             message="RiverReach lengths specified in input data sum to greater than straight-line river branch " // &
                         "length. Are you sure this is intended?", isCritical=.false.)
         ! River routing
-        errors(5) = ErrorInstance(code=500, &
+        errors(6) = ErrorInstance(code=500, &
             message="All SPM advected from RiverReach.", isCritical=.false.)
-        errors(6) = ErrorInstance(code=501, &
+        errors(7) = ErrorInstance(code=501, &
             message="No input data provided for required SubRiver - check nSubRivers is correct.")
+        ! General
+        errors(8) = ErrorInstance(code=901, message="Invalid RiverReach type index provided.")
 
         do i = 1, size(errors)
             call ERROR_HANDLER%add(error=errors(i))

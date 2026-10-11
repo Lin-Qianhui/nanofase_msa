@@ -34,18 +34,18 @@ program ReactorConfigModuleTest
     ! Suppressing warnings must not suppress the critical Reactor error.
     call initErrorHandling(.false., mode /= 'disabled_error')
     call assertTrue(.not. ERROR_HANDLER%errorExists(902), "Base handler unexpectedly registered Biota error 902")
-    call checkBeforeReactor(16)
+    call checkBeforeReactor(15)
     call soilConfig%init(trim(dimensionsPath))
-    call checkBeforeReactor(17)
+    call checkBeforeReactor(16)
     call bedSedimentConfig%init(trim(dimensionsPath))
-    call checkBeforeReactor(18)
+    call checkBeforeReactor(17)
     call waterBodyConfig%init(trim(dimensionsPath))
-    call checkBeforeReactor(24)
+    call checkBeforeReactor(25)
 
     errorsBefore = ERROR_HANDLER%getErrors()
     call registerReactorErrors()
     errorsAfter = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errorsAfter) == 25, "Reactor did not add exactly one error")
+    call assertTrue(size(errorsAfter) == 26, "Reactor did not add exactly one error")
     occurrences = 0
     do i = 1, size(errorsAfter)
         if (errorsAfter(i)%getCode() == 903) occurrences = occurrences + 1
@@ -60,7 +60,7 @@ program ReactorConfigModuleTest
         call assertTrue(error%isCritical .eqv. errorsBefore(i)%isCritical, &
             "Reactor registration changed another error's critical status")
     end do
-    call assertTrue(.not. ERROR_HANDLER%errorExists(405), "Overwritten code 405 was unexpectedly restored")
+    call assertTrue(ERROR_HANDLER%errorExists(405), "Reactor registration lost WaterBody warning 405")
     error = ERROR_HANDLER%getErrorFromCode(1)
     call assertTrue(error%message == '' .and. error%isCritical, "Legacy blank error changed")
     error = ERROR_HANDLER%equal(value=1.0, criterion=1.0)

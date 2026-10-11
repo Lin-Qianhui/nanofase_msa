@@ -40,7 +40,7 @@ program SoilConfigModuleTest
     call assertTrue(defaultSoilDarcyVelocity == 9e-6, "Soil Darcy velocity default changed")
 
     errors = ERROR_HANDLER%getErrors()
-    call assertTrue(size(errors) == 17, "Soil registration did not add exactly one error")
+    call assertTrue(size(errors) == 16, "Soil registration did not add exactly one error")
     call assertTrue(.not. ERROR_HANDLER%errorExists(903), "Soil unexpectedly registered the Reactor error")
     call assertTrue(ERROR_HANDLER%errorExists(600), "Soil error code 600 was not registered")
 

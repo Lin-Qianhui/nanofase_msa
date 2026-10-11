@@ -85,6 +85,90 @@ by git. It does not modify `config.nml` or the baseline output directory.
 Raw NetCDF byte identity is not required because metadata can include run-time
 timestamps even when model results are unchanged.
 
+## Diagnostic-Registry Correction Checks (Phase 11)
+
+The registry is the list of available error codes and messages. Phase 11 restores
+WaterBody warning 405 and moves critical code 901 from shared setup to WaterBody
+setup. Codes 110/200/201/300 remain shared. Blank positions 4 and 5 deliberately
+keep code 1's blank critical message. Scientific results must remain identical;
+the new diagnostic tests check the intended reporting changes directly.
+
+Use a fresh Phase 10 reference from revision
+`cf0e904c8bb2044bcded305743b316288efb19c5`, with the same compiler, flags, and
+saved version-file contents as the candidate. Do not reuse the older phase outputs
+described later in this guide. Build and save `nanofase`,
+`shared_consumer_integration_test`, `biota_science_test`, and
+`biota_integration_test` before editing production code. All four programs already
+exist in Phase 10; no comparison-test source needs to be copied or changed.
+
+After each CMake configuration, restore the exact saved `src/VersionModule.f90`
+contents before building. Save build settings, executable hashes, commands, and
+logs in a new directory outside tracked source folders.
+
+Run the complete tests after building the candidate:
+
+```sh
+ctest --test-dir build-debug --output-on-failure
+```
+
+The shared-handler and domain tests check the complete expected code set without
+duplicates, exact messages, severity, and counts 15/16/17/25/26/27 through shared,
+Soil, BedSediment, WaterBody, Reactor, and Biota setup. Codes 405 and 901 must be
+absent before WaterBody setup. Reactor and Biota must preserve prior definitions.
+
+The added reporting cases run in separate processes:
+
+- `shared_error_*` checks codes 1/110/200/201/300 with error output enabled, warnings
+  suppressed, and error output disabled. `shared_error_generic` checks a trigger
+  with no arguments. Code 1 must print a blank-message error rather than the
+  library's default generic text.
+- `water_body_warning405_code`, `water_body_warning405_instance`, and
+  `water_body_warning405_array` require exactly one full warning line and successful
+  continued execution. The latter two use the registered error, which carries its
+  warning status; a newly constructed `ErrorInstance` is critical by default.
+- `water_body_quiet_405` and `water_body_disabled_405` require silent continuation.
+  `water_body_critical901` and `water_body_quiet_901` require the full error message
+  and exit 1. `water_body_disabled_901` requires silent continuation.
+
+The wrappers check exit status and completion markers, remove only the known
+console color sequences when checking text, and do not compare runtime addresses
+or source-line numbers. Registration and reporting tests do not add production
+river-length or river-type checks: neither 405 nor 901 currently has a raising site.
+
+For scientific comparisons, use the four existing capture/compare runners. Set
+`phase11_evidence` to a new absolute directory and place the saved reference
+programs there with `reference_` prefixed to their names. Run from the repository
+root, capturing before production edits:
+
+```sh
+for suite in waterbody reactor; do
+  python3 -B "verification/verify_${suite}.py" capture \
+    --exe "$phase11_evidence/reference_nanofase" \
+    --work-dir "$phase11_evidence/${suite}_checks"
+done
+python3 -B verification/verify_biota.py capture \
+  --exe "$phase11_evidence/reference_nanofase" \
+  --science-exe "$phase11_evidence/reference_biota_science_test" \
+  --integration-exe "$phase11_evidence/reference_biota_integration_test" \
+  --work-dir "$phase11_evidence/biota_checks"
+python3 -B verification/verify_shared_consumers.py capture \
+  --exe "$phase11_evidence/reference_nanofase" \
+  --probe-exe "$phase11_evidence/reference_shared_consumer_integration_test" \
+  --work-dir "$phase11_evidence/shared_consumers_checks"
+```
+
+After the candidate build, run each command again with `capture` changed to
+`compare`, the same work directories, and each executable changed to its
+corresponding `build-debug/` path. Keep the integration-test sources unchanged;
+their existing source-hash protections remain active.
+
+Together these runners cover 47 exact ordinary-output comparisons, direct and
+running-model organism concentrations, expected failures, logging, batch runs,
+and checkpoint checks. Retain their existing strict comparison rules. Checkpoint
+checks establish saved-state restoration, not correct continuation of a simulation.
+The [Phase 11 report](../migration_documentation/phase11_diagnostic_registry.md)
+records the actual commands, results, comment checks, and remaining work.
+
 ## Repeatable Shared-Consumer Checks (Phase 10)
 
 `verify_shared_consumers.py` checks output choices that the original fixed-filename

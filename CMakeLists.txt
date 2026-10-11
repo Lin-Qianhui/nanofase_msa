@@ -84,6 +84,7 @@ target_link_libraries(nanofase PRIVATE "${NETCDF_LIBRARIES_F90}")
 
 # Focused regression test for the shared diagnostics singleton and the
 # intentionally malformed legacy registry retained during migration.
+# Phase 11 note: the shared codes and blank entries are now intentional; 901 belongs to WaterBody.
 add_executable(error_handling_registry_test
     vendor/feh/src/ErrorInstance.f90
     vendor/feh/src/ErrorHandler.f90
@@ -95,6 +96,26 @@ set_target_properties(error_handling_registry_test PROPERTIES
     Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/error-handling-test-modules"
 )
 add_test(NAME error_handling_registry COMMAND error_handling_registry_test)
+
+set(shared_message_1 "")
+set(shared_message_110 "Invalid object type index in data file.")
+set(shared_message_200 "File not found.")
+set(shared_message_201 "Variable not found in input file.")
+set(shared_message_300 "Newton's method failed to converge.")
+foreach(code 1 110 200 201 300)
+    foreach(mode critical quiet disabled)
+        add_test(NAME shared_error_${code}_${mode}
+            COMMAND "${CMAKE_COMMAND}"
+                "-DTEST_EXECUTABLE=$<TARGET_FILE:error_handling_registry_test>"
+                "-DCODE=${code}" "-DMODE=${mode}" "-DEXPECTED_MESSAGE=${shared_message_${code}}"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectSharedDiagnostic.cmake")
+    endforeach()
+endforeach()
+add_test(NAME shared_error_generic
+    COMMAND "${CMAKE_COMMAND}"
+        "-DTEST_EXECUTABLE=$<TARGET_FILE:error_handling_registry_test>"
+        -DCODE=1 -DMODE=generic "-DEXPECTED_MESSAGE="
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectSharedDiagnostic.cmake")
 
 # Focused regression test for Soil-owned configuration, defaults, and error
 # registration. It is a separate process because the shared handler may only
@@ -156,6 +177,7 @@ add_test(
 
 # WaterBody owns an optional group and six effective errors. Each test starts
 # a fresh process so that the shared error handler is initialised only once.
+# Phase 11 note: restoring 405 and moving 901 brings WaterBody's count to eight.
 add_executable(water_body_config_module_test
     vendor/feh/src/ErrorInstance.f90
     vendor/feh/src/ErrorHandler.f90
@@ -230,6 +252,20 @@ add_water_body_diagnostic_test(quiet_warning empty 0 "Completed WaterBody check"
 add_water_body_diagnostic_test(disabled_error empty 0 "Completed WaterBody check" "-DFORBIDDEN_TEXT=Error:")
 add_water_body_diagnostic_test(critical empty 1
     "Invalid RiverReach inflow reference. Inflow must be from a neighbouring RiverReach.")
+
+set(water_warning_405 "RiverReach lengths specified in input data sum to greater than straight-line river branch length. Are you sure this is intended?")
+foreach(mode warning405_code warning405_instance warning405_array)
+    add_water_body_diagnostic_test(${mode} empty 0 "${water_warning_405}"
+        "-DEXPECTED_DIAGNOSTIC=Warning: ${water_warning_405}")
+endforeach()
+foreach(mode quiet_405 disabled_405)
+    add_water_body_diagnostic_test(${mode} empty 0 "Completed WaterBody check" "-DFORBIDDEN_TEXT=Warning:")
+endforeach()
+foreach(mode critical901 quiet_901)
+    add_water_body_diagnostic_test(${mode} empty 1 "Invalid RiverReach type index provided."
+        "-DEXPECTED_DIAGNOSTIC=Error: Invalid RiverReach type index provided.")
+endforeach()
+add_water_body_diagnostic_test(disabled_901 empty 0 "Completed WaterBody check" "-DFORBIDDEN_TEXT=Error:")
 
 # Exercise the existing slope procedure on an interior reach without constructing
 # an outlet, whose terrain-array failure belongs to a separate repair.

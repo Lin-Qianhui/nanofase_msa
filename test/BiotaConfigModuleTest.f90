@@ -14,6 +14,9 @@ program BiotaConfigModuleTest
     character(len=32) :: mode
     type(ErrorInstance), allocatable :: before(:), after(:)
     type(ErrorInstance) :: error
+    integer, parameter :: expectedCodes(27) = [ &
+        0, 1, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 200, 201, 300, &
+        401, 402, 403, 404, 405, 500, 501, 600, 901, 902, 903, 904 ]
     integer :: i, occurrences
 
     call get_command_argument(1, dimensionsPath)
@@ -23,20 +26,23 @@ program BiotaConfigModuleTest
     call initModelDimensions(trim(dimensionsPath))
     ! Suppressing warnings must not suppress a critical Biota error.
     call initErrorHandling(.false., mode /= 'disabled_error')
-    call beforeBiota(16)
+    call beforeBiota(15)
     call soilConfig%init(trim(dimensionsPath))
-    call beforeBiota(17)
+    call beforeBiota(16)
     call bedSedimentConfig%init(trim(dimensionsPath))
-    call beforeBiota(18)
+    call beforeBiota(17)
     call waterBodyConfig%init(trim(dimensionsPath))
-    call beforeBiota(24)
-    call registerReactorErrors()
     call beforeBiota(25)
+    call registerReactorErrors()
+    call beforeBiota(26)
 
     before = ERROR_HANDLER%getErrors()
     call registerBiotaErrors()
     after = ERROR_HANDLER%getErrors()
-    call require(size(after) == 26, 'Biota did not add exactly one error')
+    call require(size(after) == 27, 'Biota did not add exactly one error')
+    do i = 1, size(expectedCodes)
+        call require(count(after%code == expectedCodes(i)) == 1, 'Final error code is not present exactly once')
+    end do
     occurrences = 0
     do i = 1, size(after)
         if (after(i)%getCode() == 902) occurrences = occurrences + 1
@@ -50,7 +56,7 @@ program BiotaConfigModuleTest
         call require(error%message == before(i)%message, 'Biota registration changed another message')
         call require(error%isCritical .eqv. before(i)%isCritical, 'Biota registration changed another severity')
     end do
-    call require(.not. ERROR_HANDLER%errorExists(405), 'Missing code 405 was unexpectedly restored')
+    call require(ERROR_HANDLER%errorExists(405), 'Biota registration lost WaterBody warning 405')
     error = ERROR_HANDLER%getErrorFromCode(1)
     call require(error%message == '' .and. error%isCritical, 'Legacy blank error changed')
     error = ERROR_HANDLER%equal(value=1.0, criterion=1.0)

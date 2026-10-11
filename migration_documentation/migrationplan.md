@@ -75,15 +75,15 @@ other explicitly deferred defects remain current until their named follow-up pha
   (`defaultSedimentTransport_a`, `defaultBankErosionAlpha`, soil attachment
   efficiency, …) that are all domain-specific.
 - **`dp` is duplicated** in `GlobalsModule.f90:13` and `DefaultsModule.f90:7`.
-- The flat error registry has several existing defects that this behaviour-preserving
-  migration must record but not silently repair:
+- The original flat error registry had several issues preserved through Phase 10:
   - `errors(4)` and `errors(5)` are never assigned and therefore behave as blank
     code-1 `ErrorInstance`s.
-  - `errors(11)` is assigned twice, silently dropping code 405.
-  - code 901 is listed with BedSediment even though its message describes an invalid
-    RiverReach type.
-  - codes 110, 200, 201, and 300 do not yet have explicit target owners.
-  These require a separate, explicitly tested behaviour-change phase.
+  - `errors(11)` was assigned twice, silently dropping code 405.
+  - codes 110, 200, 201, 300, and 901 had no agreed target owners.
+  Phase 11 restores 405 and assigns 901 to WaterBody. Codes 110/200/201/300 stay
+  shared. By explicit agreement, slots 4 and 5 and their blank critical code-1
+  message stay unchanged; they are an accepted compatibility choice, not unused
+  space that cleanup may silently remove.
 - `CheckpointModule.f90` uses shared dimension fields (`npDim` ×66,
   `nSedimentLayers` ×14, `nSizeClassesSpm` ×18, `nSoilLayers` ×10, `nFracCompsSpm` ×4)
   to shape its arrays. It also reads model-wide state such as `epsilon` and the
@@ -306,9 +306,12 @@ than the facade `C`. See the builder phase in §7.
   domain config attempts error registration.
 - During migration, `GlobalsModule` temporarily imports and publicly re-exports the
   same object so untouched consumers do not create a second handler instance.
-- The legacy flat registry remains temporarily available and shrinks only when a
-  domain with assigned codes takes ownership. Its known malformed/unowned entries are
-  preserved until the separate registry-correction phase.
+- The shared list retains codes 110, 200, 201, and 300. They describe general input,
+  file, and numerical errors and have no current production raising sites. Keeping
+  them shared preserves their availability without inventing new domain checks.
+- Positions 4 and 5 deliberately retain blank critical code-1 instances. The error
+  library combines them into one registered code-1 entry and replaces its normal
+  generic message with blank text. Final cleanup must preserve this agreed behavior.
 
 ### Model-dimensions (`src/ModelDimensions/` — proposed)
 - `npDim`, `ionicDim`
@@ -343,7 +346,7 @@ than the facade `C`. See the builder phase in §7.
 |---|---|---|---|---|
 | **Soil** (`src/Soil/`) | `soilLayerDepth`, `includeBioturbation`, `includeAttachment`, `includeSoilErosion`, `includeClayEnrichment` | `defaultSoilAttachmentEfficiency`, `defaultSoilDarcyVelocity` | 600 | `/soil/` |
 | **Source** (`src/Source/`) | `includePointSources` | — | — | `/sources/` |
-| **WaterBody** (`src/WaterBody/`) | `minStreamSlope`, `minEstuaryTimestep`, `includeEstuary`, `includeBankErosion` | `defaultSlope`, `defaultBankErosionAlpha/Beta`, `defaultMin/MaxWaterTemperature`, `defaultMinWaterTemperatureDayOfYear` | 401–404, 500–501; 405 intended but currently dropped | `/water/` |
+| **WaterBody** (`src/WaterBody/`) | `minStreamSlope`, `minEstuaryTimestep`, `includeEstuary`, `includeBankErosion` | `defaultSlope`, `defaultBankErosionAlpha/Beta`, `defaultMin/MaxWaterTemperature`, `defaultMinWaterTemperatureDayOfYear` | 401–405, 500–501, 901 | `/water/` |
 | **BedSediment** (`src/BedSediment/`) | `includeBedSediment`, `sedimentLayerDepth` | `defaultDepositionAlpha/Beta`, `defaultSedimentTransport_a/b/c`, `defaultSedimentEnrichment_k/a` | 904 | `/sediment/` (non-dimension part) |
 | **Reactor** (`src/Reactor/`) | — | `default_k_diss_pristine/transformed`, `default_k_transform_pristine`, `defaultShearRate` | 903 | none |
 | **Biota** (`src/Biota/`) | — | — | 902 | none in `config.nml`; constants-file groups stay in DataInput |
@@ -379,11 +382,10 @@ than the facade `C`. See the builder phase in §7.
 > to the separate constants file and remain read and stored by DataInput. Their
 > absence in `config.nml` does not mean that organism inputs are absent from the model.
 >
-> Error ownership in this table is conditional and provisional. Restoring code 405 to
-> WaterBody would change current diagnostic behaviour and is therefore deferred. Code
-> 901 must not be moved into BedSediment merely because the legacy array places it
-> nearby; its message refers to RiverReach. Codes 110, 200, 201, and 300 also need
-> explicit ownership decisions in the separately tested registry-correction phase.
+> Phase 11 settles the remaining error ownership separately from the domain moves.
+> WaterBody owns restored warning 405 and critical error 901; the four general codes
+> 110/200/201/300 remain in ErrorHandling. None of these six codes has a current
+> production raising site. Registering 405 does not add a river-length check.
 
 ### Model assembly / builder (`src/ModelAssembly/` — proposed)
 
@@ -420,9 +422,9 @@ We cannot edit all call sites at once. Strategy:
 3. Migrate call sites **one domain at a time** from `C%foo` to the new module's
    accessor. Untouched domains keep reading `C%foo` and keep compiling.
 4. After domain phases, migrate the remaining cross-cutting facade readers. When `C`
-   has no remaining readers, **delete it**. By then every error with an agreed owner
-   has already moved during that owner's phase; final cleanup only removes an empty
-   legacy registry and must not be used to change diagnostic behaviour.
+   has no remaining readers, **delete it**. Every error must have an agreed owner,
+   but the shared error list does not need to be empty. Keep the approved shared
+   codes and blank code-1 behavior; cleanup must not change diagnostics.
 
 This means `LoggerModule` and most checkpoint state keep reading `C%…` until their
 owning layers are migrated. The error registry moved to `ErrorHandlingModule` in
@@ -456,6 +458,7 @@ startup failure order: model-dimensions already reads the full `/sediment/` grou
 before Soil, so missing or malformed sediment input can fail at that earlier read.
 There must never be both a Globals-owned and diagnostics-owned handler.
 
+The following handoff counts are historical records for Phases 5–9.
 During the Soil error handoff, the legacy array shrank from 17 entries to 16. Codes
 901–904 shifted to slots 13–16; the two blank slots at 4–5 and the overwritten slot 11
 were deliberately preserved. At that stage the shared handler alone gave 25 effective
@@ -470,7 +473,8 @@ counts are 18 after shared-handler initialisation, 19 after Soil, 20 after
 BedSediment, and 26 after WaterBody. The original 405-then-500 overwrite moves into
 slot 5 of WaterBody's private six-entry list; only its final six entries are
 registered. Removing only the old code-500 assignment would incorrectly restore
-405. Correcting the blank entries and missing 405 remains a separate behaviour change.
+405. At that stage, deciding the blank-entry behavior and restoring missing 405
+were deferred to a separate change.
 
 Phase 8 removes only code 903 from the legacy list and registers it through Reactor.
 At that stage the list has eight slots; blank slots 4–5 and codes 901–902 in slots 7–8 remain.
@@ -483,6 +487,13 @@ has seven slots, retaining blank slots 4–5 and code 901 in slot 7. Effective c
 are 16 after the shared handler, 17 after Soil, 18 after BedSediment, 24 after
 WaterBody, 25 after Reactor, and 26 after Biota. Code 902 has no current science
 raising site; the existing inline invalid-uptake-form error remains unchanged.
+
+Phase 11 leaves six positions in the shared array: codes 110/200/201 in positions
+1–3, blank positions 4–5, and code 300 in position 6. WaterBody registers eight
+entries: 401–405, 500–501, and 901. The effective counts are now 15 after the shared
+handler, 16 after Soil, 17 after BedSediment, 25 after WaterBody, 26 after Reactor,
+and 27 after Biota. Only restoring 405 increases the final count; moving 901 changes
+when it becomes available. The blank code-1 message remains intentional.
 
 The configuration-file `/water/` group and all four of its members are optional.
 WaterBody owns their defaults and retains the original two-read/status-check logic.
@@ -611,6 +622,7 @@ subroutine bootstrap(env)
     call bedSedimentConfig%init(configFilePath) ! reads config /sediment/ and registers code 904
     call syncModelConfigToGlobals()          ! temporary copies for older consumers
     call waterBodyConfig%init(configFilePath) ! optional config /water/ and six effective errors
+    ! Phase 11: this same call now registers eight errors, including 405 and 901.
     call registerReactorErrors()             ! code 903; no Reactor config-file group
     call registerBiotaErrors()               ! code 902; constants-file inputs stay in DataInput
     call syncModelDimensionsToGlobals()      ! remaining dimension copies
@@ -654,7 +666,7 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
-Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, 8, 9, and 10 are complete. Their authoritative
+Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, 8, 9, 10, and 11 are complete. Their authoritative
 records are [phase0_kernel.md](phase0_kernel.md),
 [phase1_model_dimensions.md](phase1_model_dimensions.md),
 [phase2_model_config.md](phase2_model_config.md), and
@@ -666,10 +678,11 @@ records are [phase0_kernel.md](phase0_kernel.md),
 [phase7_waterbody.md](phase7_waterbody.md), and
 [phase8_reactor.md](phase8_reactor.md), and
 [phase9_biota.md](phase9_biota.md), and
-[phase10_shared_consumers.md](phase10_shared_consumers.md). The next migration
-phase is the separate diagnostic-registry correction below. Final compatibility
-cleanup still follows that correction; the separately listed science and build
-repairs must not be folded into ownership migration.
+[phase10_shared_consumers.md](phase10_shared_consumers.md), and
+[phase11_diagnostic_registry.md](phase11_diagnostic_registry.md). The next migration
+phase is final compatibility cleanup. Retain the approved shared errors and blank
+code-1 behavior. The separately listed science and build repairs must not be
+folded into ownership migration.
 
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
@@ -895,19 +908,21 @@ has assigned codes; a domain without assigned errors skips error registration.
   records, logging, mask/batch state, diagnostics, and checkpoint layout/defined
   values. See [phase10_shared_consumers.md](phase10_shared_consumers.md).
 
-### Separate diagnostic-registry correction phase (behaviour change)
-- Add focused tests that capture the intended diagnostics, then correct the two
-  unassigned legacy `errors(4:5)` entries, the overwritten code 405 now in WaterBody
-  registration slot 5 (formerly legacy slot 11), and the
-  incorrect association of code 901 with BedSediment.
-- Determine explicit owners for codes 110, 200, 201, 300, and 901 from their meaning
-  and intended responsibility. They have no current production raising sites, so
-  call-site searches alone cannot settle ownership. Explicitly test any decision to
-  retain, relocate, or retire them; do not invent science raising sites to fit a map.
-  Do not bundle these behaviour changes into a pure config/domain refactor.
-- Re-run exact valid-config regression tests and dedicated error-path assertions;
-  valid scientific output remains unchanged while the corrected diagnostics are
-  intentionally different.
+### Phase 11 — Separate diagnostic-registry correction (complete)
+- Restored warning 405 without overwriting 500; WaterBody now registers 401–405,
+  500–501, and critical code 901. Preserved every existing message and severity.
+- Explicitly retained shared codes 110/200/201/300 and the blank positions 4–5.
+  Their blank critical code-1 message remains by agreement. Keep this shared list
+  through final cleanup; an empty registry is not a completion requirement.
+- Preserved public interfaces, startup order, the error library, and all original
+  comments. Added explanatory notes beside historical comments without replacing them.
+- Tested exact membership and counts through startup, warning 405 through three
+  reporting forms, critical 901, shared errors, blank code 1, warning suppression,
+  and disabled error output. No new science raising sites are added.
+- **Verified:** clean build, 57 CTest cases, 47 exact model-output comparisons with
+  a fresh Phase 10 reference, unchanged Biota state, logs, batch/checkpoint checks,
+  expected failures, and all 76 original comments in changed code/build files.
+  See [phase11_diagnostic_registry.md](phase11_diagnostic_registry.md).
 
 ### Separate build-system cleanup
 - Stop CMake configuration from rewriting the tracked `src/VersionModule.f90` in a
@@ -951,10 +966,10 @@ has assigned codes; a domain without assigned errors skips error registration.
   claiming exact checkpoint continuation.
 
 ### Final phase — Cleanup
-- Remove the legacy flat registry only after all of its valid entries have moved in
-  their owning phases and the separate registry-correction phase has resolved the
-  malformed/unowned entries. Final cleanup must see an empty registry and must not
-  change error behaviour.
+- Confirm every error has its agreed owner. Keep shared codes 110/200/201/300,
+  blank positions 4–5, and the resulting blank code-1 message in ErrorHandling.
+  Remove compatibility code without removing this approved shared list or changing
+  error behavior. An empty registry is not required.
 - Move remaining log messages to domain code (most are already inline).
 - Delete `type(GlobalsType) :: C` and the remaining transitional bootstrap facade
   helpers once no readers remain. `GLOBALS_INIT` was removed in Phase 4.
@@ -1061,6 +1076,12 @@ For domain `X`:
 - **Focused config/error gate:** test existing required values and defaults in a
   separate process where shared singleton state requires it. Check both the base
   registry and the count after domain registration.
+- **Phase 11 diagnostic gate:** require exact code membership without duplicates and
+  counts 15/16/17/25/26/27 through shared/Soil/BedSediment/WaterBody/Reactor/Biota
+  setup. Codes 405 and 901 appear only after WaterBody initialisation. Test exact
+  messages, warning versus critical status, suppression controls, and continued or
+  stopped execution. Keep the blank code-1 message. Restoring registered 405 proves
+  reporting only, not automatic detection of excessive river lengths.
 - **Active Biota coverage:** use `verification/verify_biota.py capture/compare` with
   identical direct and integration test programs built against each source version.
   Compare organism counts, selected input indices, and both concentrations, and
@@ -1108,7 +1129,7 @@ For domain `X`:
 | 490 `C%npDim` readers can't change at once | Facade shim — `C` stays populated until the last domain migrates |
 | Namelist read-order coupling (`allocatable_array_sizes` first) | Model-dimensions reads sizes in Phase 1, before any domain init; bootstrap enforces order |
 | IO-unit collisions when domains read independently | Use `open(newunit=…)`; retire the central `iou*` registry |
-| Malformed/unowned legacy registry entries carried into domains | Preserve them during pure refactors; fix legacy `errors(4:5)`, WaterBody's code-405 overwrite (formerly `errors(11)`), code 901, and unowned 110/200/201/300 only in the separately tested diagnostic phase |
+| Cleanup silently changes agreed diagnostics | Preserve the Phase 11 ownership and tests: 405/901 belong to WaterBody, 110/200/201/300 remain shared, and blank positions 4–5 keep the blank critical code-1 message |
 | Silent behaviour change during refactor | `verify_refactor.py --exact` regression gate after every phase |
 | Checkpoint depends on dimensions and run state | Dimensions moved in Phase 1 and remaining shared reads in Phase 10. Defined saved values and loading are checked; the main loop's unused restored timestep, warm-up timing, and missing Biota state still prevent claims of correct continuation |
 | Layer-depth vs count split (soil/sediment) | Counts → model-dimensions; depths → domain, which queries the count to allocate |
