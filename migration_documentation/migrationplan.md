@@ -666,7 +666,7 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
-Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, 8, 9, 10, and 11 are complete. Their authoritative
+Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, 8, 9, 10, 11, and 12 are complete. Their authoritative
 records are [phase0_kernel.md](phase0_kernel.md),
 [phase1_model_dimensions.md](phase1_model_dimensions.md),
 [phase2_model_config.md](phase2_model_config.md), and
@@ -679,10 +679,11 @@ records are [phase0_kernel.md](phase0_kernel.md),
 [phase8_reactor.md](phase8_reactor.md), and
 [phase9_biota.md](phase9_biota.md), and
 [phase10_shared_consumers.md](phase10_shared_consumers.md), and
-[phase11_diagnostic_registry.md](phase11_diagnostic_registry.md). The next migration
-phase is final compatibility cleanup. Retain the approved shared errors and blank
-code-1 behavior. The separately listed science and build repairs must not be
-folded into ownership migration.
+[phase11_diagnostic_registry.md](phase11_diagnostic_registry.md), and
+[phase12_build_system_cleanup.md](phase12_build_system_cleanup.md). The separate
+build cleanup was completed before final compatibility cleanup, which is now next.
+Retain the approved shared errors and blank code-1 behavior. Version-length and
+science corrections remain separate changes.
 
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
@@ -924,12 +925,38 @@ has assigned codes; a domain without assigned errors skips error registration.
   expected failures, and all 76 original comments in changed code/build files.
   See [phase11_diagnostic_registry.md](phase11_diagnostic_registry.md).
 
-### Separate build-system cleanup
-- Stop CMake configuration from rewriting the tracked `src/VersionModule.f90` in a
-  normal source checkout. Until then, each migration phase must use the tracked-file
-  gate in §9.
-- Test this separately from science-domain migrations so a version-generation change
-  cannot hide a model-output change.
+### Phase 12 — Separate build-system cleanup (complete)
+- CMake and the example Makefile no longer rewrite tracked source. CMake generates
+  a build-local VersionModule; fpm and the package recipe still compile the valid
+  tracked fallback, now `0.0.5`, matching the manifest and recipe.
+- `NANOFASE_VERSION` explicitly selects a CMake label. An empty override uses
+  `git describe --tags` from this checkout, then the fallback if Git/history/tags
+  are unavailable. Detection never adopts a containing repository's version.
+  Every build refreshes the generated copy, writing it only if its content changes.
+- The example Makefile delegates source ordering and compilation to CMake. Debug,
+  release, fast, clean, compiler/NetCDF overrides, and compilation information remain
+  available. Each mode has its own directory; clean leaves unrelated caches alone.
+- Main-program compiled modules now have their own directory, like the tests.
+  Legacy modules in the build root are retained in `legacy-fortran-modules` so they
+  cannot silently supply an old version to a separately rebuilt test.
+- Kept the 17-character version constant and 16-character model fields. Fixed-label
+  scientific comparisons therefore preserve existing text exactly. Automatic and
+  fallback builds intentionally change version metadata, including console output.
+- Verified 58 CTest cases (57 existing plus a version-build test containing 16 check
+  groups), 47 exact output comparisons, Biota state, expected failures, batch and
+  checkpoint checks, all Make modes, source-archive builds, and `fpm @install`.
+  Retained all 61 original comments in the changed existing code/build files.
+  See [phase12_build_system_cleanup.md](phase12_build_system_cleanup.md).
+
+### Separate version-length correction
+- Lengthen the stored label only in a separate change. The current constant holds
+  17 characters, and ModelConfig and Globals retain 16. Automatic detection uses
+  the current Git description, but model outputs still apply those existing limits.
+- Check the full label in console welcome text, the summary, and the NetCDF source
+  attribute (including its repository URL). Numerical results must remain unchanged.
+- Review release metadata separately: the fallback, fpm manifest, and package recipe
+  say `0.0.5`, while CITATION.cff still says `0.0.4` with its older release date.
+  Phase 12 does not invent a new release or citation date.
 
 ### Separate river-disabled behaviour correction
 - Define what disabling bed sediment should do to deposition, resuspension,
@@ -1109,11 +1136,16 @@ For domain `X`:
   these new tests. Keep the existing Biota comparison sources/hash checks unchanged.
 - **Batch smoke gate:** run the existing batch path whenever assembly, source snapping,
   config paths, or runtime-mutated model config are touched.
-- **Tracked-file gate:** some CMake configurations rewrite tracked
-  `src/VersionModule.f90`. Save its content and hash before configuration. If CMake
-  rewrites it, restore the exact content, rebuild without configuring again, and
-  confirm the hash and regression results. Correcting this build-system mutation is a
-  separate cleanup task.
+- **Tracked-file and version gate:** Phase 12 and later build a generated version
+  module without rewriting tracked source. Give the reference and candidate the
+  same explicit `-DNANOFASE_VERSION=<label>` and identical numerical compiler flags.
+  Keep summary and NetCDF version fields in exact comparisons. Save and compare
+  tracked-file hashes after configuration, building, reconfiguration, and cleaning.
+  When the reference predates Phase 12, it cannot accept this override: build it in
+  an isolated source copy, restore its exact saved version file after configuration,
+  and verify that file again after building. Restore and rebuild again if automatic
+  reconfiguration changed it. The candidate's override must equal that saved label.
+  Use the new override procedure for both sides once both include Phase 12.
 - **Source gates:** search case-insensitively and distinguish executable statements
   from comments and strings. After Phase 10 only retained Bootstrap/Globals code
   may use `C`; only Bootstrap imports Globals in production. BiotaScienceTest is

@@ -25,24 +25,25 @@ We recommend compiling using GFortran version 10 or higher. The only dependency 
 
 ### Using `make`
 
-An example makefile ([Makefile.example](./Makefile.example)) is provided. If you already have NetCDF installed, then compiling the model is as simple as making the `bin` directory to place your exectuble in, then running `make`:
+The [example Makefile](./Makefile.example) calls CMake, which must also be installed.
+It creates its build directories automatically:
 
-```console
-$ cp Makefile.example Makefile
-$ mkdir bin
-$ make
+```sh
+make -f Makefile.example          # Debug
+make -f Makefile.example release  # CMake Release settings
+make -f Makefile.example fast     # GNU Fortran Release with -Ofast
+make -f Makefile.example clean
 ```
 
-The [example makefile](./Makefile.example) provides targets for debug, release and "fast" compilation. The main make target builds the debug version, whilst the `release` and `fast` targets build optimised release versions (`release` uses `-O3`, `fast` uses `-Ofast -march=native -mtune=native`). Run times can be significantly improved using the `release` and `fast` targets, and so unless you need detailed debugging or profiling, then it is recommended to use one of these.
+You can also copy it to `Makefile` and use the same commands without `-f`.
+The executable is `build/nanofase`; compilation information is in `build/comp_meta`.
+The three modes use separate `build/make-*` directories. Cleaning leaves unrelated
+build directories and fpm caches intact.
 
-```console
-# Build the debug version
-$ make
-# OR, build the release version
-$ make release
-# OR the fast version, with non-standard optimizations
-$ make fast
-```
+Set `FC`, `BUILD_DIR`, `JOBS`, or `MODEL_VERSION` on the Make command line as needed.
+NetCDF settings come from `nf-config`; `NETCDF_INCLUDES` and
+`NETCDF_LIBRARIES_F90` can override them. `CMAKE_ARGS` forwards additional CMake
+options. The old standalone flag/object-list variables are no longer used.
 
 ### Using `cmake`
 
@@ -54,9 +55,35 @@ $ cmake ..
 $ make
 ```
 
-Use the `-DCMAKE_BUILD_TYPE=Debug|Release` flag to control whether you want to build the debug (default) or release version.
+Set `-DCMAKE_BUILD_TYPE=Debug` or `-DCMAKE_BUILD_TYPE=Release` explicitly when configuring CMake. The Make wrapper selects Debug by default.
 
 Note that, whilst `cmake` can be used to compile the model using the `ifort` or `ifx` compilers (e.g. by using the `-DCMAKE_Fortran_COMPILER=ifort` flag), issues can arise when the installed version of NetCDF that the `cmake` script finds isn't a version compiled by an Intel compiler. Therefore, we recommend compiling using the compiler that your NetCDF installation used. As a workaround, you can explicitly point `cmake` to the correct version of NetCDF by declaring `NETCDF_INCLUDES` (include directories) and `NETCDF_LIBRARIES_F90` (link libraries) (e.g. by specifying `-DNETCDF_INCLUDES=.. -DNETCDF_LIBRARIES_F90=..`).
+
+### Model version
+
+CMake and Make select the version from this checkout's `git describe --tags` when
+available, otherwise from the tracked `0.0.5` fallback. They generate a separate
+Fortran file inside each build directory and never rewrite tracked source.
+
+For repeatable comparisons, give both builds the same label:
+
+```sh
+cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug -DNANOFASE_VERSION=0.0.5-18-g163ae42
+cmake --build build-debug
+# Equivalent Make override:
+make -f Makefile.example MODEL_VERSION=0.0.5-18-g163ae42
+```
+
+An empty override returns to automatic selection. fpm and the package recipe compile
+`src/VersionModule.f90` directly and report `0.0.5`, even inside a Git checkout.
+The constant still holds 17 characters and model output still holds 16; changing
+those limits is separate work. Release maintainers should update the fallback
+alongside package versions and review the citation metadata.
+
+Compiled Fortran module files are compiler-generated declarations used by other
+source files. Main and test programs keep their own copies. When reusing an older
+CMake build directory, old copies in its root move to `legacy-fortran-modules` to
+prevent stale imports. Use a separate build directory for an old in-source build.
 
 ### Dependencies
 

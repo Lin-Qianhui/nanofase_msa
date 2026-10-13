@@ -4,6 +4,15 @@ All notable changes to the model will be documented in this file. Breaking chang
 
 ## [Unreleased]
 
+### Changed
+
+- CMake generates model-version source inside each build directory. Select a label
+  with `-DNANOFASE_VERSION=<label>`; otherwise Git is used when available, with
+  `0.0.5` as the fallback. fpm packages compile that tracked fallback directly.
+  Builds no longer rewrite `src/VersionModule.f90`; existing output-length limits remain.
+- The example Makefile delegates to CMake, retaining debug, release, fast and clean
+  commands. Main and test executables use separate compiled-module directories.
+
 ## [0.0.5] - 2025-03-15
 
 ### Changed
@@ -20,7 +29,7 @@ All notable changes to the model will be documented in this file. Breaking chang
 
 ### Changed
 
-- ⚠️ Model version number is now obtained from the `src/VersionModule.f90` file. This is dynamically updated at build time by the [example Makefile](./Makefile.example) or [CMakeLists.txt](./CMakeLists.txt) file, and if you are not using one of these build processes, should ensure that yours does the same. In short, the output of `git describe --tags` should be used for the `modelVersion` variable in `src/VersionModule.f90`. For example, this can be achieved in a Makefile by the use of `sed`: `sed -i "s/\".*\"/\"${git describe --tags}\"/g" src/VersionModule.f90`. Note that the version number in this file and the [CITATION.cff](./CITATION.cff) file still needs bumping on each release. Build process will need updating.
+- ⚠️ Model version information moved to `src/VersionModule.f90` in this release. Historical Make/CMake builds rewrote this file using Git. That procedure was replaced by the build-directory generation described under Unreleased; do not add a `sed` rewrite to current build scripts. Release maintainers still need to review the fallback, package and citation versions together.
 - ️️️️Lots of file, module and type names have been updated to follow a coherent convention. See the updated [Makefile.example](./Makefile.example).
 
 ## [0.0.3] - 2021-08-05

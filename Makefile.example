@@ -1,121 +1,61 @@
+# CMake now owns source discovery, module dependencies and platform flags.
+# Use this file directly with make -f Makefile.example, or copy it to Makefile.
+.DEFAULT_GOAL := all
+.PHONY: all release fast clean
+
+FC = gfortran
+CMAKE ?= cmake
+BUILD_DIR ?= build
+EXEC_FILE ?= nanofase
+MODEL_VERSION ?=
+CMAKE_ARGS ?=
+JOBS ?= 2
+NF_CONFIG ?= nf-config
+NETCDF_INCLUDES ?= $(shell $(NF_CONFIG) --includedir 2>/dev/null)
+NETCDF_LIBRARIES_F90 ?= $(shell $(NF_CONFIG) --flibs 2>/dev/null)
+
+# Shell quoting also permits spaces and apostrophes in paths and version labels.
+shell_quote = '$(subst ','"'"',$(1))'
+source_dir := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+build_dir := $(abspath $(BUILD_DIR))
+netcdf_args = $(if $(NETCDF_INCLUDES),$(call shell_quote,-DNETCDF_INCLUDES=$(NETCDF_INCLUDES))) $(if $(NETCDF_LIBRARIES_F90),$(call shell_quote,-DNETCDF_LIBRARIES_F90=$(NETCDF_LIBRARIES_F90)))
+
+define build_model
+	$(CMAKE) -S $(call shell_quote,$(source_dir)) -B $(call shell_quote,$(build_dir)/make-$(1)) $(call shell_quote,-DCMAKE_Fortran_COMPILER=$(FC)) -DCMAKE_BUILD_TYPE=$(2) $(call shell_quote,-DNANOFASE_VERSION=$(MODEL_VERSION)) $(netcdf_args) $(3) $(CMAKE_ARGS)
+	$(CMAKE) --build $(call shell_quote,$(build_dir)/make-$(1)) --config $(2) --target nanofase --parallel $(JOBS)
+	$(CMAKE) $(call shell_quote,-DSOURCE_ROOT=$(source_dir)) $(call shell_quote,-DPROFILE_DIR=$(build_dir)/make-$(1)) $(call shell_quote,-DOUTPUT_DIR=$(build_dir)) $(call shell_quote,-DEXEC_FILE=$(EXEC_FILE)) -DBUILD_CONFIG=$(2) -P $(call shell_quote,$(source_dir)/cmake/PublishMakeBuild.cmake)
+endef
+
+all:
+	$(call build_model,debug,Debug,)
+release:
+	$(call build_model,release,Release,)
+# fast retains its GNU Fortran meaning; ordinary CMake flags are unchanged.
+fast:
+	$(call build_model,fast,Release,-DCMAKE_Fortran_FLAGS_RELEASE=-Ofast)
+clean:
+	$(CMAKE) $(call shell_quote,-DOUTPUT_DIR=$(build_dir)) $(call shell_quote,-DEXEC_FILE=$(EXEC_FILE)) -P $(call shell_quote,$(source_dir)/cmake/CleanMakeBuild.cmake)
+
+# Historical comments from the standalone Makefile, retained verbatim below.
+# Its manual flags, object ordering, auto-parallelisation and source rewriting
+# have been replaced by CMake. Use CMAKE_ARGS for additional compiler settings.
 # Example Makefile for NanoFASE model. Usage:
 # 	`make`          Compile the model with maximum debugging and minimal optimisations
 #	`make release`	Compile the model with -O3 optimisations
 # 	`make fast`		Compile the model with -Ofast optimisations
 #	`make clean`    Clean compilation files
-
 # What compiler to use? gfortran recommended
-FC = gfortran
 # Flags for debug (main) build. Caution using -O0 due to this issue: https://stackoverflow.com/questions/44385909/adding-to-an-array-of-characters-in-fortran
-DEBUG_FLAGS = -Og -pg -g -Wall
 # Flags for release build
-RELEASE_FLAGS = -O3 -pg -g
 # Fast flags - use with caution. The -march flag might result in the compiled model only working on your computer
-FAST_FLAGS = -Ofast -march=native -mtune=native
 # Flags common to both builds
-COMMON_FLAGS = -ffpe-trap=zero,invalid,overflow,underflow -fcheck=all
 # Default to debug flags
-FLAGS = ${DEBUG_FLAGS} ${COMMON_FLAGS}
 # Executable file name and path
-EXEC_FILE = nanofase
-BUILD_DIR = build
 # NetCDF config, assuming you have the nf-config utility installed
-NETCDF = `nf-config --fflags --flibs`
 # The following variables generate a unique compilation metadata file to be placed in EXEC_PATH,
 # which includes the current Git commit, branch and compilation time
-GIT_HASH = `git rev-parse HEAD`
-COMPILE_TIME = `date -u +'%Y-%m-%d %H:%M:%S UTC'`
-GIT_RELEASE = `git describe --tags`
-COMP_META = $(COMPILE_TIME) $(GIT_HASH) $(GIT_RELEASE)
-
 # Should we be compiling with auto parallelisation? Depending on your setup, this might actually slow things down
-AUTOPARALLEL = 0
-N_THREADS = 4
-ifeq ($(AUTOPARALLEL), 1)
-	COMMON_FLAGS += -floop-parallelize-all -ftree-parallelize-loops=${N_THREADS}
-endif
-
 # Objects to generate, in dependency order
-OBJECTS_ = ErrorInstance.o \
-	Result.o \
-	ErrorHandler.o \
-	ErrorCriteria.o \
-	mo_types.o \
-	mo_netcdf.o \
-	datetime_module.o \
-	sparskit.o \
-	Spoof.o \
-	mod_strptime.o \
-	VersionModule.o \
-	DefaultsModule.o \
-	GlobalsModule.o \
-	UtilModule.o \
-	LoggerModule.o \
-	DataInputModule.o \
-	AbstractBiotaModule.o \
-	BiotaSoilModule.o \
-	BiotaWaterModule.o \
-	AbstractReactorModule.o \
-	ReactorModule.o \
-	FineSedimentModule.o \
-	AbstractBedSedimentLayerModule.o \
-	BedSedimentLayerModule.o \
-	AbstractBedSedimentModule.o \
-	BedSedimentModule.o \
-	DiffuseSourceModule.o \
-	PointSourceModule.o \
-	FlowModule.o \
-	WaterBodyModule.o \
-	ReachModule.o \
-	RiverReachModule.o \
-	EstuaryReachModule.o \
-	AbstractSoilLayerModule.o \
-	SoilLayerModule.o \
-	AbstractSoilProfileModule.o \
-	SoilProfileModule.o \
-	CropModule.o \
-	AbstractGridCellModule.o \
-	GridCellModule.o \
-	AbstractEnvironmentModule.o \
-	EnvironmentModule.o \
-	NetCDFOutputModule.o \
-	NetCDFAggregatedOutputModule.o \
-	DataOutputModule.o \
-	CheckpointModule.o \
-	main.o 
-
 # Add the build dir to each object name
-OBJECTS = $(addprefix build/, $(OBJECTS_))
-
 # Where to look for the source files
-VPATH = vendor/feh/src \
-	vendor/mo_netcdf/src \
-	vendor/datetime-fortran/src \
-	vendor/spoof/src \
-	src \
-	src/Data \
-	src/Logger \
-	src/Biota \
-	src/Reactor \
-	src/BedSedimentLayer \
-	src/BedSediment \
-	src/Source \
-	src/WaterBody \
-	src/Soil \
-	src/GridCell \
-	src/Environment
-
 # Write the model version (from git) to file
-MODEL_VERSION := $(shell sed -i "s/\".*\"/\"${GIT_RELEASE}\"/g" src/VersionModule.f90)
-
-$(EXEC_FILE): $(OBJECTS)
-	$(FC) $(FLAGS) -o $(BUILD_DIR)/$@ $^ $(NETCDF)
-	echo $(COMP_META) > $(BUILD_DIR)/comp_meta
-$(BUILD_DIR)/%.o: %.f90
-	$(FC) -c $< -o $@ -J$(BUILD_DIR) $(FLAGS) $(NETCDF)
-release: FLAGS = ${RELEASE_FLAGS} ${COMMON_FLAGS}
-release: $(EXEC_FILE)
-fast: FLAGS = ${FAST_FLAGS} ${COMMON_FLAGS}
-fast: $(EXEC_FILE)
-clean:
-	rm -f $(BUILD_DIR)/*.mod $(BUILD_DIR)/*.o $(BUILD_DIR)/$(EXEC_FILE) $(BUILD_DIR)/comp_meta

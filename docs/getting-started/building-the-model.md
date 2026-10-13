@@ -31,11 +31,11 @@ $ git submodule update --init --recursive
 The easiest way to build the model is use [fpm](https://fpm.fortran-lang.org/) (Fortran Package Manger). You can install this easily using Conda (`conda install -c conda-forge fpm`). To build the model without installing:
 
 ```sh
-$ fpm @build
+$ fpm @release
 ```
 
 ```{note}
-If you are using Windows PowerShell, the "@" character is a special character and must be escaped using a backtick: `fpm \`@build`.
+If you are using Windows PowerShell, the "@" character is a special character and must be escaped using a backtick: `fpm \`@release`.
 ```
 
 
@@ -57,7 +57,7 @@ $ cmake ..
 $ make
 ```
 
-After running these commands, a executable file named `nanofase` (`nanofase.exe` on Windows) will be available in the `build` directory. Use the `-DCMAKE_BUILD_TYPE=Debug|Release` flag to control whether you want to build the debug (default) or release version (e.g. `cmake .. -DCMAKE_BUILD_TYPE=Release` for the release version). Unless you are developing the model, use the release version as the model is significantly faster. 
+After running these commands, a executable file named `nanofase` (`nanofase.exe` on Windows) will be available in the `build` directory. Set `-DCMAKE_BUILD_TYPE=Debug` or `-DCMAKE_BUILD_TYPE=Release` explicitly (e.g. `cmake .. -DCMAKE_BUILD_TYPE=Release`). Unless you are developing the model, use the release version as the model is significantly faster.
 
 ```{caution}
 Note that, whilst CMake can be used to compile the model using the ifort or ifx compilers (e.g. by using the -DCMAKE_Fortran_COMPILER=ifort flag), issues can arise when the installed version of NetCDF that the CMake script finds isn't a version compiled by an Intel compiler (such as those installed by `apt` and `brew`). Therefore, we recommend compiling using the compiler that your NetCDF installation used. As a workaround, you can explicitly point CMake to the correct version of NetCDF by declaring NETCDF_INCLUDES (include directories) and NETCDF_LIBRARIES_F90 (link libraries) (e.g. by specifying -DNETCDF_INCLUDES=.. -DNETCDF_LIBRARIES_F90=..).
@@ -65,14 +65,46 @@ Note that, whilst CMake can be used to compile the model using the ifort or ifx 
 
 ## Using Make
 
-The model can also be built using `make`, and an [example Makefile](https://github.com/NERC-CEH/nanofase/blob/develop/Makefile.example) is provided to help. This Makefile only uses GFortran compiler flags, and so you will need to extend this if you wish to use with another compiler. To use, simply take a copy of this file and run `make`:
+The example Makefile delegates to CMake, so install CMake as well as the compiler
+and NetCDF. It creates the directories it needs:
 
 ```sh
-$ cp Makefile.example
-$ mkdir build
-$ make
+make -f Makefile.example
+make -f Makefile.example release
+make -f Makefile.example fast
+make -f Makefile.example clean
 ```
 
-The default target builds the model with debugging enabled. To turn on optimisations, build using `make release` (for `-O3` optimisations) or `make fast` (for `-Ofast` optimsations).
+Alternatively, copy it with `cp Makefile.example Makefile` and omit `-f`.
+The default is Debug. Release uses the existing CMake Release settings; fast uses
+GNU Fortran Release with `-Ofast`. The executable is `build/nanofase`, and the
+compilation record is `build/comp_meta`. Each mode has its own `build/make-*`
+directory; cleaning leaves unrelated builds and fpm caches alone.
 
-The model will be built into the `build` directory by default (a custom directory can be specified with the `$BUILD_DIR` option, e.g. `make BUILD_DIR=makebuild`). An executable file named `nanofase` will now be available in this directory.
+Override `BUILD_DIR`, `FC`, `JOBS`, or `MODEL_VERSION` on the command line as needed.
+NetCDF is located through `nf-config`, with optional `NETCDF_INCLUDES` and
+`NETCDF_LIBRARIES_F90` overrides. Use `CMAKE_ARGS` for additional CMake settings.
+Old standalone flag and object-list variables are no longer used.
+
+## Choosing the reported version
+
+CMake and Make use an explicit label when provided, otherwise this checkout's
+`git describe --tags`, and finally `0.0.5` when usable Git history is absent.
+CMake generates the version module in the build directory and refreshes it before
+compilation. It never rewrites tracked source.
+
+```sh
+cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug -DNANOFASE_VERSION=0.0.5-18-g163ae42
+cmake --build build-debug
+make -f Makefile.example MODEL_VERSION=0.0.5-18-g163ae42
+```
+
+An empty override returns to automatic selection. fpm, including the package
+recipe's `fpm @install`, reads the tracked fallback directly and reports `0.0.5`.
+The existing 17-character constant and 16-character model-output limit remain.
+Use identical explicit labels and compiler settings when comparing model results.
+
+Main and test programs keep their compiler-generated module files in separate
+directories. On upgrading an old CMake build directory, old module files in its
+root move to `legacy-fortran-modules` so tests cannot read stale declarations.
+Use a separate build directory when upgrading an old in-source build.

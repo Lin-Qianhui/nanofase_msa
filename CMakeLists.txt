@@ -72,13 +72,16 @@ list(FILTER sources EXCLUDE REGEX ".*vendor/mo_netcdf/tests/.*f90$")
 list(FILTER sources EXCLUDE REGEX ".*vendor/spoof/example/.*f90$")
 
 # Modify the version number
-execute_process(COMMAND git describe --tags OUTPUT_VARIABLE model_version OUTPUT_STRIP_TRAILING_WHITESPACE)
-file(READ "src/VersionModule.f90" version_file)
-string(REGEX REPLACE "\".*\"" "\"${model_version}\"" version_file_new "${version_file}")
-file(WRITE "src/VersionModule.f90" ${version_file_new})
+# Phase 12: generate only in this build directory; fpm keeps the tracked fallback.
+include(cmake/NanoFASEVersion.cmake)
+nanofase_setup_version(generated_version_source)
+list(REMOVE_ITEM sources "${CMAKE_CURRENT_SOURCE_DIR}/src/VersionModule.f90")
+list(APPEND sources "${generated_version_source}")
 
 # Compile to executable and link to NetCDF
 add_executable(nanofase ${sources})
+set_target_properties(nanofase PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/nanofase-modules")
 target_include_directories(nanofase PUBLIC "${NETCDF_INCLUDES}")
 target_link_libraries(nanofase PRIVATE "${NETCDF_LIBRARIES_F90}")
 
@@ -111,6 +114,7 @@ foreach(code 1 110 200 201 300)
                 -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectSharedDiagnostic.cmake")
     endforeach()
 endforeach()
+
 add_test(NAME shared_error_generic
     COMMAND "${CMAKE_COMMAND}"
         "-DTEST_EXECUTABLE=$<TARGET_FILE:error_handling_registry_test>"
@@ -385,3 +389,19 @@ foreach(mode critical disabled_error)
             -P "${CMAKE_CURRENT_SOURCE_DIR}/test/ExpectBiota.cmake"
     )
 endforeach()
+
+# Each target that compiles the generated module must wait for its refresh,
+# including targets built directly instead of through the default all target.
+foreach(version_target nanofase shared_consumer_integration_test shared_consumer_module_test
+        water_body_slope_test reactor_legacy_mass_test biota_science_test biota_integration_test)
+    add_dependencies(${version_target} nanofase_version)
+endforeach()
+
+# This build check uses only the Python standard library and small Fortran probes.
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_Interpreter_FOUND)
+    add_test(NAME build_system_version
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/verification/verify_build_system.py"
+            --cmake "${CMAKE_COMMAND}" --compiler "${CMAKE_Fortran_COMPILER}"
+            --work-dir "${CMAKE_CURRENT_BINARY_DIR}/version-checks")
+endif()
