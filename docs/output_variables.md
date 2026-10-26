@@ -8,7 +8,7 @@ It is generated from the output routines in
 [`src/Data/DataOutputModule.f90`](../src/Data/DataOutputModule.f90), the state
 variables in [`src/WaterBody/WaterBodyModule.f90`](../src/WaterBody/WaterBodyModule.f90),
 the flux types in [`src/WaterBody/FlowModule.f90`](../src/WaterBody/FlowModule.f90),
-and the dimension definitions in [`src/GlobalsModule.f90`](../src/GlobalsModule.f90).
+and the dimension definitions in [`src/ModelDimensions/ModelDimensionsModule.f90`](../src/ModelDimensions/ModelDimensionsModule.f90).
 
 ---
 
@@ -30,27 +30,30 @@ options) "unroll" one hidden dimension into extra columns instead of summing it.
 | File | Produced by | Enabled when |
 |------|-------------|--------------|
 | `summary<hash>.md` | metadata + final mean PECs | always |
-| `output_water<hash>.csv` | `updateWaterDataOutput` | `C%writeCSV` |
-| `output_sediment<hash>.csv` | `updateSedimentDataOutput` | `C%writeCSV` |
-| `output_soil<hash>.csv` | `updateSoilDataOutput` | `C%writeCSV` |
+| `output_water<hash>.csv` | `updateWaterDataOutput` | `modelConfig%writeCSV` |
+| `output_sediment<hash>.csv` | `updateSedimentDataOutput` | `modelConfig%writeCSV` |
+| `output_soil<hash>.csv` | `updateSoilDataOutput` | `modelConfig%writeCSV` |
 | `output_ssd<hash>.csv` | `updateSedimentSizeDistributionDataOutput` | steady-state SSD mode |
-| `stats<hash>.csv` | header stub only (not yet implemented) | `C%writeCompartmentStats` |
-| NetCDF file | `me%ncout` | `C%writeNetCDF` |
+| `stats<hash>.csv` | header stub only (not yet implemented) | `modelConfig%writeCompartmentStats` |
+| NetCDF file | `me%ncout` | `modelConfig%writeNetCDF` |
 
-`<hash>` is the optional `C%outputHash` suffix. Files are opened in
+`<hash>` is the optional `modelConfig%outputHash` suffix. Files are opened in
 [`initDataOutput`](../src/Data/DataOutputModule.f90#L51).
 
 ---
 
+Settings below come from `ModelConfigModule`; sediment layer depths come from
+`BedSedimentConfigModule`. Shared array sizes come from `ModelDimensionsModule`.
+
 ## 2. Dimension primer
 
 A handful of array shapes recur throughout the outputs. They are all set from config in
-[`GlobalsModule.f90`](../src/GlobalsModule.f90#L428).
+[`ModelDimensionsModule.f90`](../src/ModelDimensions/ModelDimensionsModule.f90).
 
-### `C%npDim` — the shape of every nanomaterial (NM) array
+### `npDim` — the shape of every nanomaterial (NM) array
 
 ```fortran
-C%npDim = [C%nSizeClassesNM, C%nFormsNM, C%nSizeClassesSpm + C%nExtraStatesNM]
+npDim = [nSizeClassesNM, nFormsNM, nSizeClassesSpm + nExtraStatesNM]
 ```
 
 So every NM mass/concentration array is **3-D**:
@@ -88,7 +91,7 @@ input grid, not from simulated state.
 | Column | Meaning | Type / structure | Example | Source |
 |--------|---------|------------------|---------|--------|
 | `t` | timestep index (global across batch) | scalar integer | `42` | loop variable `t + tPreviousChunk` |
-| `datetime` | ISO date of this timestep | string | `2015-02-11` | `C%batchStartDate + timedelta(t-1)` ([L133](../src/Data/DataOutputModule.f90#L133)) |
+| `datetime` | ISO date of this timestep | string | `2015-02-11` | `modelConfig%batchStartDate + timedelta(t-1)` ([L133](../src/Data/DataOutputModule.f90#L133)) |
 | `x`, `y` | grid cell column/row index | scalar integers | `12, 7` | loop indices over `colGridCells` |
 | `easts`, `norths` | cell-centre coordinates (m) | scalar reals | `429500.0, 512500.0` | `DATASET%x(x)`, `DATASET%y(y)` |
 | `w` *(water/sediment, if `includeWaterbodyBreakdown`)* | waterbody index within the cell | scalar integer | `1` | loop over `cell%nReaches` |
@@ -128,11 +131,11 @@ in each timestep by the contained `reactor` (chemistry/partitioning) and the rea
 | `C_spm(kg/m3)` | suspended sediment concentration | 1-D `nSizeClassesSpm` | summed → `0.03` | `reach%C_spm` = `m_spm / volume` |
 | `volume(m3)` | water volume in the reach | scalar | `25000.0` | `reach%volume` |
 | `depth(m)` | water depth | scalar | `0.8` | `reach%depth` |
-| `flow(m3/s)` | outflow discharge | scalar | `12.5` | `reach%Q%outflow / C%timeStep` |
+| `flow(m3/s)` | outflow discharge | scalar | `12.5` | `reach%Q%outflow / modelConfig%timeStep` |
 
 ### Optional water columns
 
-**If `C%includeSpmSizeClassBreakdown`** — the 1-D SPM arrays are unrolled, one pair of
+**If `modelConfig%includeSpmSizeClassBreakdown`** — the 1-D SPM arrays are unrolled, one pair of
 columns per size class `i`:
 
 | Column | Meaning | Structure | Example | From |
@@ -140,7 +143,7 @@ columns per size class `i`:
 | `m_spm_sci(kg)` | sediment mass in size class *i* | one element of `m_spm(:)` | `m_spm(3) = 420.0` | `reach%m_spm(i)` |
 | `C_spm_sci(kg/m3)` | sediment conc in size class *i* | one element of `C_spm(:)` | `0.008` | `reach%C_spm(i)` |
 
-**If `C%includeSedimentFluxes`** — SPM flux terms (each a 1-D `SPMFlows` field,
+**If `modelConfig%includeSedimentFluxes`** — SPM flux terms (each a 1-D `SPMFlows` field,
 summed):
 
 | Column | Meaning | From |
@@ -168,9 +171,9 @@ Source object: the **bed sediment** contained in each reach, `reach%bedSediment`
 | `m_np_buried(kg)` | NM permanently buried this step | 3-D `npDim`, ×area | `2.0e-11` | `reach%bedSediment%get_m_np_buried() * bedArea` |
 | `bed_area(m2)` | area of the bed sediment | scalar | `8000.0` | `reach%bedArea` |
 | `sediment_mass(kg)` | total fine sediment mass in the bed | scalar (computed) | `1.2e6` | `reach%bedSediment%Mf_bed_all() * bedArea` |
-| `sediment_density(kg/m3)` | mean bulk density of bed sediment | scalar (computed) | `1500.0` | `Mf_bed_all() / sum(C%sedimentLayerDepth)` |
+| `sediment_density(kg/m3)` | mean bulk density of bed sediment | scalar (computed) | `1500.0` | `Mf_bed_all() / sum(bedSedimentConfig%sedimentLayerDepth)` |
 
-**If `C%includeSedimentLayerBreakdown`** — two columns per bed layer `l`:
+**If `modelConfig%includeSedimentLayerBreakdown`** — two columns per bed layer `l`:
 
 | Column | Meaning | Structure | From |
 |--------|---------|-----------|------|
@@ -187,7 +190,7 @@ Source object: the **bed sediment** contained in each reach, `reach%bedSediment`
 Source object: a **soil profile**,
 `profile => me%env%item%colGridCells(x,y)%item%colSoilProfiles(p)%item`
 ([L346](../src/Data/DataOutputModule.f90#L346)). One row per profile per cell.
-Concentration units are configurable via `C%soilPECUnits` (e.g. `kg/kg`).
+Concentration units are configurable via `modelConfig%soilPECUnits` (e.g. `kg/kg`).
 
 | Column | Meaning | Internal structure | Example | Calculated from |
 |--------|---------|--------------------|---------|-----------------|
@@ -204,7 +207,7 @@ Concentration units are configurable via `C%soilPECUnits` (e.g. `kg/kg`).
 
 ### Optional soil columns
 
-**If `C%includeSoilStateBreakdown`** — splits NM concentration into **free** (mobile)
+**If `modelConfig%includeSoilStateBreakdown`** — splits NM concentration into **free** (mobile)
 vs **attached** (bound to soil) using the `freeNM()` / `attachedNM()` helpers
 ([L354](../src/Data/DataOutputModule.f90#L354)):
 
@@ -213,7 +216,7 @@ vs **attached** (bound to soil) using the `freeNM()` / `attachedNM()` helpers
 | `C_np_free`, `C_transformed_free` | free NM conc (mean over layers) | `freeNM(profile%get_C_np())` etc. |
 | `C_np_att`, `C_transformed_att` | attached NM conc (mean over layers) | `attachedNM(profile%get_C_np())` etc. |
 
-**If `C%includeSoilLayerBreakdown`** — three (or more) columns per soil layer `l`,
+**If `modelConfig%includeSoilLayerBreakdown`** — three (or more) columns per soil layer `l`,
 read straight from each layer object `profile%colSoilLayers(l)%item`:
 
 | Column | Meaning | Structure | From |
@@ -223,7 +226,7 @@ read straight from each layer object `profile%colSoilLayers(l)%item`:
 | `C_dissolved_li(<units>)` | dissolved NM conc in layer *l* | scalar | `colSoilLayers(l)%item%C_dissolved` |
 | `C_np_free_li` / `C_np_att_li` … *(if state breakdown also on)* | free/attached per layer | — | `freeNM(...)` / `attachedNM(...)` of the layer |
 
-**If `C%includeSoilErosionYields`** ([L376](../src/Data/DataOutputModule.f90#L376)):
+**If `modelConfig%includeSoilErosionYields`** ([L376](../src/Data/DataOutputModule.f90#L376)):
 
 | Column | Meaning | From |
 |--------|---------|------|
@@ -250,7 +253,7 @@ shape `(nSedimentLayers, nSizeClassesSpm)`.
 | `delta_max_all_layers` | largest change in the layer-averaged distribution | scalar | `0.002` | `maxval(abs(previousSSD - sedimentSizeDistribution))` |
 
 `delta_max_all_layers` is the convergence metric the main loop compares against
-`C%steadyStateDelta` to decide whether steady state has been reached.
+`modelConfig%steadyStateDelta` to decide whether steady state has been reached.
 
 ---
 

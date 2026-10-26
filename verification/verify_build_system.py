@@ -18,13 +18,22 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = ("src/VersionModule.f90", "cmake/NanoFASEVersion.cmake", "cmake/VersionModule.f90.in")
+FILES = ("src/VersionModule.f90", "cmake/NanoFASEVersion.cmake", "cmake/VersionModule.f90.in",
+         "src/Kernel/KernelModule.f90", "src/ModelConfig/ModelConfigModule.f90",
+         "src/ModelConfig/ModelDefaultsModule.f90", "src/mod_strptime.f90",
+         "vendor/datetime-fortran/src/datetime_module.f90",
+         "vendor/feh/src/ErrorInstance.f90", "vendor/feh/src/Result.f90",
+         "test/fixtures/model-config-omitted.nml")
 PROJECT = """cmake_minimum_required(VERSION 3.13)
 project(version_check LANGUAGES Fortran)
 include(cmake/NanoFASEVersion.cmake)
 nanofase_setup_version(version_source)
+set(config_sources src/Kernel/KernelModule.f90 src/ModelConfig/ModelConfigModule.f90
+    src/ModelConfig/ModelDefaultsModule.f90 src/mod_strptime.f90
+    vendor/datetime-fortran/src/datetime_module.f90
+    vendor/feh/src/ErrorInstance.f90 vendor/feh/src/Result.f90)
 foreach(name probe probe_again)
-    add_executable(${name} ${version_source} probe.f90)
+    add_executable(${name} ${version_source} ${config_sources} probe.f90)
     set_target_properties(${name} PROPERTIES
         Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${name}-modules")
     add_dependencies(${name} nanofase_version)
@@ -32,10 +41,23 @@ endforeach()
 """
 PROBE = """program version_probe
     use VersionModule, only: MODEL_VERSION
+    use ModelConfigModule, only: modelConfig
     implicit none
-    character(len=16) :: reported = MODEL_VERSION
+    character(len=1024) :: configPath
+    call get_command_argument(1, configPath)
+    if (modelConfig%modelVersion /= '') error stop 'Version was set before initialisation'
     write(*, '(a)') MODEL_VERSION
-    write(*, '(a)') reported
+    call modelConfig%clear()
+    if (modelConfig%modelVersion /= MODEL_VERSION) error stop 'ModelConfig version was truncated'
+    write(*, '(a)') modelConfig%modelVersion
+    call modelConfig%init(trim(configPath))
+    if (modelConfig%modelVersion /= MODEL_VERSION) error stop 'Version changed during initialisation'
+    modelConfig%modelVersion = 'changed'
+    call modelConfig%clear()
+    if (modelConfig%modelVersion /= MODEL_VERSION) error stop 'Version was not reset'
+    modelConfig%modelVersion = 'changed again'
+    call modelConfig%init(trim(configPath))
+    if (modelConfig%modelVersion /= MODEL_VERSION) error stop 'Version was not reset on repeated input'
 end program version_probe
 """
 
@@ -55,6 +77,7 @@ def main() -> None:
     commands: list[dict] = []
     passed: list[str] = []
     original = hashes(ROOT)
+    sources = {}
 
     def run(command: list[str], cwd: Path = work) -> str:
         result = subprocess.run(command, cwd=cwd, text=True, stdout=subprocess.PIPE,
@@ -77,6 +100,7 @@ def main() -> None:
         return source
 
     def configure(source: Path, build: Path, *options: str) -> str:
+        sources[build] = source
         return run([args.cmake, "-S", str(source), "-B", str(build),
                     "-DCMAKE_Fortran_COMPILER=" + args.compiler, *options])
 
@@ -86,9 +110,11 @@ def main() -> None:
         executable = build / target
         if not executable.exists():
             executable = build / (target + ".exe")
-        actual = run([str(executable)]).splitlines()
-        expected = [label[:17].ljust(17), label[:16].ljust(16)]
+        actual = run([str(executable), str(sources[build] / "test/fixtures/model-config-omitted.nml")]).splitlines()
+        expected = [label, label.ljust(16)]
         assert actual == expected, (actual, expected)
+        generated = (build / "generated/VersionModule.f90").read_text()
+        assert max(map(len, generated.splitlines())) <= 120, "Generated Fortran line is too long"
 
     def git(source: Path, *arguments: str) -> str:
         return run(["git", "-c", "user.name=NanoFASE build test", "-c",
@@ -129,6 +155,18 @@ def main() -> None:
         build_and_check(first, "0.0.5")
         passed += ["override changes reach executable", "clearing override selects archive fallback"]
         assert hashes(source) == source_before
+
+        for length in (1, 15, 16, 17, 18, 256):
+            time.sleep(1.1)
+            label = 'v' + 'x' * (length - 1)
+            configure(source, first, "-DNANOFASE_VERSION=" + label)
+            build_and_check(first, label)
+        time.sleep(1.1)
+        long_special = ('x' * 31 + '\";${x}\\\\]=]') * 8
+        configure(source, first, "-DNANOFASE_VERSION=" + long_special)
+        build_and_check(first, long_special)
+        passed += ["full labels at length boundaries and 256 characters", "long labels preserve escaping",
+                   "real ModelConfig initialisation, reset and repeated reads"]
 
         tagged = fixture("tagged")
         git(tagged, "init", "--quiet")

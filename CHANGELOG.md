@@ -6,10 +6,15 @@ All notable changes to the model will be documented in this file. Breaking chang
 
 ### Changed
 
+- ⚠️ Removed the temporary GlobalsModule/DefaultsModule imports, `C` settings object
+  and copying procedures. Callers now use ModelConfig, ModelDimensions, Kernel,
+  ErrorHandling and ModelDefaults directly. Scientific behavior is unchanged.
+
 - CMake generates model-version source inside each build directory. Select a label
   with `-DNANOFASE_VERSION=<label>`; otherwise Git is used when available, with
   `0.0.5` as the fallback. fpm packages compile that tracked fallback directly.
-  Builds no longer rewrite `src/VersionModule.f90`; existing output-length limits remain.
+  Builds no longer rewrite `src/VersionModule.f90`. Full labels now reach the console,
+  summary and NetCDF source metadata; short labels retain their existing padding.
 - The example Makefile delegates to CMake, retaining debug, release, fast and clean
   commands. Main and test executables use separate compiled-module directories.
 

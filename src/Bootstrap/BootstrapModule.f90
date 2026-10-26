@@ -1,17 +1,10 @@
 !> Top-level model startup orchestration.
 module BootstrapModule
     use KernelModule, only: iouLog
-    use ModelDimensionsModule, only: initModelDimensions, dim_nSoilLayers => nSoilLayers, &
-        dim_nSedimentLayers => nSedimentLayers, dim_nSizeClassesSpm => nSizeClassesSpm, &
-        dim_nSizeClassesNM => nSizeClassesNM, dim_nFracCompsSpm => nFracCompsSpm, &
-        dim_nFormsNM => nFormsNM, dim_nExtraStatesNM => nExtraStatesNM, &
-        dim_npDim => npDim, dim_d_spm => d_spm, dim_d_spm_low => d_spm_low, &
-        dim_d_spm_upp => d_spm_upp, dim_d_nm => d_nm, &
-        dim_sedimentParticleDensities => sedimentParticleDensities
+    use ModelDimensionsModule, only: initModelDimensions
     use ModelConfigModule, only: modelConfig
     use ErrorHandlingModule, only: ERROR_HANDLER, initErrorHandling
     use ResultModule, only: Result
-    use GlobalsModule, only: C
     use SoilConfigModule, only: soilConfig
     use BedSedimentConfigModule, only: bedSedimentConfig
     use WaterBodyConfigModule, only: waterBodyConfig
@@ -58,11 +51,9 @@ module BootstrapModule
         call soilConfig%init(modelConfig%configFilePath)
         call bedSedimentConfig%init(modelConfig%configFilePath)
 
-        call syncModelConfigToGlobals()
         call waterBodyConfig%init(modelConfig%configFilePath)
         call registerReactorErrors()
         call registerBiotaErrors()
-        call syncModelDimensionsToGlobals()
 
         ! Auditing the config. Must be done after error handler has been initialised.
         auditResult = modelConfig%audit()
@@ -88,110 +79,6 @@ module BootstrapModule
         rslt = buildEnvironment(env)
         call LOGR%toFile(errors=.errors.rslt)
         call ERROR_HANDLER%trigger(errors=.errors.rslt)
-    end subroutine
-
-    !> Populate the compatibility facade and read config for domains that have
-    !! not yet taken ownership of their namelist groups.
-    ! Phase 7 note: all domain reads have moved; this helper only copies dimensions for older consumers.
-    subroutine syncModelDimensionsToGlobals()
-        ! Store dimension and domain data in the Globals facade.
-        C%nSizeClassesNM = dim_nSizeClassesNM
-        C%nFormsNM = dim_nFormsNM
-        C%nExtraStatesNM = dim_nExtraStatesNM
-        if (allocated(C%d_nm)) deallocate(C%d_nm)
-        allocate(C%d_nm, source=dim_d_nm)
-
-        C%nSizeClassesSpm = dim_nSizeClassesSpm
-        C%nSedimentLayers = dim_nSedimentLayers
-        if (allocated(C%d_spm)) deallocate(C%d_spm)
-        allocate(C%d_spm, source=dim_d_spm)
-        C%nFracCompsSpm = dim_nFracCompsSpm
-        if (allocated(C%sedimentParticleDensities)) deallocate(C%sedimentParticleDensities)
-        allocate(C%sedimentParticleDensities, source=dim_sedimentParticleDensities)
-
-        C%nSoilLayers = dim_nSoilLayers
-
-
-        if (allocated(C%d_spm_low)) deallocate(C%d_spm_low)
-        if (allocated(C%d_spm_upp)) deallocate(C%d_spm_upp)
-        allocate(C%d_spm_low, source=dim_d_spm_low)
-        allocate(C%d_spm_upp, source=dim_d_spm_upp)
-
-        ! Array to store default NM and ionic array dimensions. NM:
-        !   1: NP size class
-        !   2: form (core, shell, coating, corona)
-        !   3: state (free, bound, heteroaggregated)
-        ! Ionic: Form (free ion, solution, adsorbed)
-        C%npDim = dim_npDim
-    end subroutine
-
-    !> Copy all model-level config values into the compatibility facade.
-    subroutine syncModelConfigToGlobals()
-        C%modelVersion = modelConfig%modelVersion
-
-        C%inputFile = modelConfig%inputFile
-        C%constantsFile = modelConfig%constantsFile
-        C%outputPath = modelConfig%outputPath
-        C%outputHash = modelConfig%outputHash
-
-        C%writeCSV = modelConfig%writeCSV
-        C%writeNetCDF = modelConfig%writeNetCDF
-        C%netCDFWriteMode = modelConfig%netCDFWriteMode
-        C%writeMetadataAsComment = modelConfig%writeMetadataAsComment
-        C%writeCompartmentStats = modelConfig%writeCompartmentStats
-        C%includeWaterbodyBreakdown = modelConfig%includeWaterbodyBreakdown
-        C%includeSedimentLayerBreakdown = modelConfig%includeSedimentLayerBreakdown
-        C%includeSoilLayerBreakdown = modelConfig%includeSoilLayerBreakdown
-        C%soilPECUnits = modelConfig%soilPECUnits
-        C%sedimentPECUnits = modelConfig%sedimentPECUnits
-        C%includeSoilStateBreakdown = modelConfig%includeSoilStateBreakdown
-        C%includeSedimentFluxes = modelConfig%includeSedimentFluxes
-        C%includeSoilErosionYields = modelConfig%includeSoilErosionYields
-        C%includeSpmSizeClassBreakdown = modelConfig%includeSpmSizeClassBreakdown
-
-        C%runDescription = modelConfig%runDescription
-        C%logFilePath = modelConfig%logFilePath
-        C%writeToLog = modelConfig%writeToLog
-        C%configFilePath = modelConfig%configFilePath
-        C%timeStep = modelConfig%timeStep
-        C%nTimeSteps = modelConfig%nTimeSteps
-        C%epsilon = modelConfig%epsilon
-        C%startDate = modelConfig%startDate
-        C%triggerWarnings = modelConfig%triggerWarnings
-        C%errorOutput = modelConfig%errorOutput
-        C%hasSimulationMask = modelConfig%hasSimulationMask
-        C%simulationMaskPath = modelConfig%simulationMaskPath
-        C%ignoreNM = modelConfig%ignoreNM
-        C%warmUpPeriod = modelConfig%warmUpPeriod
-        C%bashColors = modelConfig%bashColors
-
-        C%checkpointFile = modelConfig%checkpointFile
-        C%saveCheckpoint = modelConfig%saveCheckpoint
-        C%saveCheckpointAfterWarmUp = modelConfig%saveCheckpointAfterWarmUp
-        C%reinstateCheckpoint = modelConfig%reinstateCheckpoint
-        C%preserveTimestep = modelConfig%preserveTimestep
-
-        C%runToSteadyState = modelConfig%runToSteadyState
-        C%steadyStateMode = modelConfig%steadyStateMode
-        C%steadyStateDelta = modelConfig%steadyStateDelta
-
-        C%nChunks = modelConfig%nChunks
-        C%isBatchRun = modelConfig%isBatchRun
-        if (allocated(C%batchInputFiles)) deallocate(C%batchInputFiles)
-        if (allocated(C%batchConstantFiles)) deallocate(C%batchConstantFiles)
-        if (allocated(C%batchStartDates)) deallocate(C%batchStartDates)
-        if (allocated(C%batchNTimesteps)) deallocate(C%batchNTimesteps)
-        if (allocated(C%batchConfigFiles)) deallocate(C%batchConfigFiles)
-        if (allocated(modelConfig%batchInputFiles)) allocate(C%batchInputFiles, source=modelConfig%batchInputFiles)
-        if (allocated(modelConfig%batchConstantFiles)) allocate(C%batchConstantFiles, source=modelConfig%batchConstantFiles)
-        if (allocated(modelConfig%batchStartDates)) allocate(C%batchStartDates, source=modelConfig%batchStartDates)
-        if (allocated(modelConfig%batchNTimesteps)) allocate(C%batchNTimesteps, source=modelConfig%batchNTimesteps)
-        if (allocated(modelConfig%batchConfigFiles)) allocate(C%batchConfigFiles, source=modelConfig%batchConfigFiles)
-        C%nTimestepsInBatch = modelConfig%nTimestepsInBatch
-        C%batchStartDate = modelConfig%batchStartDate
-        C%batchEndDate = modelConfig%batchEndDate
-
-        C%t0 = modelConfig%t0
     end subroutine
 
 end module BootstrapModule

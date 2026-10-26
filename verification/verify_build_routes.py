@@ -60,7 +60,7 @@ def main() -> None:
         run_dir.mkdir()
         config, output = comparison.write_run_config(ROOT / "config.example/test-scenario.example.nml", run_dir)
         stdout = run(name, [str(executable), str(config)])
-        visible = version[:16].ljust(16)
+        visible = version.ljust(16)
         assert "...version: " + visible in stdout
         assert " - Model version: " + visible in (output / "summary.md").read_text()
         header = run(name + "_netcdf", ["ncdump", "-h", str(output / "output.nc")])

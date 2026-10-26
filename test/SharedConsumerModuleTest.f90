@@ -2,7 +2,6 @@
 program SharedConsumerModuleTest
     use KernelModule, only: dp, COLOR_GREEN
     use ModelDefaultsModule, only: configDefaults, ConfigDefaultsType
-    use DefaultsModule, only: legacyDefaults => configDefaults
     use ModelConfigModule, only: modelConfig
     use ModelDimensionsModule, only: npDim, nSizeClassesNM, nSizeClassesSpm
     use UtilModule, only: isZero, isLessThanZero, divideCheckZero, flushToZero, &
@@ -25,10 +24,12 @@ program SharedConsumerModuleTest
     call get_command_argument(2, omittedPath)
 
     ! Compatibility exports must refer to the same object, not copied defaults.
+    ! Phase 13: the compatibility export is gone. Check that initialisation reads
+    ! the current defaults directly, then restore them before the other checks.
     configDefaults%epsilon = 0.125_dp
-    call require(legacyDefaults%epsilon == 0.125_dp, 'Defaults compatibility export is a copy')
-    legacyDefaults%epsilon = originalDefaults%epsilon
-    call require(configDefaults%epsilon == originalDefaults%epsilon, 'Defaults alias did not write the owner')
+    call modelConfig%init(trim(omittedPath))
+    call require(modelConfig%epsilon == 0.125_dp, 'ModelConfig did not read the current defaults')
+    configDefaults = originalDefaults
 
     call modelConfig%init(trim(explicitPath))
     call require(modelConfig%epsilon == 0.125_dp .and. modelConfig%timeStep == 43200, 'Explicit run values')

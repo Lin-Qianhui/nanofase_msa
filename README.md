@@ -65,19 +65,22 @@ CMake and Make select the version from this checkout's `git describe --tags` whe
 available, otherwise from the tracked `0.0.5` fallback. They generate a separate
 Fortran file inside each build directory and never rewrite tracked source.
 
-For repeatable comparisons, give both builds the same label:
+For repeatable comparisons, give both builds the same label. Comparisons with
+Phase 13 or earlier should use a label of at most 16 characters, such as
+`migration-check`, to avoid their old truncation:
 
 ```sh
-cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug -DNANOFASE_VERSION=0.0.5-18-g163ae42
+cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug -DNANOFASE_VERSION=migration-check
 cmake --build build-debug
 # Equivalent Make override:
-make -f Makefile.example MODEL_VERSION=0.0.5-18-g163ae42
+make -f Makefile.example MODEL_VERSION=migration-check
 ```
 
 An empty override returns to automatic selection. fpm and the package recipe compile
 `src/VersionModule.f90` directly and report `0.0.5`, even inside a Git checkout.
-The constant still holds 17 characters and model output still holds 16; changing
-those limits is separate work. Release maintainers should update the fallback
+The complete selected label is retained in the version constant, model configuration,
+console welcome text, summary and NetCDF source metadata. Labels shorter than 16
+characters retain the existing output padding. Release maintainers should update the fallback
 alongside package versions and review the citation metadata.
 
 Compiled Fortran module files are compiler-generated declarations used by other

@@ -1,4 +1,5 @@
 module VersionModule
     implicit none
-    character(len=17), parameter :: MODEL_VERSION = "@version_fortran_literal@"
+    character(len=*), parameter :: MODEL_VERSION = &
+@version_fortran_literal@
 end module VersionModule

@@ -7,4 +7,7 @@ The following conventions are used when reading and writing from files in the mo
 - Output data files: `100` to `110`.
 - Checkpoint files: `500` to `510`.
 
-If you absolutely need to change these variables, they are set in [src/DefaultsModule.f90](../../src/DefaultsModule.f90)
+If you absolutely need to change these variables, they are set in [src/Kernel/KernelModule.f90](../../src/Kernel/KernelModule.f90)
+
+Domain configuration readers use `open(newunit=...)` to obtain an available unit.
+The listed constants remain in use by the other existing readers and writers.

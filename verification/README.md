@@ -10,12 +10,66 @@ Phase 12 and later, pass the same `-DNANOFASE_VERSION=<label>` to both builds. T
 examples below describe their original phase comparisons; do not reuse old output
 directories as evidence for a different phase.
 
+## Version-Length Correction Checks (Phase 14)
+
+See [the Phase 14 report](../migration_documentation/phase14_version_length.md)
+for the saved reference, actual results and reconstruction instructions when no
+separate Phase 13 commit is available.
+
+Use a fresh Phase 13 reference, with identical Biota and shared-consumer test
+sources and numerical compiler flags. Run all four comparison suites with
+`-DNANOFASE_VERSION=migration-check` on both builds. Keep the existing exact
+comparison filters and source-hash protections.
+
+The build-version runner now compiles the real ModelConfig and its dependencies.
+It checks neutral initial state, clearing, reading configuration twice, and full
+labels at lengths 1, 15, 16, 17, 18 and 256, plus long quoted/special-character
+labels. It also retains all earlier version selection and build-isolation checks.
+
+For a separately built long-label pair, check the intended old/new metadata before
+comparing all other output exactly:
+
+```sh
+python3 -B verification/verify_version_outputs.py \
+  --reference-exe /path/to/phase13-long-build/nanofase \
+  --exe /path/to/phase14-long-build/nanofase \
+  --label v0.0.5-phase14-full-version-label-123456789 \
+  --work-dir /path/to/new-evidence
+```
+
+Both executables must be built with that exact `NANOFASE_VERSION` and matching
+compiler flags. This dedicated check tests console, summary, and the complete
+NetCDF source text/URL under both layouts and writing modes. It permits only the
+explicitly checked version differences and existing datetime/history exclusions;
+the general comparison helpers are unchanged. Run the build-route runner too.
+
+## Compatibility Cleanup Checks (Phase 13)
+
+Capture a fresh reference from Phase 12 revision
+`125d8c55e6747b6efa9c5a2aa08d07b9e4b444a0`. Use `migration-check` as the explicit
+version for both builds, and matching compiler flags. Before production edits,
+verify that original and owner-only Biota tests give the same 50 direct records
+against Phase 12. Build identical owner-only tests on both sides, then run the
+four capture/compare suites below. Do not bypass source-hash checks.
+
+Run the complete CTest suite and both build-route runners. Check removal and
+comment preservation with:
+
+```sh
+python3 -B verification/verify_compatibility_cleanup.py \
+  --reference-source /path/to/phase12-source --report /path/to/comments.json
+```
+
+The source check excludes strings and comments. The optional report maps every
+original Fortran comment occurrence to retained source or the comment-only archive.
+
 ## Build-System Cleanup Checks (Phase 12 and later)
 
 Builds must leave tracked source unchanged. CMake uses an explicit version override,
-then Git, then the tracked fallback. fpm uses only the tracked fallback. Model output
-still limits version labels to 16 characters; neither summary nor NetCDF version
-fields are removed from scientific comparisons.
+then Git, then the tracked fallback. fpm uses only the tracked fallback. Phase 14
+retains complete version labels. For exact comparisons with older phases,
+use the same short label (`migration-check`) and retain summary and NetCDF version
+fields in scientific comparisons.
 
 For Phase 12's reference, use revision `99522f1f5a66789a9e1fac4b187071aa160f0d81`
 and its vendored dependencies in a separate source copy. That older build has no
@@ -29,7 +83,10 @@ restoration. Keep the same numerical compiler flags and NetCDF installation.
 Run all four existing capture/compare suites with a fresh pre-phase reference,
 using the command forms below for Phase 11. They still cover 47 exact output sets,
 Biota concentrations, expected failures, batch operation and saved checkpoint state.
-Their test sources and comparison filters must stay unchanged.
+Their comparison filters must stay unchanged. Phase 13 updates only the direct
+Biota test setup: compile the identical updated source against both Phase 12 and
+the candidate before capturing, and retain the existing source-hash checks.
+Historical Phase 8/9 comparisons use their original test sources.
 
 Two additional runners check the build routes:
 
@@ -46,7 +103,8 @@ used for the recorded Phase 12 checks, not a new project requirement. Both runne
 create a fresh evidence directory on every invocation and save commands and results.
 
 The first runner uses small Fortran programs and the actual CMake version helper.
-Its 16 check groups cover override quoting/truncation, independent build directories,
+Its 19 check groups cover complete labels, quoting, real ModelConfig reset and
+initialisation, length boundaries, long generated-source lines, independent build directories,
 unchanged builds, cleared overrides, Git commits/tags, unavailable Git, missing tags,
 archives inside another repository, worktrees, direct secondary-target builds, old
 compiled-module migration, and unchanged source hashes. It is also one CTest case

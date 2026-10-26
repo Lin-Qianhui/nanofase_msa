@@ -4,6 +4,7 @@
 !! and then used to allocate domain arrays. `GlobalsModule` still mirrors these
 !! values into `C` as a compatibility facade during the staged migration, but
 !! new code should import dimensions from here when possible.
+!! Phase 13: the old copying object has been removed; callers use this owner directly.
 module ModelDimensionsModule
     implicit none
     private
@@ -14,23 +15,36 @@ module ModelDimensionsModule
     public :: d_spm, d_spm_low, d_spm_upp, d_nm, sedimentParticleDensities
 
     ! Config-assigned layer counts used by soil and sediment compartments.
+    !! Number of soil layers to be modelled
     integer :: nSoilLayers                      !! Number of soil layers to be modelled
+    !! Number of sediment layers to be modelled
     integer :: nSedimentLayers                  !! Number of sediment layers to be modelled
 
     ! Config-assigned size/state dimensions for SPM and nanomaterial arrays.
+    !! Number of sediment particle size classes
     integer :: nSizeClassesSpm                  !! Number of suspended particulate matter size classes
+    !! Number of nanoparticle size classes
     integer :: nSizeClassesNM                   !! Number of nanomaterial size classes
+    !! Number of sediment fractional compositions
     integer :: nFracCompsSpm                    !! Number of sediment fractional compositions
+    !! Number of NM forms (e.g. pristine, transformed, etc)
     integer :: nFormsNM                         !! Number of NM forms, e.g. pristine or transformed
+    !! Number of NM states other than heteroaggregated to SPM
     integer :: nExtraStatesNM                   !! Number of NM states not represented by SPM heteroaggregation
+    !! Default dimensions for arrays of NM
     integer :: npDim(3)                         !! Default NM array dimensions: size, form, SPM plus extra states
 
     ! Keep these arrays as default real to preserve the original GlobalsType ABI
     ! and checkpoint/output behaviour during Phase 1.
+    !! Suspended particulate matter size class diameters [m]
     real, allocatable :: d_spm(:)                       !! SPM size class diameters [m]
+    !! Lower bound when treating each size class as distribution [m]
     real, allocatable :: d_spm_low(:)                   !! Lower bound for each SPM size class [m]
+    !! Upper bound when treating each size class as distribution [m]
     real, allocatable :: d_spm_upp(:)                   !! Upper bound for each SPM size class [m]
+    !! Nanomaterial size class diameters [m]
     real, allocatable :: d_nm(:)                        !! Nanomaterial size class diameters [m]
+    !! Sediment particle densities [kg m-3]
     real, allocatable :: sedimentParticleDensities(:)   !! Sediment particle densities [kg m-3]
 
   contains

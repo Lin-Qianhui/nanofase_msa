@@ -3,6 +3,7 @@
 !! This module owns run control, output, checkpoint, steady-state, batch, and
 !! data-path configuration. `GlobalsModule` still mirrors these values into `C`
 !! as a staged migration facade for existing call sites.
+!! Phase 13: the old copying object has been removed; callers use this owner directly.
 module ModelConfigModule
     use datetime_module
     use mod_strptime, only: f_strptime
@@ -20,70 +21,120 @@ module ModelConfigModule
     ! Component initializers here are only neutral pre-init state, not default policy.
     type :: ModelConfigType
         ! Version
-        character(len=16) :: modelVersion = ""
+        character(len=max(16, len(MODEL_VERSION))) :: modelVersion = ""
 
         ! Data input/output paths
         character(len=256) :: inputFile = ""
         character(len=256) :: constantsFile = ""
+        !! Path to directory to store output data
         character(len=256) :: outputPath = ""
+        !! Hash to append to output file names. Useful for parallel runs.
         character(len=32)  :: outputHash = ""
 
         ! Output
+        !! Should output data be written as CSV file?
         logical          :: writeCSV = .false.
+        !! Should output data be written as NetCDF file?
         logical          :: writeNetCDF = .false.
+        !! Should NetCDF output be written on each timestep or at the end of the chunk?
         character(len=3) :: netCDFWriteMode = ""
+        !! Should a file with summary stats for each compartment (soil, water, sediment) be output?
         logical          :: writeCompartmentStats = .false.
+        !! Should CSV files be prepended with metadata as a #-delimited comment?
         logical          :: writeMetadataAsComment = .false.
+        !! Should the surface water output include breakdown of waterbodies?
         logical          :: includeWaterbodyBreakdown = .false.
+        !! Include breakdown of data over sediment layers?
         logical          :: includeSedimentLayerBreakdown = .false.
+        !! Include breakdown of data over soil layers?
         logical          :: includeSoilLayerBreakdown = .false.
+        !! What units to use for soil PEC - kg/m3 or kg/kg dw?
         character(len=5) :: soilPECUnits = ""
+        !! What units to use for sediment PEC - kg/m4 or kg/kg dw?
         character(len=5) :: sedimentPECUnits = ""
+        !! Should the breakdown of NM state (free vs attached) be included?
         logical          :: includeSoilStateBreakdown = .false.
+        !! Should sediment fluxes to/from waterbodies be included?
         logical          :: includeSedimentFluxes = .false.
+        !! Should the breakdown of SPM size classes be included?
         logical          :: includeSpmSizeClassBreakdown = .false.
+        !! Should sediment fluxes to/from waterbodies be included?
         logical          :: includeSoilErosionYields = .false.
 
         ! Run
+        !! Short description of model run
         character(len=256) :: runDescription = ""
+        !! Log file path
         character(len=256) :: logFilePath = ""
+        !! Should a log file be used?
         logical            :: writeToLog = .false.
+        !! Config file path
         character(len=256) :: configFilePath = ""
+        !! Datetime object representing the start date
         type(datetime)     :: startDate
+        !! The timestep to run the model on [s]
         integer            :: timeStep = 0
+        !! The number of timesteps
         integer            :: nTimeSteps = 0
+        !! Used as proximity to check whether variable as equal
         real(dp)           :: epsilon = 0.0_dp
+        !! How long before we start inputting NM (to give flows to reach steady state)?
         integer            :: warmUpPeriod = 0
+        !! Should error warnings be printed to the console?
         logical            :: triggerWarnings = .false.
+        !! Should error handling be enabled?
         logical            :: errorOutput = .false.
+        !! Are we meant to mask the simulation (i.e. only use a subset of the input dataset)?
         logical            :: hasSimulationMask = .false.
+        !! Path to NetCDF simulation mask
         character(len=256) :: simulationMaskPath = ""
+        !! If .true., miss out costly NM calculations. Useful for sediment calibration, NM PECs will be invalid
         logical            :: ignoreNM = .false.
+        !! Should output to the console use ANSI color codes?
         logical            :: bashColors = .false.
 
         ! Checkpointing
+        !! Path to checkpoint file, to save to and/or read from
         character(len=256) :: checkpointFile = ""
+        !! Should a checkpoint be saved when the run finishes?
         logical            :: saveCheckpoint = .false.
+        !! Should a checkpoint be saved after the warm up period?
         logical            :: saveCheckpointAfterWarmUp = .false.
+        !! Should a checkpoint be reinstated before the run starts?
         logical            :: reinstateCheckpoint = .false.
+        !! Should the final timestep from the checkpoint be used to start the reinstated run?
         logical            :: preserveTimestep = .false.
+        !! Used to preserve timestep between checkpoints. Timestep number at start of run
         integer            :: t0 = 0
 
         ! Steady state
+        !! Should the model be run until steady state by iterating over current simulation input data?
         logical           :: runToSteadyState = .false.
+        !! Mode defines what variable will be used to assess steady state
         character(len=50) :: steadyStateMode = ""
+        !! Delta value used to test whether we're at steady state
         real(dp)          :: steadyStateDelta = 0.0_dp
 
         ! Batch run
+        !! Numbers of chunks to run
         integer                         :: nChunks = 0
+        !! Are we batch running?
         logical                         :: isBatchRun = .false.
+        !! Paths to input files for each chunk
         character(len=256), allocatable :: batchInputFiles(:)
+        !! Paths to constants files for each chunk
         character(len=256), allocatable :: batchConstantFiles(:)
+        !! Start dates for each chunk
         type(datetime), allocatable     :: batchStartDates(:)
+        !! Number of timesteps for each chunk
         integer, allocatable            :: batchNTimesteps(:)
+        !! Paths to config files for batches
         character(len=256), allocatable :: batchConfigFiles(:)
+        !! Total number of timesteps in batch run
         integer                         :: nTimestepsInBatch = 0
+        !! Start date of batch run
         type(datetime)                  :: batchStartDate
+        !! End date of batch run
         type(datetime)                  :: batchEndDate
 
       contains

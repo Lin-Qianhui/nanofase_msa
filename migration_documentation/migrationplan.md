@@ -1,5 +1,10 @@
 # NanoFASE Model Engine — Modularisation Migration Plan
 
+Current status: Phases 0–14 and Phase B are complete. The ownership migration and
+version-length correction are finished; scientific repairs remain separate work.
+Earlier architecture examples describe the migration stages, not code to restore.
+See the phase records in §7 for implemented behavior and actual verification.
+
 ## 1. Goal
 
 Make the NanoFASE **model engine** (simulation code, not input pre-processing or
@@ -314,11 +319,12 @@ than the facade `C`. See the builder phase in §7.
   generic message with blank text. Final cleanup must preserve this agreed behavior.
 
 ### Model-dimensions (`src/ModelDimensions/` — proposed)
-- `npDim`, `ionicDim`
+- `npDim` (unused `ionicDim` was removed in Phase 13)
 - Counts: `nSizeClassesSpm`, `nSizeClassesNM`, `nFracCompsSpm`, `nFormsNM`,
   `nExtraStatesNM`, `nSoilLayers`, `nSedimentLayers`
 - Distributions: `d_spm`, `d_spm_low`, `d_spm_upp`, `d_nm`,
-  `sedimentParticleDensities`, `defaultDistributionSediment`, `defaultDistributionNP`
+  `sedimentParticleDensities`. Unused `defaultDistributionSediment` and
+  `defaultDistributionNP` were removed in Phase 13 rather than moved.
 - Namelists owned: `/allocatable_array_sizes/`, `/nanomaterial/`, and the size-class
   portion of `/sediment/`
 - The `d_spm_low`/`d_spm_upp` derivation logic (currently
@@ -666,7 +672,7 @@ end module
 
 ## 7. Phased execution (each phase = one reviewable PR)
 
-Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, 8, 9, 10, 11, and 12 are complete. Their authoritative
+Implementation status: Phases 0, 1, 2, B, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, and 14 are complete. Their authoritative
 records are [phase0_kernel.md](phase0_kernel.md),
 [phase1_model_dimensions.md](phase1_model_dimensions.md),
 [phase2_model_config.md](phase2_model_config.md), and
@@ -680,10 +686,11 @@ records are [phase0_kernel.md](phase0_kernel.md),
 [phase9_biota.md](phase9_biota.md), and
 [phase10_shared_consumers.md](phase10_shared_consumers.md), and
 [phase11_diagnostic_registry.md](phase11_diagnostic_registry.md), and
-[phase12_build_system_cleanup.md](phase12_build_system_cleanup.md). The separate
-build cleanup was completed before final compatibility cleanup, which is now next.
-Retain the approved shared errors and blank code-1 behavior. Version-length and
-science corrections remain separate changes.
+[phase12_build_system_cleanup.md](phase12_build_system_cleanup.md), and
+[phase13_compatibility_cleanup.md](phase13_compatibility_cleanup.md), and
+[phase14_version_length.md](phase14_version_length.md). Final compatibility cleanup
+and version-length correction are complete. Shared errors and blank code-1 behavior
+remain intentional; scientific corrections remain separate.
 
 ### Phase 0 — Kernel (pure addition, no behaviour change)
 - Create `KernelModule` with `dp`, physical constants, water-physics functions,
@@ -948,15 +955,21 @@ has assigned codes; a domain without assigned errors skips error registration.
   Retained all 61 original comments in the changed existing code/build files.
   See [phase12_build_system_cleanup.md](phase12_build_system_cleanup.md).
 
-### Separate version-length correction
-- Lengthen the stored label only in a separate change. The current constant holds
-  17 characters, and ModelConfig and Globals retain 16. Automatic detection uses
-  the current Git description, but model outputs still apply those existing limits.
-- Check the full label in console welcome text, the summary, and the NetCDF source
-  attribute (including its repository URL). Numerical results must remain unchanged.
-- Review release metadata separately: the fallback, fpm manifest, and package recipe
-  say `0.0.5`, while CITATION.cff still says `0.0.4` with its older release date.
-  Phase 12 does not invent a new release or citation date.
+### Phase 14 — Version-length correction (complete)
+- Removed CMake's truncation and made the generated/fallback constant use its full
+  literal length. ModelConfig stores at least 16 characters or the full label,
+  whichever is longer; short-label output padding is preserved.
+- Generated quoted labels use short continued lines, preserving special characters
+  without changing numerical compiler settings or writing tracked source.
+- Verified real ModelConfig initialisation/reset, boundary and long labels, all
+  earlier version-selection/build checks, 58 CTest cases, 47 exact short-label
+  output sets, and four full-model long-label comparisons. Console, summary and
+  the complete NetCDF source/URL were checked explicitly before comparing the
+  remaining scientific content. General comparison filters were not weakened.
+- All build routes and original-comment checks passed. See
+  [phase14_version_length.md](phase14_version_length.md) for commands and results.
+- Release metadata remains separate: the fallback, manifest and recipe still say
+  `0.0.5`; CITATION.cff retains `0.0.4` and its older date. No release date is invented.
 
 ### Separate river-disabled behaviour correction
 - Define what disabling bed sediment should do to deposition, resuspension,
@@ -992,21 +1005,23 @@ has assigned codes; a domain without assigned errors skips error registration.
   reinstatement timing and the main loop's unused restored `t0` as well before
   claiming exact checkpoint continuation.
 
-### Final phase — Cleanup
-- Confirm every error has its agreed owner. Keep shared codes 110/200/201/300,
-  blank positions 4–5, and the resulting blank code-1 message in ErrorHandling.
-  Remove compatibility code without removing this approved shared list or changing
-  error behavior. An empty registry is not required.
-- Move remaining log messages to domain code (most are already inline).
-- Delete `type(GlobalsType) :: C` and the remaining transitional bootstrap facade
-  helpers once no readers remain. `GLOBALS_INIT` was removed in Phase 4.
-- Include the unused `C%T` field in that cleanup; do not turn it into a new Reactor
-  setting. Preserve its original comments according to the per-phase comment rule.
-- Delete migrated parameters from `DefaultsModule` (keep only IO units there, or fold
-  into kernel).
-- **Verify:** build + exact output/state checks; source checks confirm zero executable
-  `C%` references and active `use GlobalsModule` imports. Preserve historical code
-  comments rather than deleting them to satisfy a literal-text search.
+### Phase 13 — Final compatibility cleanup (complete)
+- Removed GlobalsModule, DefaultsModule, the old `C` object, Bootstrap's two startup
+  copying procedures, and the unused runtime-copy procedure. All active consumers
+  now use the owners established in earlier phases.
+- Updated the Biota direct test to use only ModelConfig; proved the same 50 records
+  with both test forms against Phase 12, then compiled identical updated tests on
+  both sides before fresh capture. Source-hash protections remain enabled.
+- Replaced the defaults-alias test with a check of the actual defaults owner.
+- Preserved startup order, construction methods, logging/error propagation, shared
+  errors, blank code 1, all scientific operations, and all original comments.
+  Useful comments moved to their owners; deleted-code comments have a labelled,
+  comment-only archive in this folder.
+- Verified 58 CTest cases, 47 exact output sets, Biota state, expected failures,
+  batch/checkpoint checks, all build routes, and 4,910 original comments. See the
+  [Phase 13 report](phase13_compatibility_cleanup.md) for actual commands and results.
+- Earlier transition descriptions and skeletons above explain historical stages.
+  Do not reintroduce their old copying calls or unused fields into current code.
 
 Every phase adds a plain-language file in `migration_documentation/` recording what
 was implemented, actual verification commands and results, preserved public behaviour
@@ -1132,13 +1147,18 @@ For domain `X`:
 - **Direct-owner gate:** initialise ModelConfig and ModelDimensions in standalone
   tests before using utilities. Check tolerance boundaries, explicit overrides,
   array shapes, repeated config reads, required groups, logger settings, and that
-  the legacy defaults import exposes the same object. Do not initialise `C` in
-  these new tests. Keep the existing Biota comparison sources/hash checks unchanged.
+  ModelConfig reads current values from the real defaults owner. Do not initialise
+  `C` in these tests. Keep Biota source-hash checks enabled. Phase 13 changes only
+  the direct test setup;
+  compile identical revised test sources against both reference and candidate before capture.
 - **Batch smoke gate:** run the existing batch path whenever assembly, source snapping,
   config paths, or runtime-mutated model config are touched.
 - **Tracked-file and version gate:** Phase 12 and later build a generated version
   module without rewriting tracked source. Give the reference and candidate the
   same explicit `-DNANOFASE_VERSION=<label>` and identical numerical compiler flags.
+  When comparing Phase 14 with an older phase, use a label no longer than 16
+  characters, such as `migration-check`. Check long-label metadata separately
+  with `verify_version_outputs.py` before excluding those exact changed fields.
   Keep summary and NetCDF version fields in exact comparisons. Save and compare
   tracked-file hashes after configuration, building, reconfiguration, and cleaning.
   When the reference predates Phase 12, it cannot accept this override: build it in
@@ -1149,8 +1169,9 @@ For domain `X`:
 - **Source gates:** search case-insensitively and distinguish executable statements
   from comments and strings. After Phase 10 only retained Bootstrap/Globals code
   may use `C`; only Bootstrap imports Globals in production. BiotaScienceTest is
-  the explicit historical test exception. Final cleanup removes these active
-  dependencies too, while retaining original comments.
+  the explicit historical test exception. Phase 13 removed all of these active
+  dependencies, including the test exception, while retaining original comments.
+  Run `verification/verify_compatibility_cleanup.py` to enforce their absence.
 
 ---
 

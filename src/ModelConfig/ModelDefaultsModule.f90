@@ -1,4 +1,5 @@
 !> Model-wide defaults, shared with the temporary DefaultsModule export.
+!! Phase 13: DefaultsModule has been removed; this module is the sole defaults owner.
 module ModelDefaultsModule
     use KernelModule, only: dp
     implicit none

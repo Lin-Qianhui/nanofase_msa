@@ -6,7 +6,6 @@ program BiotaScienceTest
     use BiotaWaterModule, only: BiotaWater
     use DataInputModule, only: DATASET
     use ModelConfigModule, only: modelConfig
-    use GlobalsModule, only: C, syncRuntimeModelConfigToGlobals
     use ResultModule, only: Result
     use datetime_module, only: datetime
     implicit none
@@ -15,8 +14,9 @@ program BiotaScienceTest
     type(BiotaWater) :: water
 
     ! Both owners are set so this unchanged test also runs against Phase 8.
+    ! Phase 13: only ModelConfig is needed now; compare identical test sources
+    ! against Phase 12 and later. Earlier comparisons retain their historical test.
     modelConfig%epsilon = 1.0e-10_dp
-    C%epsilon = modelConfig%epsilon
     DATASET%biotaName = [character(len=100) :: 'soil organism', 'water organism']
     DATASET%biotaInitial_C_org = [0.5_dp, 0.75_dp]
     DATASET%biota_k_uptake_np = [0.2_dp, 0.3_dp]
@@ -46,8 +46,6 @@ program BiotaScienceTest
         integer, intent(in) :: seconds
         modelConfig%startDate = day
         modelConfig%timeStep = seconds
-        C%timeStep = seconds
-        call syncRuntimeModelConfigToGlobals()
     end subroutine
 
     subroutine reset(organism, index)

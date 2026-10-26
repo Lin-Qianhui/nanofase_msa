@@ -33,14 +33,31 @@ module KernelModule
     character(len=*), parameter :: COLOR_RESET = ESC // "[0m"       ! Escape sequence to reset text color
 
     ! Cross-domain physical constants.
+    !! Gravitational acceleration [m/s^2]
     real(dp), parameter :: g = 9.80665_dp
+    !! Boltzmann constant [m2 kg s-2 K-1]
     real(dp), parameter :: k_B = 1.38064852e-23
+    !! Pi [-]
     real(dp), parameter :: pi = 4*atan(1.0_dp)
+    !! Manning's roughness coefficient, for natural streams and major rivers.
+    !! [Reference](http://www.engineeringtoolbox.com/mannings-roughness-d_799.html).
     real(dp), parameter :: n_river = 0.035_dp
 
 contains
 
     !> Calculate water density at temperature T [deg C], optionally with salinity S [g/kg].
+    !> Calculate the density of water at a given temperature \( T \):
+    !! $$
+    !!      \rho_{\text{w}}(T) = 1000 \left( 1 - \frac{T + 288.9414}{508929.2 (T + 68.12963) (T - 3.9863^2)} \right)
+    !! $$
+    !! and optionally with a given salinity \( S \):
+    !! $$
+    !!      \rho_{\text{w,s}}(T,S) = \rho_w + AS + BS^{3/2} + CS^2
+    !! $$
+    !! where \( A = 0.824493 - 0.0040899T + 0.000076438T^2 -0.00000082467T^3 + 0.0000000053675T^4 \),
+    !! \( B = -0.005724 + 0.00010227T - 0.0000016546T^2 \) and \( C = 4.8314 \times 10^{-4} \).
+    !! Reference:
+    !! [D. R. Maidment, Handbook of Hydrology (2012)](https://books.google.co.uk/books/about/Handbook_of_hydrology.html?id=4_9OAAAAMAAJ)
     pure function rho_w(T, S)
         real, intent(in) :: T
         real(dp), intent(in), optional :: S
@@ -57,6 +74,12 @@ contains
     end function
 
     !> Calculate water kinematic viscosity at temperature T [deg C], optionally with salinity S [g/kg].
+    !> Calculate the kinematic viscosity of water \( \nu_w \) at given temperature \( T \)
+    !! and optionally salinity \( S \):
+    !! $$
+    !!      \nu_{\text{w}}(T,S) = \frac{1}{\rho_w(T,S)} 2.414\times 10^{-5} \cdot 10^{\frac{247.8}{(T+273.15)-140.0}}
+    !! $$
+    !! Reference: [T. Al-Shemmeri](http://varunkamboj.typepad.com/files/engineering-fluid-mechanics-1.pdf)
     pure function nu_w(T, S)
         real, intent(in) :: T
         real(dp), intent(in), optional :: S
@@ -70,6 +93,11 @@ contains
     end function
 
     !> Calculate water dynamic viscosity at temperature T [deg C].
+    !> Calculate the dynamic viscosity of water \( \mu_w \) at a given temperature \( T \)
+    !! $$
+    !!      \nu_{\text{w}}(T,S) = 2.414\times 10^{-5} \cdot 10^{\frac{247.8}{(T+273.15)-140.0}}
+    !! $$
+    !! Reference: [T. Al-Shemmeri](http://varunkamboj.typepad.com/files/engineering-fluid-mechanics-1.pdf)
     pure function mu_w(T)
         real, intent(in) :: T
         real(dp) :: mu_w
