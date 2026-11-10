@@ -1,587 +1,923 @@
 #!/usr/bin/env python3
-"""Cross-module data-flow extraction for modern Fortran, built on PSyclone.
+"""Source-level Fortran shared-state and derived-type access analysis.
 
-Pass 1 (shared mutable state): reports how data moves through module-level
-*variables* read/written across module boundaries. Named constants (kind params
-like `dp`, `nf90_*`), derived TYPES, and PROCEDURES are filtered out - they are
-not data flow. Emits a text report plus a colour-coded Graphviz .dot.
-
-Pass 2 (derived-type component dependencies): for every obj%a access it resolves
-obj's declared TYPE and the module that DEFINES that type, so "B depends on A via
-C%a" is reported even when the object is local or a dummy argument. It also
-classifies how the root object is bound (the `kind` field) to separate a
-dependency on an imported TYPE (root local/dummy) from one on an imported
-VARIABLE (root itself imported). Text report; disable with --no-types.
-
-Everything passed to --src is INTERNAL (your system). Imports from a module you
-did not pass are EXTERNAL. Intrinsic modules (iso_fortran_env, iso_c_binding,
-omp_lib, ieee_*) are always treated as external noise and dropped.
-
-Usage:
-    python fortran_dataflow.py --src src vendor \
-        --ignore omp_lib netcdf spoof -o flow.dot
-    dot -Tsvg flow.dot -o flow.svg
+Uses fparser2's syntax tree and a project-wide symbol/interface index. R/W are
+syntactic accesses or explicit INTENT contracts; ? means an unresolved effect,
+never a confirmed write. See dataflow/README.md for scope and limitations.
 """
-import argparse, glob, os, sys
-from collections import namedtuple, defaultdict
+import argparse
+import glob
+import hashlib
+import json
+import os
+import sys
+from collections import defaultdict, namedtuple
+from dataclasses import dataclass, field
+from pathlib import Path
 
-from psyclone.psyir.frontend.fortran import FortranReader
-from psyclone.psyir.nodes import Routine, Container
-from psyclone.psyir.symbols import (ImportInterface, DefaultModuleInterface,
-                                     RoutineSymbol, DataSymbol, DataTypeSymbol,
-                                     ArrayType, StructureType)
-from fparser.two.parser import ParserFactory
 from fparser.common.readfortran import FortranStringReader
+from fparser.two.parser import ParserFactory
 from fparser.two.utils import walk as fwalk
 from fparser.two import Fortran2003 as f2
 
-Access = namedtuple("Access", "home owner var mode internal")
+Access = namedtuple('Access', 'home owner var mode internal')
+TypeDep = namedtuple('TypeDep', 'home tmod tname comp mode sure kind internal')
+DEFAULT_EXTS = ('.f90', '.f95', '.f03', '.f08')
+INTRINSIC = {'iso_fortran_env', 'iso_c_binding', 'omp_lib',
+             'ieee_arithmetic', 'ieee_exceptions', 'ieee_features'}
+EXAMPLE_DIRS = {'test', 'tests', 'example', 'examples'}
 
-# Pass-2 record:
-#   home     accessing module (B)
-#   tmod     module that DEFINES the derived type (A)
-#   tname    derived type name (C)
-#   comp     component path under the root object ("a", or nested "region%nx")
-#   mode     "R" / "W" / "RW"
-#   sure     False when the type's module could not be pinned down
-#   kind     binding of the ROOT object - see _binding()
-#   internal True when tmod is one of our internal modules
-TypeDep = namedtuple("TypeDep", "home tmod tname comp mode sure kind internal")
 
-# Bindings that mean "dependency on an imported TYPE" (root not itself imported).
-_TYPE_ONLY = {"local", "arg", "module-var", "other"}
+def children(node):
+    if isinstance(node, (list, tuple)):
+        return node
+    return getattr(node, 'content', None) or getattr(node, 'items', ()) or ()
 
-DEFAULT_EXTS = (".f90", ".F90", ".f95", ".F95", ".f03", ".F03", ".f08", ".F08")
-INTRINSIC = {"iso_fortran_env", "iso_c_binding", "omp_lib",
-             "ieee_arithmetic", "ieee_exceptions", "ieee_features"}
 
-def discover(entries, exts):
-    found = []
-    for e in entries:
-        if os.path.isdir(e):
-            for root, _, names in os.walk(e):
-                found += [os.path.join(root, n) for n in names if n.endswith(exts)]
-        elif any(ch in e for ch in "*?[]"):
-            found += [p for p in glob.glob(e, recursive=True) if p.endswith(exts)]
-        elif os.path.isfile(e):
-            found.append(e)
+def tag(node):
+    return type(node).__name__
+
+
+def low(node):
+    return str(node).lower()
+
+
+def mode_union(modes):
+    chars = set(''.join(modes))
+    return ''.join(c for c in 'RW?' if c in chars)
+
+
+def discover(entries, exts=DEFAULT_EXTS, include_examples=False):
+    found = set()
+    for entry in entries:
+        if os.path.isdir(entry):
+            for root, dirs, names in os.walk(entry):
+                dirs[:] = sorted(d for d in dirs if not d.startswith('.') and
+                                 (include_examples or d.lower() not in EXAMPLE_DIRS))
+                found.update(os.path.normpath(os.path.join(root, n)) for n in names
+                             if n.lower().endswith(tuple(e.lower() for e in exts)))
         else:
-            print(f"# WARN: '{e}' matched nothing", file=sys.stderr)
-    seen, out = set(), []
-    for p in found:
-        rp = os.path.normpath(p)
-        if rp not in seen:
-            seen.add(rp); out.append(rp)
-    return out
+            matches = glob.glob(entry, recursive=True)
+            if not matches:
+                raise ValueError(f"Source path matched nothing: {entry}")
+            found.update(os.path.normpath(p) for p in matches if os.path.isfile(p))
+    return sorted(found)
 
-def kind_of(sym):
-    if isinstance(sym, RoutineSymbol):  return "routine"
-    if isinstance(sym, DataTypeSymbol): return "type"
-    if isinstance(sym, DataSymbol):
-        return "const" if getattr(sym, "is_constant", False) else "var"
-    return "unknown"
 
-def module_of(routine):
-    node = routine.parent
-    while node is not None and not isinstance(node, Container):
-        node = node.parent
-    return node.name if isinstance(node, Container) else "<program>"
+@dataclass(eq=False)
+class Symbol:
+    name: str
+    scope: 'Scope'
+    kind: str = 'var'
+    type_name: str = ''
+    intrinsic_type: str = ''
+    rank: int = 0
+    intent: str = ''
+    optional: bool = False
+    pointer: bool = False
+    polymorphic: bool = False
+    target: 'Scope' = None
+    specifics: list = field(default_factory=list)
+    # Type-bound procedure binding: interface or implementation, PASS/NOPASS.
+    procedure: str = ''
+    pass_arg: str = ''
+    nopass: bool = False
 
-# --- pass 2 helpers --------------------------------------------------------
+    @property
+    def owner(self):
+        return self.scope.home.lower()
 
-def _unwrap_derived(datatype):
-    """Peel array wrappers and return (type_symbol, type_name) for a derived
-    type, or (None, None) if the root is intrinsic / unresolvable."""
-    for _ in range(8):                       # peel e.g. type(C) :: x(:,:)
-        if isinstance(datatype, ArrayType):
-            datatype = (getattr(datatype, "datatype", None)
-                        or getattr(datatype, "_datatype", None))
-        else:
-            break
-    if isinstance(datatype, DataTypeSymbol):
-        return datatype, datatype.name
-    if isinstance(datatype, StructureType):
-        return datatype, "<inline>"          # defined in place, no module
-    return None, None
 
-def _resolve_datatype(sym, home, defs):
-    """Return (type_sym, tname, type_home) for the root object's derived type.
+@dataclass(eq=False)
+class Scope:
+    name: str
+    kind: str
+    parent: 'Scope' = None
+    path: str = ''
+    node: object = None
+    symbols: dict = field(default_factory=dict)
+    uses: list = field(default_factory=list)
+    public: bool = True
+    visibility: dict = field(default_factory=dict)
+    args: list = field(default_factory=list)
+    base: str = ''
+    namelists: dict = field(default_factory=dict)
+    interface: bool = False
+    imports: set = field(default_factory=set)
+    import_all: bool = False
+    aliases: dict = field(default_factory=dict)
+    overrides: dict = field(default_factory=dict)
 
-    For a locally declared root the type is on the symbol itself. For a root
-    IMPORTED from another module PSyclone leaves its datatype unresolved, so we
-    follow the import into the defining module's declaration and read the type
-    from there. type_home is the module whose declaration we used - it is where
-    a DefaultModuleInterface type lives, so _defining_module needs it (not the
-    accessing module) to attribute the type correctly."""
-    type_sym, tname = _unwrap_derived(sym.datatype)
-    if type_sym is not None:
-        return type_sym, tname, home
-    intf = getattr(sym, "interface", None)
-    if isinstance(intf, ImportInterface):
-        mod = intf.container_symbol.name.lower()
-        real = defs.get(mod, {}).get(sym.name.lower())
-        if real is not None and real is not sym:
-            ts, tn = _unwrap_derived(real.datatype)
-            if ts is not None:
-                return ts, tn, mod
-    return None, None, home
+    @property
+    def home(self):
+        if self.kind in ('module', 'program', 'external'):
+            return self.name
+        return self.parent.home if self.parent else self.name
 
-def _defining_module(type_sym, home):
-    """Which module defines this derived type, and are we sure? ImportInterface
-    is the reliable signal; DefaultModuleInterface means it is defined in the
-    accessing module; anything else means the providing module was not parsed."""
-    intf = getattr(type_sym, "interface", None)
-    if isinstance(intf, ImportInterface):
-        return intf.container_symbol.name.lower(), True
-    if type(intf).__name__ == "DefaultModuleInterface":
-        return home.lower(), True
-    return home.lower(), False
 
-def _binding(sym):
-    """How the ROOT object is bound - separates a dep on an imported TYPE
-    (root local/dummy) from a dep on an imported VARIABLE (root imported)."""
-    n = type(getattr(sym, "interface", None)).__name__
-    if n == "ImportInterface":
-        return "var-import"        # the object itself is imported
-    if n == "ArgumentInterface":
-        return "arg"               # passed in - clean interface coupling
-    if n == "DefaultModuleInterface":
-        return "module-var"        # this module's own module-level state
-    if n in ("AutomaticInterface", "StaticInterface", "LocalInterface"):
-        return "local"             # local object of an imported type
-    return "other"
+class Project:
+    def __init__(self, files, ignore=(), strict=False):
+        self.modules = {}
+        self.scopes = []
+        self.node_scopes = {}
+        self.trees = []
+        self.external = {}
+        self.ignored = set(map(str.lower, ignore)) | INTRINSIC
+        self.strict = strict
+        self.evidence = set()
+        self.type_rows = defaultdict(set)
+        self.diagnostics = set()
+        self._resolve_cache = {}
+        self.effects = defaultdict(set)
+        parser = ParserFactory().create(std='f2008')
+        for path in files:
+            source = Path(path).read_text()
+            try:
+                tree = parser(FortranStringReader(source))
+            except Exception as exc:
+                # Never silently compare graphs with different parser coverage.
+                raise ValueError(f'Cannot parse {path}: {exc}') from exc
+            self.trees.append((path, source, tree))
+            self.index(tree, None, path)
 
-# ---------------------------------------------------------------------------
+    def add_scope(self, name, kind, parent, path, node, interface=False):
+        scope = Scope(name, kind, parent, path, node, interface=interface)
+        self.scopes.append(scope)
+        self.node_scopes[id(node)] = scope
+        if kind == 'module':
+            if low(name) in self.modules:
+                raise ValueError(f'Duplicate module {name}: {path}')
+            self.modules[low(name)] = scope
+        elif parent and kind in ('routine', 'type'):
+            existing = parent.symbols.get(low(name))
+            if existing and existing.kind == 'generic':
+                existing.specifics.append(scope)
+            else:
+                parent.symbols[low(name)] = Symbol(low(name), parent, kind=kind,
+                                                   target=scope)
+        return scope
 
-def collect(files):
-    """Pass 1: parse everything; record internal modules, routine names, the kind
-    of every symbol each module DEFINES (not imports), and the actual DataSymbol
-    for each module-level variable so Pass 2 can resolve imported roots' types."""
-    reader = FortranReader()
-    internal, routines, kinds, defs, trees, failed = (
-        set(), set(), defaultdict(dict), defaultdict(dict), [], [])
-    for path in files:
-        src = open(path).read()
-        try:
-            psyir = reader.psyir_from_source(src)
-        except Exception as e:
-            print(f"# FALLBACK {path}: {type(e).__name__}: {e}", file=sys.stderr)
-            failed.append((path, src))
-            continue
-        for c in psyir.walk(Container):
-            if type(c).__name__ == "FileContainer":
-                continue
-            internal.add(c.name.lower())
-            for s in c.symbol_table.symbols:
-                if isinstance(s.interface, ImportInterface):
-                    continue  # only record what this module actually defines
-                kinds[c.name.lower()][s.name.lower()] = kind_of(s)
-                if isinstance(s, DataSymbol):
-                    defs[c.name.lower()][s.name.lower()] = s
-        for r in psyir.walk(Routine):
-            routines.add(r.name.lower())
-        trees.append((path, src, psyir))
-    return internal, routines, kinds, defs, trees, failed
-
-def fallback_accesses(src, var_owner):
-    """Coarse extraction via fparser2 for files PSyclone couldn't build PSyIR for.
-    Matches assignment reads/writes against known module variables (var_owner:
-    {var_lower: set(owner_modules)}), restricted to modules the file actually uses.
-    Returns (home_module, [(owner, var, mode), ...]). Misses call-argument and
-    derived-type-component writes - it is a salvage, not a full analysis."""
-    parser = ParserFactory().create(std="f2008")
-    tree = parser(FortranStringReader(src))
-    mods = fwalk(tree, f2.Module_Stmt)
-    home = str(fwalk(mods[0], f2.Name)[0]).lower() if mods else "<program>"
-    used = {str(fwalk(u, f2.Name)[0]).lower() for u in fwalk(tree, f2.Use_Stmt)}
-    out = []
-    for sub in fwalk(tree, (f2.Subroutine_Subprogram, f2.Function_Subprogram)):
-        writes, reads = set(), set()
-        for asg in fwalk(sub, f2.Assignment_Stmt):
-            lhs = [str(n).lower() for n in fwalk(asg.children[0], f2.Name)]
-            if lhs:
-                writes.add(lhs[0])
-            reads.update(str(n).lower() for n in fwalk(asg.children[2], f2.Name))
-        for v in (writes | reads):
-            owners = var_owner.get(v, set()) & used     # only vars from used modules
-            if not owners:
-                continue
-            owner = sorted(owners)[0]
-            mode = ("R" if v in reads else "") + ("W" if v in writes else "")
-            out.append((owner, v, mode))
-    return home, out
-
-def _ref_part_name(part):
-    """Name of one component in an fparser2 Data_Ref part, dropping any
-    subscript so obj%comp(i) contributes 'comp', not 'comp' plus index names."""
-    if isinstance(part, f2.Part_Ref):
-        return str(part.children[0])
-    return str(part)
-
-def _fparser_tree(src):
-    """Parse src with fparser2 and return (tree, home_module, used_modules)."""
-    tree = ParserFactory().create(std="f2008")(FortranStringReader(src))
-    mods = fwalk(tree, f2.Module_Stmt)
-    home = str(fwalk(mods[0], f2.Name)[0]).lower() if mods else "<program>"
-    used = {str(fwalk(u, f2.Name)[0]).lower() for u in fwalk(tree, f2.Use_Stmt)}
-    return tree, home, used
-
-def _component_deps_from_refs(drefs, home, used, write_ids, defs, var_owner,
-                              internal, force_external):
-    """Turn fparser2 Data_Ref nodes (obj%comp) into var-import TypeDeps, resolving
-    the root's TYPE via defs. Only roots that are known imported module variables
-    can be resolved (no type info for local/dummy roots without PSyIR); write iff
-    the ref id is in write_ids, else read."""
-    out, seen = [], set()
-    for dref in drefs:
-        parts = dref.children
-        if len(parts) < 2:                       # need at least root%component
-            continue
-        root = _ref_part_name(parts[0]).lower()
-        owners = var_owner.get(root, set()) & used
-        if not owners:
-            continue                             # root not a known imported var
-        owner = sorted(owners)[0]
-        real = defs.get(owner, {}).get(root)
-        if real is None:
-            continue
-        type_sym, tname = _unwrap_derived(real.datatype)
-        if type_sym is None:
-            continue
-        tmod, sure = _defining_module(type_sym, owner)
-        if tmod in INTRINSIC:
-            continue
-        comp = "%".join(_ref_part_name(p) for p in parts[1:])
-        mode = "W" if id(dref) in write_ids else "R"
-        tmod_internal = tmod in internal and tmod not in force_external
-        key = (home, tmod, tname.lower(), comp.lower(), mode)
-        if key in seen:
-            continue
-        seen.add(key)
-        out.append(TypeDep(home, tmod, tname, comp, mode, sure, "var-import",
-                           tmod_internal))
-    return out
-
-def fallback_type_deps(src, defs, var_owner, internal, force_external):
-    """Coarse Pass 2 for files PSyclone couldn't build PSyIR for. Scans every
-    obj%comp ref (executable AND declaration) and emits var-import TypeDeps for
-    imported-variable roots. R/W is approximated: write iff the ref is an
-    assignment LHS. A salvage, not a full analysis."""
-    tree, home, used = _fparser_tree(src)
-    write_ids = {id(asg.children[0]) for asg in fwalk(tree, f2.Assignment_Stmt)
-                 if isinstance(asg.children[0], f2.Data_Ref)}
-    return _component_deps_from_refs(fwalk(tree, f2.Data_Ref), home, used,
-                                     write_ids, defs, var_owner, internal,
-                                     force_external)
-
-def spec_expr_type_deps(src, defs, var_owner, internal, force_external):
-    """PSyIR's reference_accesses() ignores declaration specification expressions
-    (array bounds, kinds), so obj%comp used only to size a local array - e.g.
-    real(dp) :: x(C%nSizeClassesSpm) - is invisible to Pass 2 even when the file
-    parses. Recover those reads by scanning declaration statements with fparser2;
-    a spec expression is always a read."""
-    tree, home, used = _fparser_tree(src)
-    drefs = [d for decl in fwalk(tree, f2.Type_Declaration_Stmt)
-             for d in fwalk(decl, f2.Data_Ref)]
-    return _component_deps_from_refs(drefs, home, used, set(), defs, var_owner,
-                                     internal, force_external)
-
-def type_component_deps(trees, internal, force_external, defs):
-    """Pass 2: derived-type COMPONENT dependencies. For every obj%a access,
-    resolve obj's declared TYPE and the module that defines it, and classify how
-    the root object is bound so an imported-TYPE dependency can be told apart
-    from an imported-VARIABLE one. Reuses the trees parsed by collect(); defs lets
-    us recover the type of a root IMPORTED from another module."""
-    out, seen = [], set()
-    for _path, _src, psyir in trees:
-        for rtn in psyir.walk(Routine):
-            home = module_of(rtn)
-            vam = rtn.reference_accesses()
-            for sig in vam.all_signatures:
-                if not sig.is_structure:         # need at least root%component
-                    continue
-                root = sig.var_name
-                try:
-                    sym = rtn.symbol_table.lookup(root)
-                except KeyError:
-                    continue
-                if not isinstance(sym, DataSymbol):
-                    continue
-                type_sym, tname, type_home = _resolve_datatype(sym, home, defs)
-                if type_sym is None:
-                    continue                     # intrinsic-typed root, not a dep
-                tmod, sure = _defining_module(type_sym, type_home)
-                if tmod in INTRINSIC:
-                    continue
-                kind = _binding(sym)
-                comp = str(sig[1:])              # component path below the root
-                mode = ("R" if vam.is_read(sig) else "") + ("W" if vam.is_written(sig) else "")
-                tmod_internal = tmod in internal and tmod not in force_external
-                key = (home.lower(), tmod, tname.lower(), comp.lower(), mode, kind)
-                if key in seen:
-                    continue
-                seen.add(key)
-                out.append(TypeDep(home, tmod, tname, comp, mode, sure, kind,
-                                   tmod_internal))
-    return out
-
-def analyse(args):
-    exts = tuple(args.ext) if args.ext else DEFAULT_EXTS
-    files = discover(args.src, exts)
-    if not files:
-        sys.exit("No source files found under --src")
-    print(f"# analysing {len(files)} file(s)", file=sys.stderr)
-
-    internal, routine_names, kinds, defs, trees, failed = collect(files)
-
-    # modules forced to count as external (ignored by the user, or intrinsic)
-    force_external = {m.lower() for m in (args.ignore or [])} | INTRINSIC
-
-    # map of known module-level variable -> set of modules defining it (for fallback)
-    var_owner = defaultdict(set)
-    for mod, syms in kinds.items():
-        for nm, k in syms.items():
-            if k == "var":
-                var_owner[nm].add(mod)
-
-    seen, accesses = set(), []
-    for _path, _src, psyir in trees:
-        for rtn in psyir.walk(Routine):
-            home = module_of(rtn)
-            vam = rtn.reference_accesses()
-            for sig in vam.all_signatures:
-                name = sig.var_name
-                low = name.lower()
-                if low in routine_names:
-                    continue
-                try:
-                    sym = rtn.symbol_table.lookup(name)
-                except KeyError:
-                    continue
-                # resolved cases we can reject outright
-                if isinstance(sym, (RoutineSymbol, DataTypeSymbol)):
-                    continue
-                if isinstance(sym, DataSymbol) and getattr(sym, "is_constant", False):
-                    continue
-                # owning module
-                intf = sym.interface
-                if isinstance(intf, DefaultModuleInterface):
-                    owner = home.lower()
-                elif isinstance(intf, ImportInterface):
-                    owner = intf.container_symbol.name.lower()
+    def index(self, node, scope, path, interface=False):
+        kind = tag(node)
+        if kind in ('Module', 'Main_Program', 'Subroutine_Subprogram',
+                    'Function_Subprogram', 'Subroutine_Body', 'Function_Body'):
+            head = children(node)[0]
+            name = str(head.items[1]) if head.items[1] else '<program>'
+            skind = {'Module': 'module', 'Main_Program': 'program'}.get(kind, 'routine')
+            scope = self.add_scope(name, skind, scope, path, node, interface)
+            if skind == 'routine':
+                scope.args = [low(a) for a in children(head.items[2])]
+                for name in scope.args:
+                    scope.symbols[name] = Symbol(name, scope)
+                if tag(head) == 'Function_Stmt':
+                    suffix = head.items[3]
+                    result = low(suffix.items[0]) if suffix and suffix.items[0] else low(scope.name)
+                    scope.symbols[result] = Symbol(result, scope)
+                    for dtype in fwalk(head.items[0], f2.Declaration_Type_Spec):
+                        scope.symbols[result].type_name = low(dtype.items[1])
+        elif kind == 'Derived_Type_Def':
+            head = children(node)[0]
+            scope = self.add_scope(str(head.items[1]), 'type', scope, path, node)
+            for attr in children(head.items[0]):
+                if tag(attr) == 'Type_Attr_Spec' and attr.items[0] == 'EXTENDS':
+                    scope.base = low(attr.items[1])
+                elif low(attr) in ('public', 'private'):
+                    scope.parent.visibility[low(scope.name)] = low(attr) == 'public'
+        elif kind == 'Interface_Block':
+            head = children(node)[0]
+            name = head.items[0]
+            generic = None
+            if name and tag(name) == 'Name':
+                generic = scope.symbols.setdefault(low(name), Symbol(low(name), scope, kind='generic'))
+            for child in children(node)[1:]:
+                if tag(child) == 'Procedure_Stmt':
+                    if generic:
+                        generic.specifics.extend(low(n) for n in children(child.items[0]))
                 else:
-                    continue  # local var or dummy argument
-                if owner in INTRINSIC:
+                    self.index(child, scope, path, interface=True)
+                    if generic and id(child) in self.node_scopes:
+                        generic.specifics.append(self.node_scopes[id(child)])
+            return
+        elif scope:
+            if kind == 'Use_Stmt':
+                mod = low(node.items[2])
+                only = 'ONLY' in str(node.items[3]).upper()
+                mapping = {}
+                for item in children(node.items[4]):
+                    if tag(item) == 'Rename':
+                        mapping[low(item.items[-2])] = low(item.items[-1])
+                    elif tag(item) == 'Name':
+                        mapping[low(item)] = low(item)
+                scope.uses.append((mod, only, mapping))
+                return
+            if kind in ('Type_Declaration_Stmt', 'Data_Component_Def_Stmt'):
+                dtype, attrs, decls = node.items
+                type_name = low(dtype.items[1]) if tag(dtype) == 'Declaration_Type_Spec' else ''
+                attr_text = str(attrs).lower() if attrs else ''
+                intent = next((low(a.items[1]) for a in children(attrs)
+                               if tag(a) == 'Intent_Attr_Spec'), '')
+                dimension = next((a.items[1] for a in children(attrs)
+                                  if tag(a) in ('Dimension_Attr_Spec', 'Dimension_Component_Attr_Spec')), None)
+                for decl in children(decls):
+                    name = low(decl.items[0])
+                    sym = scope.symbols.setdefault(name, Symbol(name, scope))
+                    sym.type_name = type_name
+                    sym.polymorphic = tag(dtype) == 'Declaration_Type_Spec' and low(dtype.items[0]) == 'class'
+                    sym.intrinsic_type = low(dtype.items[0]) if tag(dtype) == 'Intrinsic_Type_Spec' else ''
+                    sym.kind = 'const' if 'parameter' in attr_text else 'var'
+                    sym.intent = intent
+                    sym.optional = 'optional' in attr_text
+                    sym.pointer = 'pointer' in attr_text
+                    shape = decl.items[1] or dimension
+                    sym.rank = len(children(shape)) if shape else 0
+                    for access in ('public', 'private'):
+                        if access in attr_text:
+                            scope.visibility[name] = access == 'public'
+                return
+            if kind == 'Access_Stmt':
+                public = low(node.items[0]) == 'public'
+                if node.items[1] is None:
+                    scope.public = public
+                else:
+                    scope.visibility.update((low(n), public) for n in children(node.items[1]))
+                return
+            if kind == 'Import_Stmt':
+                if node.items[1]:
+                    scope.imports.update(low(n) for n in children(node.items[1]))
+                else:
+                    scope.import_all = True
+                return
+            if kind == 'Namelist_Stmt':
+                for name, members in node.items:
+                    scope.namelists[low(name)] = list(children(members))
+                return
+            if kind == 'Specific_Binding':
+                interface_name, attrs, _, name, implementation = node.items
+                attr_text = str(attrs).lower() if attrs else ''
+                sym = Symbol(low(name), scope, kind='binding',
+                             procedure=low(implementation or interface_name or name),
+                             nopass='nopass' in attr_text)
+                for attr in children(attrs):
+                    if tag(attr) == 'Binding_PASS_Arg_Name':
+                        sym.pass_arg = low(attr.items[1])
+                scope.symbols[sym.name] = sym
+                return
+            if kind == 'Generic_Binding':
+                _, name, specifics = node.items
+                scope.symbols[low(name)] = Symbol(low(name), scope, kind='generic',
+                                                specifics=[low(n) for n in children(specifics)])
+                return
+        for child in children(node):
+            self.index(child, scope, path, interface)
+
+    def external_symbol(self, mod, name):
+        key = (mod, name)
+        if key not in self.external:
+            scope = Scope(mod, 'external')
+            self.external[key] = Symbol(name, scope, kind='unknown')
+        return self.external[key]
+
+    def resolve(self, scope, name, exported=False, trail=frozenset(), types_only=False):
+        name = low(name)
+        # Keep the scope itself alive in the cache. Ephemeral ASSOCIATE/SELECT
+        # scopes can otherwise reuse object ids and inherit a different binding.
+        key = (scope, name, exported, types_only)
+        if key in trail or scope is None:
+            return ()
+        if not trail and key in self._resolve_cache:
+            return self._resolve_cache[key]
+        if exported and not scope.visibility.get(name, scope.public):
+            return ()
+        trail = trail | {key}
+        if name in scope.symbols and (not types_only or scope.symbols[name].kind == 'type'):
+            return (scope.symbols[name],)
+        found = []
+        explicit_import = False
+        for mod, only, mapping in scope.uses:
+            if name in mapping:
+                remote = mapping[name]
+                explicit_import = True
+            elif only or name in {v for k, v in mapping.items() if k != v}:
+                continue
+            else:
+                remote = name
+            if mod in self.modules:
+                found.extend(self.resolve(self.modules[mod], remote, True, trail, types_only))
+            elif mod not in INTRINSIC or name in mapping:
+                # Wildcard imports from absent modules cannot prove ownership.
+                found.append(self.external_symbol(mod, remote))
+        concrete = [s for s in found if s.kind != 'unknown']
+        if concrete:
+            # Prefer a known declaration over hypothetical absent exports.
+            # This assumes valid Fortran; unavailable providers are listed in JSON.
+            found = concrete
+        if not concrete and not explicit_import and not exported and scope.parent and (
+                not scope.interface or scope.import_all or name in scope.imports):
+            host = self.resolve(scope.parent, name, False, trail, types_only)
+            known_host = [s for s in host if s.kind != 'unknown']
+            found = known_host or list(dict.fromkeys(found + list(host)))
+        result = tuple(dict.fromkeys(found))
+        # Only cache complete top-level lookups (cycles may truncate recursion).
+        if len(trail) == 1:
+            self._resolve_cache[key] = result
+        return result
+
+    def one(self, scope, name):
+        found = self.resolve(scope, name)
+        return found[0] if len(found) == 1 else None
+
+    def type_scope(self, symbol):
+        if not symbol or not symbol.type_name or symbol.type_name == '*':
+            return None
+        found = self.resolve(symbol.scope, symbol.type_name, types_only=True)
+        ts = found[0] if len(found) == 1 else None
+        return ts.target if ts and ts.kind == 'type' else None
+
+    def member(self, scope, name, seen=frozenset()):
+        if not scope or id(scope) in seen:
+            return None
+        if name in scope.symbols:
+            return scope.symbols[name]
+        if scope.base:
+            if name == scope.base:
+                # EXTENDS implicitly declares a component with the parent's name.
+                return Symbol(name, scope.parent, type_name=scope.base)
+            base = self.one(scope.parent, scope.base)
+            if base and base.target:
+                return self.member(base.target, name, seen | {id(scope)})
+        return None
+
+    def location(self, node, scope):
+        cur = node
+        while cur is not None:
+            item = getattr(cur, 'item', None)
+            if item:
+                return scope.path, item.span[0], str(cur).replace('\n', ' ')
+            cur = getattr(cur, 'parent', None)
+        return scope.path, 0, str(node).replace('\n', ' ')
+
+    def diagnostic(self, node, scope, message):
+        self.diagnostics.add((*self.location(node, scope), message))
+
+    def ref_parts(self, node):
+        if tag(node) in ('Name', 'Type_Name'):
+            return [(low(node), None)]
+        if tag(node) == 'Part_Ref':
+            return [(low(node.items[0]), node.items[1])]
+        if tag(node) == 'Data_Ref':
+            return [part for item in node.items for part in self.ref_parts(item)]
+        if tag(node) in ('Data_Pointer_Object', 'Procedure_Designator', 'Proc_Component_Ref'):
+            return self.ref_parts(node.items[0]) + self.ref_parts(node.items[2])
+        if tag(node) == 'Substring':
+            return self.ref_parts(node.items[0])
+        return []
+
+    def root_ref(self, node, scope):
+        """Return defining root, component names, final symbol, and index ASTs."""
+        parts = self.ref_parts(node)
+        if not parts:
+            return None, [], None, []
+        name = parts[0][0]
+        indices = [idx for _, idx in parts if idx is not None]
+        alias_scope = scope
+        while alias_scope:
+            if name in alias_scope.aliases:
+                expr, origin = alias_scope.aliases[name]
+                root, path, last, _ = self.root_ref(expr, origin)
+                override = alias_scope.overrides.get(name)
+                if override:
+                    last = Symbol(name, alias_scope, type_name=override)
+                break
+            if name in alias_scope.symbols or alias_scope.uses:
+                break
+            alias_scope = alias_scope.parent
+        if not alias_scope or name not in alias_scope.aliases:
+            root = last = self.one(scope, name)
+            path = []
+        for comp, _ in parts[1:]:
+            path.append(comp)
+            last = self.member(self.type_scope(last), comp)
+        return root, path, last, indices
+
+    def reference(self, node, scope, mode, reason, site=None):
+        root, path, last, indices = self.root_ref(node, scope)
+        for idx in indices:
+            self.expr(idx, scope)
+        if tag(node) == 'Substring':
+            self.expr(node.items[1], scope)
+        if not root:
+            names = self.ref_parts(node)
+            if names:
+                self.diagnostic(node, scope, f'Unresolved or ambiguous symbol: {names[0][0]}')
+            return
+        if root.kind not in ('var', 'unknown'):
+            return
+        if last and last.kind in ('routine', 'binding', 'generic', 'const', 'type'):
+            return
+        if path and last is None:
+            self.diagnostic(node, scope, f'Unresolved component type: {root.name}%{"%".join(path)}')
+        if root.name in root.scope.args and mode:
+            self.effects[root].add(mode)
+        if not mode:
+            return
+        if root.scope.kind in ('module', 'external') and root.owner not in INTRINSIC:
+            if not (root.kind == 'unknown' and self.strict):
+                # Unknown external exports might be constants: do not assert R/W.
+                actual_mode = '?' if root.kind == 'unknown' else mode
+                var = '%'.join([root.name] + path)
+                self.evidence.add((scope.home, root.owner, var, actual_mode,
+                                   *self.location(site or node, scope), reason))
+        if path:
+            ts = self.type_scope(root)
+            if ts is None and self.ref_parts(node):
+                # SELECT TYPE can supply the concrete type of an unlimited
+                # polymorphic dummy without changing its original identity.
+                first = node.items[0] if tag(node) == 'Data_Ref' else node
+                ts = self.type_scope(self.root_ref(first, scope)[2])
+            if ts:
+                binding = ('var-import' if root.scope.kind == 'module' and root.owner != scope.home.lower()
+                           else 'module-var' if root.scope.kind == 'module'
+                           else 'arg' if root.name in root.scope.args else 'local')
+                key = (scope.home, ts.home.lower(), ts.name.lower(), '%'.join(path),
+                       True, binding, ts.home.lower() in self.modules and ts.home.lower() not in self.ignored)
+                self.type_rows[key].add(mode)
+
+    def signature(self, symbol, seen=frozenset()):
+        if symbol is None or id(symbol) in seen:
+            return []
+        seen = seen | {id(symbol)}
+        if symbol.kind == 'routine':
+            return [(symbol.target, None)]
+        if symbol.kind == 'binding':
+            target = self.one(symbol.scope.parent, symbol.procedure)
+            return [(r, symbol) for r, _ in self.signature(target, seen)]
+        if symbol.kind in ('generic', 'type') and symbol.specifics:
+            result = []
+            for spec in symbol.specifics:
+                if isinstance(spec, Scope):
+                    result.append((spec, None))
+                else:
+                    target = (self.member(symbol.scope, spec) if symbol.scope.kind == 'type'
+                              else self.one(symbol.scope, spec))
+                    result.extend(self.signature(target, seen))
+            return result
+        return []
+
+    def bound_candidates(self, obj, symbol):
+        candidates = self.signature(symbol)
+        declared = self.type_scope(obj)
+        if not obj or not obj.polymorphic or not declared or not symbol:
+            return candidates
+        # A CLASS(Base) receiver can dispatch to any supplied extension. Keep
+        # the declared interface too: missing intents on a deferred binding
+        # remain uncertain rather than assuming a particular dynamic type.
+        for scope in self.scopes:
+            if scope.kind != 'type' or scope is declared:
+                continue
+            base, seen = scope, set()
+            while base and base.base and id(base) not in seen:
+                seen.add(id(base))
+                parent = self.one(base.parent, base.base)
+                base = parent.target if parent else None
+                if base is declared:
+                    candidates.extend(self.signature(self.member(scope, symbol.name)))
+                    break
+        return list(dict.fromkeys(candidates))
+
+    def actuals(self, arglist):
+        return [(low(a.items[0]), a.items[1]) if tag(a) in ('Actual_Arg_Spec', 'Component_Spec')
+                else (None, a) for a in children(arglist)]
+
+    def argument_modes(self, candidates, actuals, receiver):
+        """Map keywords and PASS to dummies; require compatible intents on overloads.
+
+        Ambiguous generics are deliberately not guessed by name/rank alone.
+        """
+        matches = []
+        for routine, binding in candidates:
+            names = list(routine.args)
+            bound = {}
+            if receiver is not None and binding and not binding.nopass:
+                pname = binding.pass_arg or (names[0] if names else '')
+                if pname not in names:
                     continue
-                # what does the OWNING module say this name is?
-                k = kinds.get(owner, {}).get(low)
-                if k in ("routine", "type", "const"):
-                    continue                       # not data
-                owner_internal = owner in internal and owner not in force_external
-                if owner_internal and k is None:
-                    # owner re-exports it from elsewhere (e.g. netcdf via mo_netcdf)
-                    owner_internal = False         # treat as external
-                if k is None and not owner_internal and args.strict:
-                    continue                       # drop unclassifiable externals
-                mode = ("R" if vam.is_read(sig) else "") + ("W" if vam.is_written(sig) else "")
-                key = (home.lower(), owner, low, mode)
-                if key in seen:
-                    continue
-                seen.add(key)
-                accesses.append(Access(home, owner, low, mode, owner_internal))
-
-    # salvage files PSyclone could not build PSyIR for
-    failed_modules, fallback_type = [], []
-    for path, src in failed:
-        try:
-            home, cand = fallback_accesses(src, var_owner)
-        except Exception as e:
-            print(f"# FALLBACK FAILED {path}: {type(e).__name__}: {e}", file=sys.stderr)
-            failed_modules.append((path, "<unparsed>"))
-            continue
-        failed_modules.append((path, home))
-        for owner, var, mode in cand:
-            if owner in INTRINSIC:
+                bound[pname] = -1
+            positional = [n for n in names if n not in bound]
+            valid = True
+            for i, (keyword, _) in enumerate(actuals):
+                name = keyword or (positional.pop(0) if positional else '')
+                if name not in names or name in bound:
+                    valid = False
+                    break
+                if keyword and name in positional:
+                    positional.remove(name)
+                bound[name] = i
+            if not valid or any(n not in bound and not routine.symbols[n].optional for n in names):
                 continue
-            owner_internal = owner in internal and owner not in force_external
-            if owner_internal and kinds.get(owner, {}).get(var) is None:
-                owner_internal = False
-            if not owner_internal and args.strict:
-                continue
-            key = (home, owner, var, mode)
-            if key in seen:
-                continue
-            seen.add(key)
-            accesses.append(Access(home, owner, var, mode, owner_internal))
-        # coarse pass-2 for the same file (imported-variable component access)
-        try:
-            fallback_type += fallback_type_deps(src, defs, var_owner, internal,
-                                                force_external)
-        except Exception as e:
-            print(f"# FALLBACK TYPE FAILED {path}: {type(e).__name__}: {e}",
-                  file=sys.stderr)
+            intents = {}
+            for name, index in bound.items():
+                intent = routine.symbols[name].intent
+                dummy = routine.symbols[name]
+                inferred = '?' if routine.interface or dummy.pointer else mode_union(self.effects[dummy])
+                intents[index] = {'in': 'R', 'out': 'W', 'inout': 'RW'}.get(intent, inferred)
+            matches.append(intents)
+        if not matches:
+            return {}
+        return {i: next(iter(values)) if len(values := {m.get(i, '?') for m in matches}) == 1 else '?'
+                for i in set().union(*(m.keys() for m in matches))}
 
-    # pass 2: derived-type component dependencies (parsed trees + salvaged files)
-    type_deps = type_component_deps(trees, internal, force_external, defs)
-    type_deps += fallback_type
-    # supplement: declaration spec-expressions (array bounds etc.) that PSyIR's
-    # reference_accesses() skips - parsed files only; failed ones are covered above
-    for _path, src, _psyir in trees:
-        try:
-            type_deps += spec_expr_type_deps(src, defs, var_owner, internal,
-                                             force_external)
-        except Exception as e:
-            print(f"# SPEC SCAN FAILED {_path}: {type(e).__name__}: {e}",
-                  file=sys.stderr)
-    # dedup across all sources (same component reached via more than one pass)
-    uniq, deduped = set(), []
-    for d in type_deps:
-        key = (d.home.lower(), d.tmod, d.tname.lower(), d.comp.lower(), d.mode, d.kind)
-        if key in uniq:
-            continue
-        uniq.add(key)
-        deduped.append(d)
-    return accesses, deduped, failed_modules
+    def call(self, designator, arglist, scope, intrinsic=False, receiver_override=None, symbol_override=None):
+        actuals = self.actuals(arglist)
+        name = low(designator)
+        receiver = receiver_override
+        obj = None
+        if receiver_override is not None:
+            symbol = symbol_override
+            obj = self.root_ref(receiver, scope)[2]
+        elif tag(designator) == 'Procedure_Designator':
+            receiver = designator.items[0]
+            _, _, obj, _ = self.root_ref(receiver, scope)
+            symbol = self.member(self.type_scope(obj), low(designator.items[2]))
+        else:
+            symbol = self.one(scope, name)
+        if symbol and symbol.kind == 'type' and not symbol.specifics:
+            # Structure constructors copy component expressions.
+            for _, arg in actuals:
+                self.expr(arg, scope)
+            return
+        candidates = self.bound_candidates(obj, symbol) if receiver is not None else self.signature(symbol)
+        modes = self.argument_modes(candidates, actuals, receiver)
+        # Standard intrinsic functions only read arguments. Intrinsic subroutines
+        # with output arguments require their own explicit contracts.
+        contracts = {
+            'random_number': (('harvest', 'W'),),
+            'cpu_time': (('time', 'W'),),
+            'system_clock': (('count', 'W'), ('count_rate', 'W'), ('count_max', 'W')),
+            'date_and_time': (('date', 'W'), ('time', 'W'), ('zone', 'W'), ('values', 'W')),
+            'random_seed': (('size', 'W'), ('put', 'R'), ('get', 'W')),
+            'move_alloc': (('from', 'RW'), ('to', 'W')),
+            'get_command_argument': (('number', 'R'), ('value', 'W'), ('length', 'W'), ('status', 'W')),
+            'get_environment_variable': (('name', 'R'), ('value', 'W'), ('length', 'W'), ('status', 'W'), ('trim_name', 'R')),
+        }
+        if (not symbol or symbol.kind == 'unknown') and name in contracts:
+            contract = contracts[name]
+            modes = {i: dict(contract).get(keyword, '?') if keyword else
+                     contract[i][1] if i < len(contract) else '?'
+                     for i, (keyword, _) in enumerate(actuals)}
+        elif intrinsic:
+            modes = dict.fromkeys(range(len(actuals)), 'R')
+        for i, (_, arg) in enumerate(actuals):
+            mode = modes.get(i, '?')
+            # Expressions are evaluated; only a designator can be modified by a
+            # callee. In particular f(x + 1) does not write x.
+            if self.is_variable(arg, scope):
+                self.reference(arg, scope, mode, f'argument of {name}' +
+                               (' (unresolved effect)' if '?' in mode else ' (callee intent/body)'))
+            else:
+                self.expr(arg, scope)
+        if receiver is not None:
+            # NOPASS bindings do not access the receiver's data.
+            if not candidates or any(not b or not b.nopass for _, b in candidates):
+                self.reference(receiver, scope, modes.get(-1, '?'), f'passed object of {name}')
+            else:
+                for idx in self.root_ref(receiver, scope)[3]:
+                    self.expr(idx, scope)
+        if (actuals or receiver is not None) and ((not modes and not candidates) or any('?' in m for m in modes.values())):
+            self.diagnostic(designator, scope, f'Unresolved argument effects: {name}')
 
-def report_degraded(failed_modules, out=sys.stdout):
-    if not failed_modules:
-        return
-    print("# !! DEGRADED COVERAGE - PSyclone could not build PSyIR for these "
-          "file(s).", file=out)
-    print("#    They were salvaged with the coarse fparser2 fallback: shared-state "
-          "and", file=out)
-    print("#    derived-type component deps are recovered ONLY for imported "
-          "module-variable", file=out)
-    print("#    roots. Local/dummy roots, call-argument accesses and combined RW "
-          "detail", file=out)
-    print("#    may be MISSING for the module(s) below - treat their rows as a "
-          "floor.", file=out)
-    for path, mod in sorted(failed_modules):
-        print(f"#    - {mod or '<program>'}  ({path})", file=out)
-    print(file=out)
+    def is_variable(self, node, scope):
+        if tag(node) not in ('Name', 'Part_Ref', 'Data_Ref', 'Substring', 'Data_Pointer_Object', 'Proc_Component_Ref'):
+            return False
+        root, _, last, _ = self.root_ref(node, scope)
+        if tag(node) == 'Part_Ref' and root and (root.kind not in ('var', 'unknown') or
+                                               (not root.rank and root.intrinsic_type != 'character')):
+            return False
+        return last is None or last.kind in ('var', 'unknown')
 
-def _home_display(items):
-    """Map each home.lower() to a single display name, preferring a mixed-case
-    variant (from PSyIR) over an all-lowercase one (from the fparser2 fallback)
-    so the two never split into separate report groups."""
-    names = {}
-    for it in items:
-        lh = it.home.lower()
-        if lh not in names or (names[lh] == lh and it.home != lh):
-            names[lh] = it.home
-    return names
+    def expr(self, node, scope):
+        kind = tag(node)
+        if node is None or isinstance(node, (str, int)):
+            return
+        if kind == 'Name':
+            self.reference(node, scope, 'R', 'expression')
+        elif kind == 'Part_Ref':
+            symbol = self.one(scope, low(node.items[0]))
+            root = self.root_ref(node, scope)[0]
+            if root is None or (symbol and symbol.kind in ('routine', 'generic', 'type')) or (
+                    root and root.kind == 'unknown'):
+                self.call(node.items[0], node.items[1], scope)
+            else:
+                self.reference(node, scope, 'R', 'array/substring expression')
+        elif kind in ('Data_Ref', 'Substring', 'Data_Pointer_Object', 'Proc_Component_Ref'):
+            last = self.root_ref(node, scope)[2]
+            if kind == 'Data_Ref' and last and last.kind in ('binding', 'generic'):
+                parts = node.items
+                receiver = parts[0] if len(parts) == 2 else f2.Data_Ref('%'.join(map(str, parts[:-1])))
+                receiver.parent = node
+                args = parts[-1].items[1] if tag(parts[-1]) == 'Part_Ref' else None
+                self.call(node, args, scope, receiver_override=receiver, symbol_override=last)
+            else:
+                self.reference(node, scope, 'R', 'component expression')
+        elif kind in ('Function_Reference', 'Intrinsic_Function_Reference', 'Structure_Constructor'):
+            self.call(node.items[0], node.items[1], scope, kind == 'Intrinsic_Function_Reference')
+        elif kind in ('Actual_Arg_Spec', 'Component_Spec'):
+            self.expr(node.items[1], scope)
+        elif kind.endswith('_Literal_Constant'):
+            return
+        else:
+            for child in children(node):
+                self.expr(child, scope)
 
-def report(accesses, out=sys.stdout):
-    print("# Shared mutable state (R=read, W=write, RW=both)\n", file=out)
-    names = _home_display(accesses)
-    cur = None
-    for a in sorted(accesses, key=lambda a: (a.home.lower(), not a.internal, a.owner, a.var)):
-        lh = a.home.lower()
-        if lh != cur:
-            cur = lh; print(names[lh] or "<program>", file=out)
-        tag = "internal" if a.internal else "EXTERNAL"
-        print(f"    [{tag:8s}] {a.owner}::{a.var:24s} {a.mode}", file=out)
+    def io(self, node, scope):
+        kind = tag(node)
+        output_keys = {'iostat', 'iomsg', 'newunit', 'size', 'id'}
+        if kind == 'Inquire_Stmt':
+            output_keys |= {'exist', 'opened', 'number', 'named', 'name', 'access',
+                            'sequential', 'direct', 'form', 'formatted', 'unformatted',
+                            'recl', 'nextrec', 'blank', 'position', 'action', 'read',
+                            'write', 'readwrite', 'delim', 'pad', 'pending', 'pos',
+                            'iolength', 'asynchronous', 'decimal', 'encoding', 'round', 'sign'}
+        for child in children(node):
+            if tag(child) in ('Input_Item_List', 'Output_Item_List'):
+                for value in children(child):
+                    if kind == 'Read_Stmt' and self.is_variable(value, scope):
+                        self.reference(value, scope, 'W', 'READ input')
+                    else:
+                        self.expr(value, scope)
+            elif tag(child).endswith('Spec_List'):
+                for pos, spec in enumerate(children(child)):
+                    key, value = spec.items
+                    key = low(key) if key is not None else ('unit' if pos == 0 else 'fmt')
+                    if key == 'nml':
+                        cur = scope
+                        while cur and low(value) not in cur.namelists:
+                            cur = cur.parent
+                        if cur:
+                            for member in cur.namelists[low(value)]:
+                                self.reference(member, scope, 'W' if kind == 'Read_Stmt' else 'R', 'namelist I/O', site=node)
+                        else:
+                            self.diagnostic(node, scope, f'Unresolved namelist: {value}')
+                    elif key in output_keys or (key == 'unit' and kind == 'Write_Stmt' and
+                                               (sym := self.root_ref(value, scope)[0]) and
+                                               self.is_internal_file(sym)):
+                        self.reference(value, scope, 'W', f'{kind} {key}')
+                    else:
+                        self.expr(value, scope)
+            else:
+                self.expr(child, scope)
 
-def report_type_deps(deps, out=sys.stdout):
-    print("# Derived-type component dependencies "
-          "(home -> type_module::Type%component  R/W  [binding])", file=out)
-    print("#   [binding] local/arg/module-var : dependency on an imported TYPE only", file=out)
-    print("#   [binding] var-import           : root object imported -> also a "
-          "shared VARIABLE (see list above)\n", file=out)
-    names = _home_display(deps)
-    by_home = defaultdict(list)
-    for d in deps:
-        by_home[d.home.lower()].append(d)
-    for lh in sorted(by_home):
-        rows = by_home[lh]
-        n_type = sum(1 for d in rows if d.kind in _TYPE_ONLY)
-        n_var = sum(1 for d in rows if d.kind == "var-import")
-        print(f"{names[lh] or '<program>'}    ({n_type} type-dep, {n_var} var-import)", file=out)
-        # type-only deps first (the rows unique to this pass), then var-imports
-        for d in sorted(rows, key=lambda x: (x.kind == "var-import",
-                                             not x.internal, x.tmod, x.tname, x.comp)):
-            tag = "internal" if d.internal else "EXTERNAL"
-            flag = "" if d.sure else "  (? type module unresolved)"
-            label = f"{d.tname}%{d.comp}"
-            print(f"    [{tag:8s}] {d.tmod}::{label:28s} {d.mode:2s} [{d.kind}]{flag}", file=out)
+    def is_internal_file(self, symbol):
+        # Character type is stored separately from derived-type identity.
+        return getattr(symbol, 'intrinsic_type', '') == 'character'
 
-def to_dot(accesses, path, show_external):
-    # combine modes per (home-module, owner::var) edge
-    combo = defaultdict(lambda: {"R": False, "W": False, "internal": True})
+    def scan(self, node, scope=None):
+        kind = tag(node)
+        if id(node) in self.node_scopes:
+            scope = self.node_scopes[id(node)]
+        if scope is None:
+            for child in children(node):
+                self.scan(child, scope)
+            return
+        if kind in ('Type_Declaration_Stmt', 'Data_Component_Def_Stmt'):
+            dtype, attrs, decls = node.items
+            # Bounds/lengths are reads, including mutable dimensions in interfaces.
+            if tag(dtype) == 'Intrinsic_Type_Spec':
+                self.expr(dtype.items[1], scope)
+            for attr in children(attrs):
+                if tag(attr) in ('Dimension_Attr_Spec', 'Dimension_Component_Attr_Spec'):
+                    self.expr(attr.items[1], scope)
+            for decl in children(decls):
+                self.expr(decl.items[1], scope)
+                self.expr(decl.items[2], scope)
+                init = decl.items[3]
+                if init:
+                    self.expr(init.items[1], scope)
+                    if scope.kind != 'type':
+                        self.reference(decl.items[0], scope, 'W', 'declaration initializer')
+            return
+        if kind in ('Assignment_Stmt', 'Pointer_Assignment_Stmt'):
+            self.reference(node.items[0], scope, 'W', 'pointer association' if kind.startswith('Pointer') else 'assignment')
+            self.expr(node.items[2], scope)
+            if kind.startswith('Pointer'):
+                self.diagnostic(node, scope, 'Pointer association: subsequent target aliases are not propagated')
+            return
+        if kind == 'Call_Stmt':
+            self.call(node.items[0], node.items[1], scope)
+            return
+        if kind in ('Allocate_Stmt', 'Deallocate_Stmt'):
+            for child in children(node):
+                if tag(child) in ('Allocation_List', 'Allocate_Object_List'):
+                    for alloc in children(child):
+                        obj = alloc.items[0] if tag(alloc) == 'Allocation' else alloc
+                        self.reference(obj, scope, 'W', kind)
+                        if tag(alloc) == 'Allocation':
+                            self.expr(alloc.items[1], scope)
+                elif tag(child) in ('Alloc_Opt_List', 'Dealloc_Opt_List'):
+                    for opt in children(child):
+                        if low(opt.items[0]) in ('stat', 'errmsg'):
+                            self.reference(opt.items[1], scope, 'W', 'allocation status')
+                        else:
+                            self.expr(opt.items[1], scope)
+            return
+        if kind in ('Read_Stmt', 'Write_Stmt', 'Print_Stmt', 'Open_Stmt', 'Close_Stmt',
+                    'Inquire_Stmt', 'Wait_Stmt', 'Rewind_Stmt', 'Backspace_Stmt', 'Endfile_Stmt', 'Flush_Stmt'):
+            self.io(node, scope)
+            return
+        if kind == 'Associate_Construct':
+            alias = Scope('<associate>', 'block', scope, scope.path)
+            for item in children(children(node)[0].items[1]):
+                name, _, expr = item.items
+                alias.aliases[low(name)] = (expr, scope)
+                # Establishing a variable alias does not read its value.
+                if self.is_variable(expr, scope):
+                    for idx in self.root_ref(expr, scope)[3]:
+                        self.expr(idx, scope)
+                else:
+                    self.expr(expr, scope)
+            for child in children(node)[1:]:
+                self.scan(child, alias)
+            return
+        if kind == 'Select_Type_Construct':
+            head = children(node)[0]
+            name, expr = head.items
+            name = low(name or expr)
+            alias = None
+            for child in children(node)[1:]:
+                if tag(child) == 'Type_Guard_Stmt':
+                    alias = Scope('<select type>', 'block', scope, scope.path)
+                    alias.aliases[name] = (expr, scope)
+                    if child.items[1] and tag(child.items[1]) == 'Type_Name':
+                        alias.overrides[name] = low(child.items[1])
+                else:
+                    self.scan(child, alias or scope)
+            return
+        if kind == 'Loop_Control':
+            self.expr(node.items[0], scope)
+            if node.items[1]:
+                var, bounds = node.items[1]
+                self.reference(var, scope, 'W', 'DO variable')
+                self.expr(bounds, scope)
+            if len(node.items) > 3 and node.items[3]:
+                self.diagnostic(node, scope, 'DO CONCURRENT locality is not resolved')
+                self.expr(node.items[3], scope)
+            return
+        if kind == 'If_Stmt':
+            self.expr(node.items[0], scope)
+            self.scan(node.items[1], scope)
+            return
+        if kind in ('If_Then_Stmt', 'Else_If_Stmt', 'Select_Case_Stmt', 'Case_Stmt',
+                    'Where_Construct_Stmt', 'Masked_Elsewhere_Stmt', 'Stop_Stmt', 'Error_Stop_Stmt'):
+            self.expr(node.items[0], scope)
+            return
+        if kind in ('Where_Stmt', 'Forall_Stmt'):
+            self.expr(node.items[0], scope)
+            self.scan(node.items[1], scope)
+            return
+        if kind == 'Nonlabel_Do_Stmt':
+            self.scan(node.items[1], scope)
+            return
+        if kind in ('Module_Stmt', 'Program_Stmt', 'Function_Stmt', 'Subroutine_Stmt',
+                    'Derived_Type_Stmt', 'Use_Stmt', 'Import_Stmt', 'Implicit_Stmt',
+                    'Access_Stmt', 'Private_Components_Stmt', 'Contains_Stmt',
+                    'Interface_Stmt', 'Procedure_Stmt', 'Specific_Binding', 'Generic_Binding',
+                    'Namelist_Stmt', 'Return_Stmt', 'Continue_Stmt', 'Exit_Stmt', 'Cycle_Stmt',
+                    'Goto_Stmt', 'Else_Stmt', 'Elsewhere_Stmt') or kind.startswith('End_'):
+            return
+        if kind.endswith('_Stmt'):
+            self.diagnostic(node, scope, f'Unsupported statement (effects unknown): {kind}')
+            # Preserve uncertain references without inventing writes.
+            for name in fwalk(node, f2.Name):
+                self.reference(name, scope, '?', f'unsupported {kind}')
+            return
+        for child in children(node):
+            self.scan(child, scope)
+
+    def analyse(self):
+        # Missing INTENT is common in this codebase. Infer dummy effects from
+        # implementations to a fixed point, including recursive call chains.
+        # Unavailable bodies/interfaces retain ?, and may-effects are unioned.
+        while True:
+            before = {symbol: mode_union(modes) for symbol, modes in self.effects.items()}
+            self.evidence.clear()
+            self.type_rows.clear()
+            self.diagnostics.clear()
+            for _, _, tree in self.trees:
+                self.scan(tree)
+            after = {symbol: mode_union(modes) for symbol, modes in self.effects.items()}
+            if before == after:
+                break
+        combined = defaultdict(set)
+        for home, owner, var, mode, *_ in self.evidence:
+            combined[(home, owner, var)].add(mode)
+        accesses = [Access(home, owner, var, mode_union(modes),
+                           owner in self.modules and owner not in self.ignored)
+                    for (home, owner, var), modes in sorted(combined.items(), key=lambda x: tuple(map(str.lower, x[0])))]
+        deps = [TypeDep(home, tmod, tname, comp, mode_union(modes), sure, binding, internal)
+                for (home, tmod, tname, comp, sure, binding, internal), modes in sorted(self.type_rows.items())]
+        return accesses, deps
+
+
+def report(accesses, deps, project, out, no_types=False):
+    print('# Shared mutable state: R=read, W=write/INTENT(OUT), RW=both, ?=unresolved effect', file=out)
+    print('# Components retain their root instance; local/dummy type dependencies are separate.', file=out)
+    print(f'# Parsed {len(project.trees)} files; {len(project.diagnostics)} diagnostics. See evidence JSON for locations.\n', file=out)
+    home = None
+    for row in accesses:
+        if row.home != home:
+            home = row.home
+            print(home, file=out)
+        print(f'    [{"internal" if row.internal else "EXTERNAL"}] {row.owner}::{row.var}  {row.mode}', file=out)
+    if not no_types:
+        print('\n# Derived-type component dependencies (not shared-state edges for local/dummy objects)', file=out)
+        home = None
+        for row in deps:
+            if row.home != home:
+                home = row.home
+                print(home, file=out)
+            print(f'    {row.tmod}::{row.tname}%{row.comp}  {row.mode} [{row.kind}]', file=out)
+
+
+def to_dot(accesses, path, show_external=True):
+    combo = defaultdict(set)
+    internal = {}
     for a in accesses:
-        if not a.internal and not show_external:
-            continue
-        vid = f"{a.owner}::{a.var}"
-        e = combo[(a.home, vid)]
-        if "R" in a.mode: e["R"] = True
-        if "W" in a.mode: e["W"] = True
-        e["internal"] = a.internal
-    COLOR = {"R": "#1f77b4", "W": "#d62728", "RW": "#7e3ff2"}
-    mods, vars_ = set(), {}
-    lines = []
-    for (home, vid), e in combo.items():
-        mods.add(home); vars_[vid] = e["internal"]
-        mode = "RW" if (e["R"] and e["W"]) else ("R" if e["R"] else "W")
-        c = COLOR[mode]
-        if mode == "W":
-            lines.append(f'  "{home}" -> "{vid}" [color="{c}", penwidth=1.6, label="W"];')
-        elif mode == "R":
-            lines.append(f'  "{vid}" -> "{home}" [color="{c}", penwidth=1.6, label="R"];')
-        else:  # RW: one double-headed edge
-            lines.append(f'  "{home}" -> "{vid}" [color="{c}", penwidth=1.8, dir=both, label="RW"];')
-    with open(path, "w") as f:
-        f.write("digraph dataflow {\n  rankdir=LR;\n  node [fontname=Helvetica];\n"
-                "  edge [fontname=Helvetica, fontsize=9];\n")
-        for m in sorted(mods):
-            f.write(f'  "{m}" [shape=box, style=filled, fillcolor="#cfe8ff"];\n')
-        for vid, internal in sorted(vars_.items()):
-            f.write(f'  "{vid}" [shape=ellipse, style=filled, '
-                    f'fillcolor="{"#fff2cc" if internal else "#eeeeee"}"];\n')
-        f.write("\n".join(lines) + "\n")
-        # legend
-        f.write('''
-  subgraph cluster_legend {
-    label="Legend"; fontname=Helvetica; style=dashed; color="#999999";
-    lw1 [shape=box, label="module", fillcolor="#cfe8ff", style=filled];
-    lv1 [shape=ellipse, label="state var", fillcolor="#fff2cc", style=filled];
-    lw1 -> lv1 [color="#d62728", label="writes (W)", penwidth=1.6];
-    lr0 [shape=ellipse, label="state var ", fillcolor="#fff2cc", style=filled];
-    lr1 [shape=box, label="module ", fillcolor="#cfe8ff", style=filled];
-    lr0 -> lr1 [color="#1f77b4", label="reads (R)", penwidth=1.6];
-    lb0 [shape=box, label="module  ", fillcolor="#cfe8ff", style=filled];
-    lb1 [shape=ellipse, label="state var  ", fillcolor="#fff2cc", style=filled];
-    lb0 -> lb1 [color="#7e3ff2", label="read+write (RW)", dir=both, penwidth=1.8];
-  }
-}
-''')
-    print(f"# wrote {path}  (render: dot -Tsvg {path} -o flow.svg)", file=sys.stderr)
+        if (a.internal or show_external) and a.mode:
+            vid = f'{a.owner}::{a.var}'
+            combo[(a.home.lower(), vid)].add(a.mode)
+            internal[vid] = a.internal
+    names = {a.home.lower(): a.home for a in accesses}
+    quote = json.dumps
+    lines = ['digraph dataflow {', '  rankdir=LR;', '  node [fontname=Helvetica];',
+             '  edge [fontname=Helvetica, fontsize=9];']
+    for home in sorted({h for h, _ in combo}):
+        lines.append(f'  {quote(names[home])} [shape=box, style=filled, fillcolor="#cfe8ff"];')
+    for vid in sorted(internal):
+        color = '#fff2cc' if internal[vid] else '#eeeeee'
+        lines.append(f'  {quote(vid)} [shape=ellipse, style=filled, fillcolor="{color}"];')
+    for (home, vid), modes in sorted(combo.items()):
+        mode = mode_union(modes)
+        known = mode.replace('?', '')
+        src, dst = (vid, names[home]) if known == 'R' else (names[home], vid)
+        color = {'R': '#1f77b4', 'W': '#d62728', 'RW': '#7e3ff2', '': '#888888'}[known]
+        direction = 'both' if known == 'RW' else 'forward' if known else 'none'
+        style = 'dashed' if '?' in mode else 'solid'
+        lines.append(f'  {quote(src)} -> {quote(dst)} [color="{color}", dir={direction}, style={style}, label="{mode}"];')
+    lines += ['  labelloc="t";', '  label="R: read | W: write or output intent | RW: both | ?: unresolved effect (dashed; no assumed write)";', '}']
+    Path(path).write_text('\n'.join(lines) + '\n')
 
-if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="Cross-module Fortran data-flow extractor")
-    ap.add_argument("--src", nargs="+", required=True,
-                    help="dirs (walked recursively), globs, or files - all internal")
-    ap.add_argument("--ignore", action="extend", nargs="+", default=[],
-                    help="module name(s) to force-treat as external")
-    ap.add_argument("--ext", nargs="+", help="source extensions (default: free-form Fortran)")
-    ap.add_argument("--no-external", action="store_true", help="drop external state from graph")
-    ap.add_argument("--no-types", action="store_true",
-                    help="skip pass 2 (derived-type component dependencies)")
-    ap.add_argument("--strict", action="store_true",
-                    help="also drop external names we cannot classify (nf90_* etc.)")
-    ap.add_argument("-o", "--out", default="flow.dot")
-    ap.add_argument("-r", "--report", default="flow.txt",
-                    help="text report path; pass '-' to print to terminal")
+
+def write_evidence(path, accesses, deps, project):
+    document = {
+        'schema_version': 1,
+        'semantics': 'Syntactic and INTENT-based accesses; ? is unresolved. No whole-program pointer/heap analysis.',
+        'sources': [{'path': path, 'sha256': hashlib.sha256(src.encode()).hexdigest()}
+                    for path, src, _ in project.trees],
+        'unavailable_modules': sorted({mod for scope in project.scopes for mod, _, _ in scope.uses
+                                       if mod not in project.modules and mod not in INTRINSIC}),
+        'accesses': [a._asdict() for a in accesses],
+        'type_dependencies': [d._asdict() for d in deps],
+        'evidence': [dict(zip(('home', 'owner', 'var', 'mode', 'file', 'line', 'statement', 'reason'), row))
+                     for row in sorted(project.evidence)],
+        'diagnostics': [dict(zip(('file', 'line', 'statement', 'message'), row))
+                        for row in sorted(project.diagnostics)],
+    }
+    Path(path).write_text(json.dumps(document, indent=2) + '\n')
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('--src', nargs='+', required=True)
+    ap.add_argument('--ignore', action='extend', nargs='+', default=[])
+    ap.add_argument('--ext', nargs='+')
+    ap.add_argument('--include-examples', action='store_true', help='include test/example directories when walking source roots')
+    ap.add_argument('--no-external', action='store_true')
+    ap.add_argument('--no-types', action='store_true')
+    ap.add_argument('--strict', action='store_true', help='omit unclassified external exports')
+    ap.add_argument('-o', '--out', default='flow.dot')
+    ap.add_argument('-r', '--report', default='flow.txt')
+    ap.add_argument('--evidence', help='JSON containing source locations, hashes, and diagnostics')
     args = ap.parse_args()
-    acc, type_deps, failed_modules = analyse(args)
-    rf = sys.stdout if args.report == "-" else open(args.report, "w")
     try:
-        report_degraded(failed_modules, out=rf)
-        report(acc, out=rf)
-        if not args.no_types:
-            print(file=rf)
-            report_type_deps(type_deps, out=rf)
-    finally:
-        if rf is not sys.stdout:
-            rf.close()
-            print(f"# wrote {args.report}", file=sys.stderr)
-    to_dot(acc, args.out, show_external=not args.no_external)
+        files = discover(args.src, tuple(args.ext or DEFAULT_EXTS), args.include_examples)
+        if not files:
+            raise ValueError('No source files found')
+        project = Project(files, args.ignore, args.strict)
+        accesses, deps = project.analyse()
+    except ValueError as exc:
+        ap.exit(1, f'{exc}\n')
+    if args.report == '-':
+        report(accesses, deps, project, sys.stdout, args.no_types)
+    else:
+        with open(args.report, 'w') as out:
+            report(accesses, deps, project, out, args.no_types)
+    to_dot(accesses, args.out, not args.no_external)
+    if args.evidence:
+        write_evidence(args.evidence, accesses, deps, project)
+    print(f'# parsed {len(files)} files; {len(accesses)} state accesses; {len(project.diagnostics)} diagnostics', file=sys.stderr)
+    print(f'# wrote {args.out} and {args.report}', file=sys.stderr)
+    if project.diagnostics and not args.evidence:
+        print('# Use --evidence FILE.json to inspect unresolved effects and coverage diagnostics.', file=sys.stderr)
+
+
+if __name__ == '__main__':
+    main()

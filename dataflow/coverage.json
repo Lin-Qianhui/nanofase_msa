@@ -1,0 +1,113 @@
+{
+  "premigration": {
+    "root": "/Users/qianhuilin/Documents/nanofase_before_migration/nanofase",
+    "parsed_files": 47,
+    "shared_state_relationships": 509,
+    "type_dependencies": 1778,
+    "diagnostics": 336,
+    "uncertain_shared_state": [
+      {
+        "home": "EstuaryReachModule",
+        "owner": "datainputmodule",
+        "var": "dataset%shearrate",
+        "mode": "?",
+        "internal": true
+      },
+      {
+        "home": "main",
+        "owner": "datainputmodule",
+        "var": "dataset",
+        "mode": "RW?",
+        "internal": true
+      },
+      {
+        "home": "RiverReachModule",
+        "owner": "datainputmodule",
+        "var": "dataset%shearrate",
+        "mode": "?",
+        "internal": true
+      }
+    ],
+    "npdim_writers": [
+      "GlobalsModule"
+    ],
+    "npdim_readers": [
+      "AbstractBedSedimentModule",
+      "AbstractReactorModule",
+      "BedSedimentModule",
+      "CheckpointModule",
+      "DiffuseSourceModule",
+      "EnvironmentModule",
+      "EstuaryReachModule",
+      "FlowModule",
+      "GridCellModule",
+      "PointSourceModule",
+      "ReachModule",
+      "ReactorModule",
+      "RiverReachModule",
+      "SoilLayerModule",
+      "SoilProfileModule",
+      "UtilModule",
+      "WaterBodyModule"
+    ]
+  },
+  "postmigration": {
+    "root": "/Users/qianhuilin/Documents/nanofase-mono/nanofase",
+    "parsed_files": 58,
+    "shared_state_relationships": 449,
+    "type_dependencies": 1700,
+    "diagnostics": 332,
+    "uncertain_shared_state": [
+      {
+        "home": "BootstrapModule",
+        "owner": "datainputmodule",
+        "var": "dataset",
+        "mode": "RW?",
+        "internal": true
+      },
+      {
+        "home": "EstuaryReachModule",
+        "owner": "datainputmodule",
+        "var": "dataset%shearrate",
+        "mode": "?",
+        "internal": true
+      },
+      {
+        "home": "main",
+        "owner": "datainputmodule",
+        "var": "dataset",
+        "mode": "RW?",
+        "internal": true
+      },
+      {
+        "home": "RiverReachModule",
+        "owner": "datainputmodule",
+        "var": "dataset%shearrate",
+        "mode": "?",
+        "internal": true
+      }
+    ],
+    "npdim_writers": [
+      "ModelDimensionsModule"
+    ],
+    "npdim_readers": [
+      "AbstractBedSedimentModule",
+      "AbstractReactorModule",
+      "BedSedimentModule",
+      "CheckpointModule",
+      "DiffuseSourceModule",
+      "EnvironmentModule",
+      "EstuaryReachModule",
+      "FlowModule",
+      "GridCellModule",
+      "PointSourceModule",
+      "ReachModule",
+      "ReactorModule",
+      "RiverReachModule",
+      "SoilLayerModule",
+      "SoilProfileModule",
+      "UtilModule",
+      "WaterBodyModule"
+    ]
+  }
+}

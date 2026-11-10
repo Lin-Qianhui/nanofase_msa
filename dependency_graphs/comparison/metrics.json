@@ -1,0 +1,5644 @@
+{
+  "comparisons": {
+    "full": {
+      "acd": {
+        "change": 1.0739893211289093,
+        "change_unit": "components",
+        "post": 18.50877192982456,
+        "pre": 17.434782608695652,
+        "unit": "components"
+      },
+      "ccd": {
+        "change": 253,
+        "change_unit": "count",
+        "post": 1055,
+        "pre": 802,
+        "unit": "count"
+      },
+      "cross_group_edge_count": {
+        "change": 110,
+        "change_unit": "count",
+        "post": 291,
+        "pre": 181,
+        "unit": "count"
+      },
+      "cross_group_edge_fraction": {
+        "change": 0.029375216737949406,
+        "change_unit": "fraction",
+        "post": 0.8871951219512195,
+        "pre": 0.8578199052132701,
+        "unit": "fraction"
+      },
+      "cyclic_component_count": {
+        "change": 0,
+        "change_unit": "count",
+        "post": 0,
+        "pre": 0,
+        "unit": "count"
+      },
+      "cyclic_node_count": {
+        "change": 0,
+        "change_unit": "count",
+        "post": 0,
+        "pre": 0,
+        "unit": "count"
+      },
+      "direct_edge_density": {
+        "change": 0.0008245250808179838,
+        "change_unit": "fraction",
+        "post": 0.10275689223057644,
+        "pre": 0.10193236714975845,
+        "unit": "fraction"
+      },
+      "directed_modularity": {
+        "change": -0.014796120357468606,
+        "change_unit": "score",
+        "post": 0.0752063503866746,
+        "pre": 0.0900024707441432,
+        "unit": "score"
+      },
+      "edge_count": {
+        "change": 117,
+        "change_unit": "count",
+        "post": 328,
+        "pre": 211,
+        "unit": "count"
+      },
+      "group_count": {
+        "change": 4,
+        "change_unit": "count",
+        "post": 26,
+        "pre": 22,
+        "unit": "count"
+      },
+      "isolated_node_count": {
+        "change": 0,
+        "change_unit": "count",
+        "post": 1,
+        "pre": 1,
+        "unit": "count"
+      },
+      "largest_component_size": {
+        "change": 0,
+        "change_unit": "count",
+        "post": 1,
+        "pre": 1,
+        "unit": "count"
+      },
+      "node_count": {
+        "change": 11,
+        "change_unit": "count",
+        "post": 57,
+        "pre": 46,
+        "unit": "count"
+      },
+      "propagation_cost_percent": {
+        "change": -5.430171621804817,
+        "change_unit": "percentage_points",
+        "post": 32.4715297014466,
+        "pre": 37.901701323251416,
+        "unit": "percent"
+      }
+    },
+    "src": {
+      "acd": {
+        "change": 2.0778732545649863,
+        "change_unit": "components",
+        "post": 16.367346938775512,
+        "pre": 14.289473684210526,
+        "unit": "components"
+      },
+      "ccd": {
+        "change": 259,
+        "change_unit": "count",
+        "post": 802,
+        "pre": 543,
+        "unit": "count"
+      },
+      "cross_group_edge_count": {
+        "change": 94,
+        "change_unit": "count",
+        "post": 217,
+        "pre": 123,
+        "unit": "count"
+      },
+      "cross_group_edge_fraction": {
+        "change": 0.04040486269401933,
+        "change_unit": "fraction",
+        "post": 0.8714859437751004,
+        "pre": 0.831081081081081,
+        "unit": "fraction"
+      },
+      "cyclic_component_count": {
+        "change": 0,
+        "change_unit": "count",
+        "post": 0,
+        "pre": 0,
+        "unit": "count"
+      },
+      "cyclic_node_count": {
+        "change": 0,
+        "change_unit": "count",
+        "post": 0,
+        "pre": 0,
+        "unit": "count"
+      },
+      "direct_edge_density": {
+        "change": 0.0006041890440386805,
+        "change_unit": "fraction",
+        "post": 0.10586734693877552,
+        "pre": 0.10526315789473684,
+        "unit": "fraction"
+      },
+      "directed_modularity": {
+        "change": -0.019028698687663423,
+        "change_unit": "score",
+        "post": 0.08099869356945856,
+        "pre": 0.10002739225712198,
+        "unit": "score"
+      },
+      "edge_count": {
+        "change": 101,
+        "change_unit": "count",
+        "post": 249,
+        "pre": 148,
+        "unit": "count"
+      },
+      "group_count": {
+        "change": 4,
+        "change_unit": "count",
+        "post": 22,
+        "pre": 18,
+        "unit": "count"
+      },
+      "isolated_node_count": {
+        "change": 0,
+        "change_unit": "count",
+        "post": 0,
+        "pre": 0,
+        "unit": "count"
+      },
+      "largest_component_size": {
+        "change": 0,
+        "change_unit": "count",
+        "post": 1,
+        "pre": 1,
+        "unit": "count"
+      },
+      "node_count": {
+        "change": 11,
+        "change_unit": "count",
+        "post": 49,
+        "pre": 38,
+        "unit": "count"
+      },
+      "propagation_cost_percent": {
+        "change": -4.201129261699592,
+        "change_unit": "percentage_points",
+        "post": 33.402748854643896,
+        "pre": 37.60387811634349,
+        "unit": "percent"
+      }
+    }
+  },
+  "definitions": {
+    "acd": "CCD / N.",
+    "ccd": "Sum of unique reachable-node counts, including the starting node exactly once.",
+    "changes": "Post minus pre; propagation-cost changes are percentage points.",
+    "component_dependency": "Transitive dependency count + 1 (self).",
+    "cross_group_edge_fraction": "Direct edges with different endpoint groups / all direct edges.",
+    "cyclic_components": "Strongly connected components of size > 1, or singleton nodes with explicit self-loops.",
+    "direct_counts": "Distinct direct neighbors in the supplied graph; explicit self-loops, if present, count.",
+    "direct_edge_density": "Non-self direct edges / [N * (N - 1)]; undefined for N = 1.",
+    "directed_modularity": "Sum_g [L_g / m - K_out_g * K_in_g / m^2], resolution 1, on direct edges.",
+    "edge_direction": "A -> B means A depends on B; edges are unweighted and deduplicated.",
+    "full_scope": "Every node and edge in the supplied DOT graph, including isolated vendor nodes.",
+    "node_granularity": "DOT module/program units, including main and isolated nodes.",
+    "partition": "First directory beneath src; each root-level src file is its own group; vendors by library.",
+    "propagation_cost_percent": "100 * CCD / N^2; includes the visibility-matrix diagonal.",
+    "source_manifest_sha256": "SHA-256 of sorted UTF-8 records: relative_path + NUL + file_sha256 + newline.",
+    "src_scope": "Induced subgraph of nodes mapped beneath src; remove vendor nodes before reachability.",
+    "transitive_counts": "Unique nodes reachable by one or more edges, including direct neighbors but excluding self.",
+    "undefined_values": "JSON null / empty CSV cells / 'undefined' in Markdown; modularity and cross-group fraction for m = 0."
+  },
+  "schema_version": 1,
+  "snapshots": {
+    "post": {
+      "edges": [
+        [
+          "abstractbedsedimentlayermodule",
+          "errorinstancemodule"
+        ],
+        [
+          "abstractbedsedimentlayermodule",
+          "finesedimentmodule"
+        ],
+        [
+          "abstractbedsedimentlayermodule",
+          "kernelmodule"
+        ],
+        [
+          "abstractbedsedimentlayermodule",
+          "mo_netcdf"
+        ],
+        [
+          "abstractbedsedimentlayermodule",
+          "resultmodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "abstractbedsedimentlayermodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "bedsedimentconfigmodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "finesedimentmodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "kernelmodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "mo_netcdf"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "resultmodule"
+        ],
+        [
+          "abstractbiotamodule",
+          "kernelmodule"
+        ],
+        [
+          "abstractbiotamodule",
+          "resultmodule"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "abstractgridcellmodule"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "kernelmodule"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "mo_netcdf"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "reachmodule"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "resultmodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "abstractsoilprofilemodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "cropmodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "diffusesourcemodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "kernelmodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "mo_netcdf"
+        ],
+        [
+          "abstractgridcellmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "reachmodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "resultmodule"
+        ],
+        [
+          "abstractreactormodule",
+          "kernelmodule"
+        ],
+        [
+          "abstractreactormodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "abstractreactormodule",
+          "resultmodule"
+        ],
+        [
+          "abstractsoillayermodule",
+          "biotasoilmodule"
+        ],
+        [
+          "abstractsoillayermodule",
+          "kernelmodule"
+        ],
+        [
+          "abstractsoillayermodule",
+          "mo_netcdf"
+        ],
+        [
+          "abstractsoillayermodule",
+          "resultmodule"
+        ],
+        [
+          "abstractsoilprofilemodule",
+          "abstractsoillayermodule"
+        ],
+        [
+          "abstractsoilprofilemodule",
+          "kernelmodule"
+        ],
+        [
+          "abstractsoilprofilemodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "abstractsoilprofilemodule",
+          "resultmodule"
+        ],
+        [
+          "bedsedimentconfigmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "bedsedimentconfigmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "bedsedimentconfigmodule",
+          "kernelmodule"
+        ],
+        [
+          "bedsedimentconfigmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "abstractbedsedimentlayermodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "bedsedimentconfigmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "datainputmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "errorinstancemodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "finesedimentmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "kernelmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "resultmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "utilmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "abstractbedsedimentmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "bedsedimentlayermodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "finesedimentmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "kernelmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "resultmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "utilmodule"
+        ],
+        [
+          "biotaconfigmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "biotaconfigmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "biotasoilmodule",
+          "abstractbiotamodule"
+        ],
+        [
+          "biotasoilmodule",
+          "datainputmodule"
+        ],
+        [
+          "biotasoilmodule",
+          "datetime_module"
+        ],
+        [
+          "biotasoilmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "biotasoilmodule",
+          "kernelmodule"
+        ],
+        [
+          "biotasoilmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "biotasoilmodule",
+          "resultmodule"
+        ],
+        [
+          "biotasoilmodule",
+          "utilmodule"
+        ],
+        [
+          "biotawatermodule",
+          "abstractbiotamodule"
+        ],
+        [
+          "biotawatermodule",
+          "datainputmodule"
+        ],
+        [
+          "biotawatermodule",
+          "datetime_module"
+        ],
+        [
+          "biotawatermodule",
+          "errorinstancemodule"
+        ],
+        [
+          "biotawatermodule",
+          "kernelmodule"
+        ],
+        [
+          "biotawatermodule",
+          "modelconfigmodule"
+        ],
+        [
+          "biotawatermodule",
+          "resultmodule"
+        ],
+        [
+          "biotawatermodule",
+          "utilmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "bedsedimentconfigmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "biotaconfigmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "datainputmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "environmentmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "kernelmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "loggermodule"
+        ],
+        [
+          "bootstrapmodule",
+          "modelassemblymodule"
+        ],
+        [
+          "bootstrapmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "reactorconfigmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "resultmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "soilconfigmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "sourceconfigmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "utilmodule"
+        ],
+        [
+          "bootstrapmodule",
+          "waterbodyconfigmodule"
+        ],
+        [
+          "checkpointmodule",
+          "abstractenvironmentmodule"
+        ],
+        [
+          "checkpointmodule",
+          "datainputmodule"
+        ],
+        [
+          "checkpointmodule",
+          "environmentmodule"
+        ],
+        [
+          "checkpointmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "checkpointmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "checkpointmodule",
+          "flowmodule"
+        ],
+        [
+          "checkpointmodule",
+          "kernelmodule"
+        ],
+        [
+          "checkpointmodule",
+          "loggermodule"
+        ],
+        [
+          "checkpointmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "checkpointmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "checkpointmodule",
+          "resultmodule"
+        ],
+        [
+          "checkpointmodule",
+          "utilmodule"
+        ],
+        [
+          "cropmodule",
+          "kernelmodule"
+        ],
+        [
+          "datainputmodule",
+          "bedsedimentconfigmodule"
+        ],
+        [
+          "datainputmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "datainputmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "datainputmodule",
+          "kernelmodule"
+        ],
+        [
+          "datainputmodule",
+          "loggermodule"
+        ],
+        [
+          "datainputmodule",
+          "mo_netcdf"
+        ],
+        [
+          "datainputmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "datainputmodule",
+          "reactorconfigmodule"
+        ],
+        [
+          "datainputmodule",
+          "resultmodule"
+        ],
+        [
+          "datainputmodule",
+          "soilconfigmodule"
+        ],
+        [
+          "datainputmodule",
+          "utilmodule"
+        ],
+        [
+          "datainputmodule",
+          "waterbodyconfigmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "abstractenvironmentmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "abstractgridcellmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "bedsedimentconfigmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "datainputmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "datetime_module"
+        ],
+        [
+          "dataoutputmodule",
+          "environmentmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "estuaryreachmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "kernelmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "loggermodule"
+        ],
+        [
+          "dataoutputmodule",
+          "mo_netcdf"
+        ],
+        [
+          "dataoutputmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "netcdfaggregatedoutputmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "netcdfoutputmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "riverreachmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "utilmodule"
+        ],
+        [
+          "diffusesourcemodule",
+          "datainputmodule"
+        ],
+        [
+          "diffusesourcemodule",
+          "kernelmodule"
+        ],
+        [
+          "diffusesourcemodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "environmentmodule",
+          "abstractenvironmentmodule"
+        ],
+        [
+          "environmentmodule",
+          "abstractgridcellmodule"
+        ],
+        [
+          "environmentmodule",
+          "datainputmodule"
+        ],
+        [
+          "environmentmodule",
+          "datetime_module"
+        ],
+        [
+          "environmentmodule",
+          "kernelmodule"
+        ],
+        [
+          "environmentmodule",
+          "loggermodule"
+        ],
+        [
+          "environmentmodule",
+          "mo_netcdf"
+        ],
+        [
+          "environmentmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "environmentmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "environmentmodule",
+          "reachmodule"
+        ],
+        [
+          "environmentmodule",
+          "resultmodule"
+        ],
+        [
+          "environmentmodule",
+          "utilmodule"
+        ],
+        [
+          "errorcriteriamodule",
+          "errorhandlermodule"
+        ],
+        [
+          "errorcriteriamodule",
+          "errorinstancemodule"
+        ],
+        [
+          "errorhandlermodule",
+          "errorinstancemodule"
+        ],
+        [
+          "errorhandlingmodule",
+          "errorcriteriamodule"
+        ],
+        [
+          "errorhandlingmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "bedsedimentconfigmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "bedsedimentmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "datainputmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "datetime_module"
+        ],
+        [
+          "estuaryreachmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "kernelmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "loggermodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "reachmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "reactormodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "resultmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "utilmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "waterbodyconfigmodule"
+        ],
+        [
+          "finesedimentmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "finesedimentmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "finesedimentmodule",
+          "kernelmodule"
+        ],
+        [
+          "finesedimentmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "finesedimentmodule",
+          "resultmodule"
+        ],
+        [
+          "finesedimentmodule",
+          "utilmodule"
+        ],
+        [
+          "flowmodule",
+          "kernelmodule"
+        ],
+        [
+          "flowmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "gridcellmodule",
+          "abstractgridcellmodule"
+        ],
+        [
+          "gridcellmodule",
+          "bedsedimentconfigmodule"
+        ],
+        [
+          "gridcellmodule",
+          "cropmodule"
+        ],
+        [
+          "gridcellmodule",
+          "datainputmodule"
+        ],
+        [
+          "gridcellmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "gridcellmodule",
+          "kernelmodule"
+        ],
+        [
+          "gridcellmodule",
+          "loggermodule"
+        ],
+        [
+          "gridcellmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "gridcellmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "gridcellmodule",
+          "resultmodule"
+        ],
+        [
+          "gridcellmodule",
+          "utilmodule"
+        ],
+        [
+          "loggermodule",
+          "errorinstancemodule"
+        ],
+        [
+          "loggermodule",
+          "kernelmodule"
+        ],
+        [
+          "loggermodule",
+          "modelconfigmodule"
+        ],
+        [
+          "main",
+          "bootstrapmodule"
+        ],
+        [
+          "main",
+          "checkpointmodule"
+        ],
+        [
+          "main",
+          "datainputmodule"
+        ],
+        [
+          "main",
+          "dataoutputmodule"
+        ],
+        [
+          "main",
+          "datetime_module"
+        ],
+        [
+          "main",
+          "environmentmodule"
+        ],
+        [
+          "main",
+          "errorhandlingmodule"
+        ],
+        [
+          "main",
+          "estuaryreachmodule"
+        ],
+        [
+          "main",
+          "kernelmodule"
+        ],
+        [
+          "main",
+          "loggermodule"
+        ],
+        [
+          "main",
+          "mo_types"
+        ],
+        [
+          "main",
+          "modelconfigmodule"
+        ],
+        [
+          "main",
+          "resultmodule"
+        ],
+        [
+          "main",
+          "riverreachmodule"
+        ],
+        [
+          "main",
+          "utilmodule"
+        ],
+        [
+          "mo_netcdf",
+          "mo_types"
+        ],
+        [
+          "mod_strptime",
+          "datetime_module"
+        ],
+        [
+          "modelassemblymodule",
+          "datainputmodule"
+        ],
+        [
+          "modelassemblymodule",
+          "environmentmodule"
+        ],
+        [
+          "modelassemblymodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "modelassemblymodule",
+          "errorinstancemodule"
+        ],
+        [
+          "modelassemblymodule",
+          "estuaryreachmodule"
+        ],
+        [
+          "modelassemblymodule",
+          "gridcellmodule"
+        ],
+        [
+          "modelassemblymodule",
+          "kernelmodule"
+        ],
+        [
+          "modelassemblymodule",
+          "loggermodule"
+        ],
+        [
+          "modelassemblymodule",
+          "reachmodule"
+        ],
+        [
+          "modelassemblymodule",
+          "resultmodule"
+        ],
+        [
+          "modelassemblymodule",
+          "riverreachmodule"
+        ],
+        [
+          "modelassemblymodule",
+          "soilprofilemodule"
+        ],
+        [
+          "modelconfigmodule",
+          "datetime_module"
+        ],
+        [
+          "modelconfigmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "modelconfigmodule",
+          "kernelmodule"
+        ],
+        [
+          "modelconfigmodule",
+          "mod_strptime"
+        ],
+        [
+          "modelconfigmodule",
+          "modeldefaultsmodule"
+        ],
+        [
+          "modelconfigmodule",
+          "resultmodule"
+        ],
+        [
+          "modelconfigmodule",
+          "versionmodule"
+        ],
+        [
+          "modeldefaultsmodule",
+          "kernelmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "abstractenvironmentmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "datainputmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "datetime_module"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "environmentmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "kernelmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "mo_netcdf"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "netcdfoutputmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "utilmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "abstractenvironmentmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "datainputmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "datetime_module"
+        ],
+        [
+          "netcdfoutputmodule",
+          "environmentmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "kernelmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "mo_netcdf"
+        ],
+        [
+          "netcdfoutputmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "utilmodule"
+        ],
+        [
+          "pointsourcemodule",
+          "datainputmodule"
+        ],
+        [
+          "pointsourcemodule",
+          "kernelmodule"
+        ],
+        [
+          "pointsourcemodule",
+          "modelconfigmodule"
+        ],
+        [
+          "pointsourcemodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "pointsourcemodule",
+          "sourceconfigmodule"
+        ],
+        [
+          "reachmodule",
+          "bedsedimentconfigmodule"
+        ],
+        [
+          "reachmodule",
+          "datainputmodule"
+        ],
+        [
+          "reachmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "reachmodule",
+          "kernelmodule"
+        ],
+        [
+          "reachmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "reachmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "reachmodule",
+          "resultmodule"
+        ],
+        [
+          "reachmodule",
+          "waterbodyconfigmodule"
+        ],
+        [
+          "reachmodule",
+          "waterbodymodule"
+        ],
+        [
+          "reactorconfigmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "reactorconfigmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "reactormodule",
+          "abstractreactormodule"
+        ],
+        [
+          "reactormodule",
+          "datainputmodule"
+        ],
+        [
+          "reactormodule",
+          "kernelmodule"
+        ],
+        [
+          "reactormodule",
+          "modelconfigmodule"
+        ],
+        [
+          "reactormodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "reactormodule",
+          "resultmodule"
+        ],
+        [
+          "reactormodule",
+          "utilmodule"
+        ],
+        [
+          "resultmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "riverreachmodule",
+          "bedsedimentmodule"
+        ],
+        [
+          "riverreachmodule",
+          "biotawatermodule"
+        ],
+        [
+          "riverreachmodule",
+          "datainputmodule"
+        ],
+        [
+          "riverreachmodule",
+          "datetime_module"
+        ],
+        [
+          "riverreachmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "riverreachmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "riverreachmodule",
+          "kernelmodule"
+        ],
+        [
+          "riverreachmodule",
+          "loggermodule"
+        ],
+        [
+          "riverreachmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "riverreachmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "riverreachmodule",
+          "reachmodule"
+        ],
+        [
+          "riverreachmodule",
+          "reactormodule"
+        ],
+        [
+          "riverreachmodule",
+          "resultmodule"
+        ],
+        [
+          "riverreachmodule",
+          "utilmodule"
+        ],
+        [
+          "soilconfigmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "soilconfigmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "soilconfigmodule",
+          "kernelmodule"
+        ],
+        [
+          "soilconfigmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "soillayermodule",
+          "abstractsoillayermodule"
+        ],
+        [
+          "soillayermodule",
+          "biotasoilmodule"
+        ],
+        [
+          "soillayermodule",
+          "datainputmodule"
+        ],
+        [
+          "soillayermodule",
+          "datetime_module"
+        ],
+        [
+          "soillayermodule",
+          "errorinstancemodule"
+        ],
+        [
+          "soillayermodule",
+          "kernelmodule"
+        ],
+        [
+          "soillayermodule",
+          "modelconfigmodule"
+        ],
+        [
+          "soillayermodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "soillayermodule",
+          "resultmodule"
+        ],
+        [
+          "soillayermodule",
+          "soilconfigmodule"
+        ],
+        [
+          "soillayermodule",
+          "utilmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "abstractsoilprofilemodule"
+        ],
+        [
+          "soilprofilemodule",
+          "datainputmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "datetime_module"
+        ],
+        [
+          "soilprofilemodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "kernelmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "modelconfigmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "resultmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "soilconfigmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "soillayermodule"
+        ],
+        [
+          "soilprofilemodule",
+          "utilmodule"
+        ],
+        [
+          "utilmodule",
+          "kernelmodule"
+        ],
+        [
+          "utilmodule",
+          "modelconfigmodule"
+        ],
+        [
+          "utilmodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "waterbodyconfigmodule",
+          "errorhandlingmodule"
+        ],
+        [
+          "waterbodyconfigmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "waterbodyconfigmodule",
+          "kernelmodule"
+        ],
+        [
+          "waterbodymodule",
+          "abstractbedsedimentmodule"
+        ],
+        [
+          "waterbodymodule",
+          "abstractreactormodule"
+        ],
+        [
+          "waterbodymodule",
+          "biotawatermodule"
+        ],
+        [
+          "waterbodymodule",
+          "datainputmodule"
+        ],
+        [
+          "waterbodymodule",
+          "diffusesourcemodule"
+        ],
+        [
+          "waterbodymodule",
+          "flowmodule"
+        ],
+        [
+          "waterbodymodule",
+          "kernelmodule"
+        ],
+        [
+          "waterbodymodule",
+          "modeldimensionsmodule"
+        ],
+        [
+          "waterbodymodule",
+          "pointsourcemodule"
+        ],
+        [
+          "waterbodymodule",
+          "resultmodule"
+        ]
+      ],
+      "inputs": {
+        "dot": {
+          "path": "/Users/qianhuilin/Documents/nanofase-mono/nanofase/dependency_graphs/nanofase_postmigration/nanofase_postmigration.dot",
+          "sha256": "3051188af514894e13ad5492aa11a1bd00c2fe38b82006a26de3d0116ee0aec4"
+        },
+        "source_files_sha256": {
+          "src/BedSediment/AbstractBedSedimentModule.f90": "3e52673cfa0e943a11abedaccbab7fc863cbaff321e52234c48878e2fc9fb993",
+          "src/BedSediment/BedSedimentConfigModule.f90": "798ae43bcc0e618b0a4be3f04213c5f0f11cf8984620ce2b654a4fb96a240a29",
+          "src/BedSediment/BedSedimentModule.f90": "8f997fbe530cb0cb6081b6276ff91273ede49cd3ea395bbaaca769e8ce86a8a0",
+          "src/BedSedimentLayer/AbstractBedSedimentLayerModule.f90": "cadcb00a680860a7084d57af6204a3bcc40c0b71f2bf43fc68bbca33da5baa34",
+          "src/BedSedimentLayer/BedSedimentLayerModule.f90": "a566f602c4ed33a3f7ad3059c392d9fc581ba7a174096a0c7b8aeb528dd0dc12",
+          "src/BedSedimentLayer/FineSedimentModule.f90": "0e5d14f88b3d5d9b6e62ce3d2b4de96e1e0f248b86ac38a5cde21b7493fd644f",
+          "src/Biota/AbstractBiotaModule.f90": "8a5146301777ade03d18f9c2f782ff5145cc701a88d8f2c943bae1a20c7de115",
+          "src/Biota/BiotaConfigModule.f90": "1baa65fd76bc276d325becf5fbeae7b731786cb729d7c23370d3b59ff7d0afdc",
+          "src/Biota/BiotaSoilModule.f90": "85666a9d06c18bd47ca03ef9b938c3adce4ecdf8f9a71d1855272663851a1f48",
+          "src/Biota/BiotaWaterModule.f90": "11b0b51503fa25adde4a812626730b5f52bf37f7e29fae6bad6624a1565eca19",
+          "src/Bootstrap/BootstrapModule.f90": "700bea73ad83673688e7a5cc9766f1a4b470036b746fa6cda93853c73eedaa8a",
+          "src/CheckpointModule.f90": "fa9f3eb1b33c9b87dfe96048f7bea07d950649568a4042263cbf1c89dc0a08c4",
+          "src/Data/DataInputModule.f90": "8a9e3d8169203a6330aae576ee5b77b655a1655f82d53543b5a1fde3f2e772aa",
+          "src/Data/DataOutputModule.f90": "ea7e6575980de5f31fd91a3916cb07ad4e45d75ae1c984dfaeaf6c6ca743bfdd",
+          "src/Data/NetCDFAggregatedOutputModule.f90": "bb85cd8fde5f9b784e50a9aaaece95fe66580f13eb2d69e1a21c97306d443da8",
+          "src/Data/NetCDFOutputModule.f90": "cbde431a36d6089012ea42e390541efe76ec28927aa27ac9a0cdd41b17681fa7",
+          "src/Environment/AbstractEnvironmentModule.f90": "fb7890acc560c63a65ec44eb71852cf6c1d68d1ee7b77083c9b7bcbf1dc8c8f1",
+          "src/Environment/EnvironmentModule.f90": "ddbe8a523cdb2deeb5cf33e51a110c9529239212b9771a59bf11291b221bd069",
+          "src/ErrorHandling/ErrorHandlingModule.f90": "69ebd4dc124c6a759b9f053730c2256e4e7bfe2393f274447b54288de6a42532",
+          "src/GridCell/AbstractGridCellModule.f90": "547807d23674eb33b3da3df473dd8827f158cc3fb8bf69fd01f2bf027c82b17e",
+          "src/GridCell/CropModule.f90": "703fb45de1ed10e8528b82b8f6b80e51fe980c6f179bee406716c91b5f95230b",
+          "src/GridCell/GridCellModule.f90": "168331712a24f5981cc57cf5868aa9b98f5bf656c2191af33e642d09a215b989",
+          "src/Kernel/KernelModule.f90": "161c007a59972f0e3f7b2ee4c3e13e9bb33ad95a726af30b4b416df4eb7559c7",
+          "src/Logger/LoggerModule.f90": "5a2d03eecd8e55eb6fbc9d1787d53b83890374a4597cb50ebba5f333f8090858",
+          "src/ModelAssembly/ModelAssemblyModule.f90": "9c38aff48c85ec30a8d11229a30a88290fe62f95c42d01cc2ab81d02bd00bd7c",
+          "src/ModelConfig/ModelConfigModule.f90": "d005b2bb27e628af74764a6549fdc72253bf4ba3f563330023b1f0be64e2e483",
+          "src/ModelConfig/ModelDefaultsModule.f90": "121ea9f9f6875173d7bd70171464936f7ced529c649a45b0bc3722dab09eb217",
+          "src/ModelDimensions/ModelDimensionsModule.f90": "f648886ef9e4ae38d500017fd475f6cb70b89f0ca0cac1195818280b240ed696",
+          "src/Reactor/AbstractReactorModule.f90": "64eb385d70a44197560addf5518c6c29bcf9a703e94165eaafd3cccdbc78fdb4",
+          "src/Reactor/ReactorConfigModule.f90": "48a8b283f6f9ee58b4b87f96dde1b15ae4fa9462900520d418ab51d144594866",
+          "src/Reactor/ReactorModule.f90": "14de288a6b8837a4b7fa308ab5a6efbb7c6bd6e3de78fb1860d94890ea171bee",
+          "src/Soil/AbstractSoilLayerModule.f90": "cde1b9d2c15e9f82e2013872055b9a948d808c36c11b5d54edf0b246366f0f4f",
+          "src/Soil/AbstractSoilProfileModule.f90": "6301ebd7e92e462fed20598d11b37f9ada2766b77f57457790d6a0a1bd140aed",
+          "src/Soil/SoilConfigModule.f90": "588dceb6bf3f0877c4730aa648e1db24eedbcfde6aadc7d7e126b0c935a86720",
+          "src/Soil/SoilLayerModule.f90": "5f085bab5c360da5cd6005abeb37c07fd5dc799f5513cb9427df12eff2c5d010",
+          "src/Soil/SoilProfileModule.f90": "4f21e6d32481c8b514680a0dde0ad0604eaa027d3b344be49f39b8339fe2bae0",
+          "src/Source/DiffuseSourceModule.f90": "4402c01f5f5ff780cd96101664bdceb604b05f12dea171b7bc83cdae2dd14f67",
+          "src/Source/PointSourceModule.f90": "6ee821b155a0a8cb6b9ac96e3051035728436803ec7ecad102155039e50f5500",
+          "src/Source/SourceConfigModule.f90": "342cdd99f051892cebaf6f5b3ac6af07ce82c1d0f5a920fb8694f5d59ad6bdf0",
+          "src/UtilModule.f90": "402dab697bd1d8e001a6dcf9c7b5e09477d5582d37b63e2849e067bf36f2a9df",
+          "src/VersionModule.f90": "6f1e9362642a9c4d91c15300c0dbfc2a39265f3b51f16b609fb711eb98507cb8",
+          "src/WaterBody/EstuaryReachModule.f90": "3e7ee19605cb6558dfceb1bc9430b1687c5501bb3eeee5058e2ca6ba97cb333d",
+          "src/WaterBody/FlowModule.f90": "6a93de21077bdde885f568fadbcc598e27f3b5a86156e23ddcc4c141a8e2a519",
+          "src/WaterBody/ReachModule.f90": "cfecf37b51fc9d4f2c2617eb6725cab3e4e2376fa2b1e804be9abd9109b19600",
+          "src/WaterBody/RiverReachModule.f90": "2337b81b93bcc88e6829d70c9851d679d3d5c0918a24102071041ef2070d728d",
+          "src/WaterBody/WaterBodyConfigModule.f90": "bba9fb40fb1fb44a48d6e5523a89ed8297429aada3bd51dff599a554727177bf",
+          "src/WaterBody/WaterBodyModule.f90": "a2012abc49810d1491a1375fea1243ac975f064f36e87deef0adeb4f61d37506",
+          "src/main.f90": "d50521e87863a288b0425efec060260036c90aefbd95930d5b6cc3b70913686e",
+          "src/mod_strptime.f90": "11f16ba0645d8b3710813a53242924bd8a312b96579d5e8940885bdb313a50a6",
+          "vendor/datetime-fortran/src/datetime_module.f90": "0a84dc889716e16647fa363b676261e1851ca0c046177add882b142f8abe0ca2",
+          "vendor/feh/src/ErrorCriteria.f90": "4a182fe377fa8cde974252f81670db94b4d5c44af13d27dcc39f721f60d7f095",
+          "vendor/feh/src/ErrorHandler.f90": "ea51d1607a704a1a80bf899a038a235751761fcc1e5847d11b5b4494c56cb7b0",
+          "vendor/feh/src/ErrorInstance.f90": "644753dd93e4710b9e592f8d2459f0c8291a7177554f8da04c0639b58ce79312",
+          "vendor/feh/src/Result.f90": "0a9cbae40bfc8de638d3c81ac68ee8073d5c487c5480dae6b987a29aabcc1bd7",
+          "vendor/mo_netcdf/src/mo_netcdf.f90": "685c108cc9d9dd353c5acd0c5b0992bce3204c79a1c292a3a0ffe32e8c8b900f",
+          "vendor/mo_netcdf/src/mo_types.f90": "6af88010ab2e9fb530ef87bfdf88beeaf657ae172005d758a616e50b8d022794",
+          "vendor/spoof/src/Spoof.f90": "c92be59de351a2994822b754016877cbfa18c9b4883e43e58974998d8786379c",
+          "vendor/spoof/src/sparskit.f90": "26ecc6b9432bda6bff5684f4dc484fad4e38adaca9eae3e071f2db368443b3ac"
+        },
+        "source_manifest_sha256": "1487b6a73c428ffe35c3edb991ce13c6d191b77e29e5a8d16be0350897bb3fa5",
+        "source_root": "/Users/qianhuilin/Documents/nanofase-mono/nanofase"
+      },
+      "node_mapping": {
+        "abstractbedsedimentlayermodule": {
+          "file": "src/BedSedimentLayer/AbstractBedSedimentLayerModule.f90",
+          "group": "src/BedSedimentLayer"
+        },
+        "abstractbedsedimentmodule": {
+          "file": "src/BedSediment/AbstractBedSedimentModule.f90",
+          "group": "src/BedSediment"
+        },
+        "abstractbiotamodule": {
+          "file": "src/Biota/AbstractBiotaModule.f90",
+          "group": "src/Biota"
+        },
+        "abstractenvironmentmodule": {
+          "file": "src/Environment/AbstractEnvironmentModule.f90",
+          "group": "src/Environment"
+        },
+        "abstractgridcellmodule": {
+          "file": "src/GridCell/AbstractGridCellModule.f90",
+          "group": "src/GridCell"
+        },
+        "abstractreactormodule": {
+          "file": "src/Reactor/AbstractReactorModule.f90",
+          "group": "src/Reactor"
+        },
+        "abstractsoillayermodule": {
+          "file": "src/Soil/AbstractSoilLayerModule.f90",
+          "group": "src/Soil"
+        },
+        "abstractsoilprofilemodule": {
+          "file": "src/Soil/AbstractSoilProfileModule.f90",
+          "group": "src/Soil"
+        },
+        "bedsedimentconfigmodule": {
+          "file": "src/BedSediment/BedSedimentConfigModule.f90",
+          "group": "src/BedSediment"
+        },
+        "bedsedimentlayermodule": {
+          "file": "src/BedSedimentLayer/BedSedimentLayerModule.f90",
+          "group": "src/BedSedimentLayer"
+        },
+        "bedsedimentmodule": {
+          "file": "src/BedSediment/BedSedimentModule.f90",
+          "group": "src/BedSediment"
+        },
+        "biotaconfigmodule": {
+          "file": "src/Biota/BiotaConfigModule.f90",
+          "group": "src/Biota"
+        },
+        "biotasoilmodule": {
+          "file": "src/Biota/BiotaSoilModule.f90",
+          "group": "src/Biota"
+        },
+        "biotawatermodule": {
+          "file": "src/Biota/BiotaWaterModule.f90",
+          "group": "src/Biota"
+        },
+        "bootstrapmodule": {
+          "file": "src/Bootstrap/BootstrapModule.f90",
+          "group": "src/Bootstrap"
+        },
+        "checkpointmodule": {
+          "file": "src/CheckpointModule.f90",
+          "group": "src/CheckpointModule.f90"
+        },
+        "cropmodule": {
+          "file": "src/GridCell/CropModule.f90",
+          "group": "src/GridCell"
+        },
+        "datainputmodule": {
+          "file": "src/Data/DataInputModule.f90",
+          "group": "src/Data"
+        },
+        "dataoutputmodule": {
+          "file": "src/Data/DataOutputModule.f90",
+          "group": "src/Data"
+        },
+        "datetime_module": {
+          "file": "vendor/datetime-fortran/src/datetime_module.f90",
+          "group": "vendor/datetime-fortran"
+        },
+        "diffusesourcemodule": {
+          "file": "src/Source/DiffuseSourceModule.f90",
+          "group": "src/Source"
+        },
+        "environmentmodule": {
+          "file": "src/Environment/EnvironmentModule.f90",
+          "group": "src/Environment"
+        },
+        "errorcriteriamodule": {
+          "file": "vendor/feh/src/ErrorCriteria.f90",
+          "group": "vendor/feh"
+        },
+        "errorhandlermodule": {
+          "file": "vendor/feh/src/ErrorHandler.f90",
+          "group": "vendor/feh"
+        },
+        "errorhandlingmodule": {
+          "file": "src/ErrorHandling/ErrorHandlingModule.f90",
+          "group": "src/ErrorHandling"
+        },
+        "errorinstancemodule": {
+          "file": "vendor/feh/src/ErrorInstance.f90",
+          "group": "vendor/feh"
+        },
+        "estuaryreachmodule": {
+          "file": "src/WaterBody/EstuaryReachModule.f90",
+          "group": "src/WaterBody"
+        },
+        "finesedimentmodule": {
+          "file": "src/BedSedimentLayer/FineSedimentModule.f90",
+          "group": "src/BedSedimentLayer"
+        },
+        "flowmodule": {
+          "file": "src/WaterBody/FlowModule.f90",
+          "group": "src/WaterBody"
+        },
+        "gridcellmodule": {
+          "file": "src/GridCell/GridCellModule.f90",
+          "group": "src/GridCell"
+        },
+        "kernelmodule": {
+          "file": "src/Kernel/KernelModule.f90",
+          "group": "src/Kernel"
+        },
+        "loggermodule": {
+          "file": "src/Logger/LoggerModule.f90",
+          "group": "src/Logger"
+        },
+        "main": {
+          "file": "src/main.f90",
+          "group": "src/main.f90"
+        },
+        "mo_netcdf": {
+          "file": "vendor/mo_netcdf/src/mo_netcdf.f90",
+          "group": "vendor/mo_netcdf"
+        },
+        "mo_types": {
+          "file": "vendor/mo_netcdf/src/mo_types.f90",
+          "group": "vendor/mo_netcdf"
+        },
+        "mod_strptime": {
+          "file": "src/mod_strptime.f90",
+          "group": "src/mod_strptime.f90"
+        },
+        "modelassemblymodule": {
+          "file": "src/ModelAssembly/ModelAssemblyModule.f90",
+          "group": "src/ModelAssembly"
+        },
+        "modelconfigmodule": {
+          "file": "src/ModelConfig/ModelConfigModule.f90",
+          "group": "src/ModelConfig"
+        },
+        "modeldefaultsmodule": {
+          "file": "src/ModelConfig/ModelDefaultsModule.f90",
+          "group": "src/ModelConfig"
+        },
+        "modeldimensionsmodule": {
+          "file": "src/ModelDimensions/ModelDimensionsModule.f90",
+          "group": "src/ModelDimensions"
+        },
+        "netcdfaggregatedoutputmodule": {
+          "file": "src/Data/NetCDFAggregatedOutputModule.f90",
+          "group": "src/Data"
+        },
+        "netcdfoutputmodule": {
+          "file": "src/Data/NetCDFOutputModule.f90",
+          "group": "src/Data"
+        },
+        "pointsourcemodule": {
+          "file": "src/Source/PointSourceModule.f90",
+          "group": "src/Source"
+        },
+        "reachmodule": {
+          "file": "src/WaterBody/ReachModule.f90",
+          "group": "src/WaterBody"
+        },
+        "reactorconfigmodule": {
+          "file": "src/Reactor/ReactorConfigModule.f90",
+          "group": "src/Reactor"
+        },
+        "reactormodule": {
+          "file": "src/Reactor/ReactorModule.f90",
+          "group": "src/Reactor"
+        },
+        "resultmodule": {
+          "file": "vendor/feh/src/Result.f90",
+          "group": "vendor/feh"
+        },
+        "riverreachmodule": {
+          "file": "src/WaterBody/RiverReachModule.f90",
+          "group": "src/WaterBody"
+        },
+        "soilconfigmodule": {
+          "file": "src/Soil/SoilConfigModule.f90",
+          "group": "src/Soil"
+        },
+        "soillayermodule": {
+          "file": "src/Soil/SoilLayerModule.f90",
+          "group": "src/Soil"
+        },
+        "soilprofilemodule": {
+          "file": "src/Soil/SoilProfileModule.f90",
+          "group": "src/Soil"
+        },
+        "sourceconfigmodule": {
+          "file": "src/Source/SourceConfigModule.f90",
+          "group": "src/Source"
+        },
+        "sparskit": {
+          "file": "vendor/spoof/src/sparskit.f90",
+          "group": "vendor/spoof"
+        },
+        "utilmodule": {
+          "file": "src/UtilModule.f90",
+          "group": "src/UtilModule.f90"
+        },
+        "versionmodule": {
+          "file": "src/VersionModule.f90",
+          "group": "src/VersionModule.f90"
+        },
+        "waterbodyconfigmodule": {
+          "file": "src/WaterBody/WaterBodyConfigModule.f90",
+          "group": "src/WaterBody"
+        },
+        "waterbodymodule": {
+          "file": "src/WaterBody/WaterBodyModule.f90",
+          "group": "src/WaterBody"
+        }
+      },
+      "scopes": {
+        "full": {
+          "cyclic_components": [],
+          "groups": {
+            "src/BedSediment": {
+              "in_degree_sum": 12,
+              "internal_edge_count": 2,
+              "modularity_contribution": 0.003866745984533016,
+              "nodes": [
+                "abstractbedsedimentmodule",
+                "bedsedimentconfigmodule",
+                "bedsedimentmodule"
+              ],
+              "out_degree_sum": 20
+            },
+            "src/BedSedimentLayer": {
+              "in_degree_sum": 7,
+              "internal_edge_count": 3,
+              "modularity_contribution": 0.007845032718619869,
+              "nodes": [
+                "abstractbedsedimentlayermodule",
+                "bedsedimentlayermodule",
+                "finesedimentmodule"
+              ],
+              "out_degree_sum": 20
+            },
+            "src/Biota": {
+              "in_degree_sum": 7,
+              "internal_edge_count": 2,
+              "modularity_contribution": 0.004796252230814991,
+              "nodes": [
+                "abstractbiotamodule",
+                "biotaconfigmodule",
+                "biotasoilmodule",
+                "biotawatermodule"
+              ],
+              "out_degree_sum": 20
+            },
+            "src/Bootstrap": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.000148720999405116,
+              "nodes": [
+                "bootstrapmodule"
+              ],
+              "out_degree_sum": 16
+            },
+            "src/CheckpointModule.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.000111540749553837,
+              "nodes": [
+                "checkpointmodule"
+              ],
+              "out_degree_sum": 12
+            },
+            "src/Data": {
+              "in_degree_sum": 25,
+              "internal_edge_count": 6,
+              "modularity_contribution": 0.0073709845330160615,
+              "nodes": [
+                "datainputmodule",
+                "dataoutputmodule",
+                "netcdfaggregatedoutputmodule",
+                "netcdfoutputmodule"
+              ],
+              "out_degree_sum": 47
+            },
+            "src/Environment": {
+              "in_degree_sum": 12,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.001041046995835812,
+              "nodes": [
+                "abstractenvironmentmodule",
+                "environmentmodule"
+              ],
+              "out_degree_sum": 18
+            },
+            "src/ErrorHandling": {
+              "in_degree_sum": 15,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0002788518738845925,
+              "nodes": [
+                "errorhandlingmodule"
+              ],
+              "out_degree_sum": 2
+            },
+            "src/GridCell": {
+              "in_degree_sum": 7,
+              "internal_edge_count": 3,
+              "modularity_contribution": 0.007845032718619869,
+              "nodes": [
+                "abstractgridcellmodule",
+                "cropmodule",
+                "gridcellmodule"
+              ],
+              "out_degree_sum": 20
+            },
+            "src/Kernel": {
+              "in_degree_sum": 41,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "kernelmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/Logger": {
+              "in_degree_sum": 10,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0002788518738845925,
+              "nodes": [
+                "loggermodule"
+              ],
+              "out_degree_sum": 3
+            },
+            "src/ModelAssembly": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.000111540749553837,
+              "nodes": [
+                "modelassemblymodule"
+              ],
+              "out_degree_sum": 12
+            },
+            "src/ModelConfig": {
+              "in_degree_sum": 21,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.00148720999405116,
+              "nodes": [
+                "modelconfigmodule",
+                "modeldefaultsmodule"
+              ],
+              "out_degree_sum": 8
+            },
+            "src/ModelDimensions": {
+              "in_degree_sum": 28,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "modeldimensionsmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/Reactor": {
+              "in_degree_sum": 6,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.002379535990481856,
+              "nodes": [
+                "abstractreactormodule",
+                "reactorconfigmodule",
+                "reactormodule"
+              ],
+              "out_degree_sum": 12
+            },
+            "src/Soil": {
+              "in_degree_sum": 10,
+              "internal_edge_count": 6,
+              "modularity_contribution": 0.015132361689470554,
+              "nodes": [
+                "abstractsoillayermodule",
+                "abstractsoilprofilemodule",
+                "soilconfigmodule",
+                "soillayermodule",
+                "soilprofilemodule"
+              ],
+              "out_degree_sum": 34
+            },
+            "src/Source": {
+              "in_degree_sum": 5,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.002676977989292088,
+              "nodes": [
+                "diffusesourcemodule",
+                "pointsourcemodule",
+                "sourceconfigmodule"
+              ],
+              "out_degree_sum": 8
+            },
+            "src/UtilModule.f90": {
+              "in_degree_sum": 19,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0005298185603807258,
+              "nodes": [
+                "utilmodule"
+              ],
+              "out_degree_sum": 3
+            },
+            "src/VersionModule.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "versionmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/WaterBody": {
+              "in_degree_sum": 19,
+              "internal_edge_count": 6,
+              "modularity_contribution": 0.009109161213563356,
+              "nodes": [
+                "estuaryreachmodule",
+                "flowmodule",
+                "reachmodule",
+                "riverreachmodule",
+                "waterbodyconfigmodule",
+                "waterbodymodule"
+              ],
+              "out_degree_sum": 52
+            },
+            "src/main.f90": {
+              "in_degree_sum": 0,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "main"
+              ],
+              "out_degree_sum": 15
+            },
+            "src/mod_strptime.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": -9.29506246281975e-06,
+              "nodes": [
+                "mod_strptime"
+              ],
+              "out_degree_sum": 1
+            },
+            "vendor/datetime-fortran": {
+              "in_degree_sum": 13,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "datetime_module"
+              ],
+              "out_degree_sum": 0
+            },
+            "vendor/feh": {
+              "in_degree_sum": 54,
+              "internal_edge_count": 4,
+              "modularity_contribution": 0.010187388459250445,
+              "nodes": [
+                "errorcriteriamodule",
+                "errorhandlermodule",
+                "errorinstancemodule",
+                "resultmodule"
+              ],
+              "out_degree_sum": 4
+            },
+            "vendor/mo_netcdf": {
+              "in_degree_sum": 12,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.002937239738251041,
+              "nodes": [
+                "mo_netcdf",
+                "mo_types"
+              ],
+              "out_degree_sum": 1
+            },
+            "vendor/spoof": {
+              "in_degree_sum": 0,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "sparskit"
+              ],
+              "out_degree_sum": 0
+            }
+          },
+          "is_acyclic": true,
+          "isolated_nodes": [
+            "sparskit"
+          ],
+          "metrics": {
+            "acd": 18.50877192982456,
+            "ccd": 1055,
+            "cross_group_edge_count": 291,
+            "cross_group_edge_fraction": 0.8871951219512195,
+            "cyclic_component_count": 0,
+            "cyclic_node_count": 0,
+            "direct_edge_density": 0.10275689223057644,
+            "directed_modularity": 0.0752063503866746,
+            "edge_count": 328,
+            "group_count": 26,
+            "isolated_node_count": 1,
+            "largest_component_size": 1,
+            "node_count": 57,
+            "propagation_cost_percent": 32.4715297014466
+          },
+          "nodes": {
+            "abstractbedsedimentlayermodule": {
+              "component_dependency": 17,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 2,
+              "file": "src/BedSedimentLayer/AbstractBedSedimentLayerModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 16,
+              "transitive_dependent_count": 18
+            },
+            "abstractbedsedimentmodule": {
+              "component_dependency": 19,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 2,
+              "file": "src/BedSediment/AbstractBedSedimentModule.f90",
+              "group": "src/BedSediment",
+              "transitive_dependency_count": 18,
+              "transitive_dependent_count": 16
+            },
+            "abstractbiotamodule": {
+              "component_dependency": 4,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/AbstractBiotaModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 3,
+              "transitive_dependent_count": 21
+            },
+            "abstractenvironmentmodule": {
+              "component_dependency": 39,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 5,
+              "file": "src/Environment/AbstractEnvironmentModule.f90",
+              "group": "src/Environment",
+              "transitive_dependency_count": 38,
+              "transitive_dependent_count": 8
+            },
+            "abstractgridcellmodule": {
+              "component_dependency": 38,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 4,
+              "file": "src/GridCell/AbstractGridCellModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 37,
+              "transitive_dependent_count": 10
+            },
+            "abstractreactormodule": {
+              "component_dependency": 5,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 2,
+              "file": "src/Reactor/AbstractReactorModule.f90",
+              "group": "src/Reactor",
+              "transitive_dependency_count": 4,
+              "transitive_dependent_count": 16
+            },
+            "abstractsoillayermodule": {
+              "component_dependency": 24,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 2,
+              "file": "src/Soil/AbstractSoilLayerModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 23,
+              "transitive_dependent_count": 14
+            },
+            "abstractsoilprofilemodule": {
+              "component_dependency": 25,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 2,
+              "file": "src/Soil/AbstractSoilProfileModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 24,
+              "transitive_dependent_count": 12
+            },
+            "bedsedimentconfigmodule": {
+              "component_dependency": 7,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 8,
+              "file": "src/BedSediment/BedSedimentConfigModule.f90",
+              "group": "src/BedSediment",
+              "transitive_dependency_count": 6,
+              "transitive_dependent_count": 28
+            },
+            "bedsedimentlayermodule": {
+              "component_dependency": 24,
+              "direct_dependency_count": 9,
+              "direct_dependent_count": 1,
+              "file": "src/BedSedimentLayer/BedSedimentLayerModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 23,
+              "transitive_dependent_count": 7
+            },
+            "bedsedimentmodule": {
+              "component_dependency": 26,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 2,
+              "file": "src/BedSediment/BedSedimentModule.f90",
+              "group": "src/BedSediment",
+              "transitive_dependency_count": 25,
+              "transitive_dependent_count": 6
+            },
+            "biotaconfigmodule": {
+              "component_dependency": 5,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 1,
+              "file": "src/Biota/BiotaConfigModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 4,
+              "transitive_dependent_count": 2
+            },
+            "biotasoilmodule": {
+              "component_dependency": 23,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/BiotaSoilModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 22,
+              "transitive_dependent_count": 15
+            },
+            "biotawatermodule": {
+              "component_dependency": 23,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/BiotaWaterModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 22,
+              "transitive_dependent_count": 15
+            },
+            "bootstrapmodule": {
+              "component_dependency": 51,
+              "direct_dependency_count": 16,
+              "direct_dependent_count": 1,
+              "file": "src/Bootstrap/BootstrapModule.f90",
+              "group": "src/Bootstrap",
+              "transitive_dependency_count": 50,
+              "transitive_dependent_count": 1
+            },
+            "checkpointmodule": {
+              "component_dependency": 41,
+              "direct_dependency_count": 12,
+              "direct_dependent_count": 1,
+              "file": "src/CheckpointModule.f90",
+              "group": "src/CheckpointModule.f90",
+              "transitive_dependency_count": 40,
+              "transitive_dependent_count": 1
+            },
+            "cropmodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 2,
+              "file": "src/GridCell/CropModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 11
+            },
+            "datainputmodule": {
+              "component_dependency": 21,
+              "direct_dependency_count": 12,
+              "direct_dependent_count": 21,
+              "file": "src/Data/DataInputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 20,
+              "transitive_dependent_count": 26
+            },
+            "dataoutputmodule": {
+              "component_dependency": 48,
+              "direct_dependency_count": 16,
+              "direct_dependent_count": 1,
+              "file": "src/Data/DataOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 47,
+              "transitive_dependent_count": 1
+            },
+            "datetime_module": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 13,
+              "file": "vendor/datetime-fortran/src/datetime_module.f90",
+              "group": "vendor/datetime-fortran",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 34
+            },
+            "diffusesourcemodule": {
+              "component_dependency": 22,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 2,
+              "file": "src/Source/DiffuseSourceModule.f90",
+              "group": "src/Source",
+              "transitive_dependency_count": 21,
+              "transitive_dependent_count": 15
+            },
+            "environmentmodule": {
+              "component_dependency": 40,
+              "direct_dependency_count": 12,
+              "direct_dependent_count": 7,
+              "file": "src/Environment/EnvironmentModule.f90",
+              "group": "src/Environment",
+              "transitive_dependency_count": 39,
+              "transitive_dependent_count": 7
+            },
+            "errorcriteriamodule": {
+              "component_dependency": 3,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 1,
+              "file": "vendor/feh/src/ErrorCriteria.f90",
+              "group": "vendor/feh",
+              "transitive_dependency_count": 2,
+              "transitive_dependent_count": 36
+            },
+            "errorhandlermodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 1,
+              "file": "vendor/feh/src/ErrorHandler.f90",
+              "group": "vendor/feh",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 37
+            },
+            "errorhandlingmodule": {
+              "component_dependency": 4,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 15,
+              "file": "src/ErrorHandling/ErrorHandlingModule.f90",
+              "group": "src/ErrorHandling",
+              "transitive_dependency_count": 3,
+              "transitive_dependent_count": 35
+            },
+            "errorinstancemodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 24,
+              "file": "vendor/feh/src/ErrorInstance.f90",
+              "group": "vendor/feh",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 44
+            },
+            "estuaryreachmodule": {
+              "component_dependency": 37,
+              "direct_dependency_count": 14,
+              "direct_dependent_count": 3,
+              "file": "src/WaterBody/EstuaryReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 36,
+              "transitive_dependent_count": 4
+            },
+            "finesedimentmodule": {
+              "component_dependency": 14,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 4,
+              "file": "src/BedSedimentLayer/FineSedimentModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 13,
+              "transitive_dependent_count": 19
+            },
+            "flowmodule": {
+              "component_dependency": 3,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/WaterBody/FlowModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 2,
+              "transitive_dependent_count": 15
+            },
+            "gridcellmodule": {
+              "component_dependency": 39,
+              "direct_dependency_count": 11,
+              "direct_dependent_count": 1,
+              "file": "src/GridCell/GridCellModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 38,
+              "transitive_dependent_count": 3
+            },
+            "kernelmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 41,
+              "file": "src/Kernel/KernelModule.f90",
+              "group": "src/Kernel",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 41
+            },
+            "loggermodule": {
+              "component_dependency": 9,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 10,
+              "file": "src/Logger/LoggerModule.f90",
+              "group": "src/Logger",
+              "transitive_dependency_count": 8,
+              "transitive_dependent_count": 27
+            },
+            "main": {
+              "component_dependency": 56,
+              "direct_dependency_count": 15,
+              "direct_dependent_count": 0,
+              "file": "src/main.f90",
+              "group": "src/main.f90",
+              "transitive_dependency_count": 55,
+              "transitive_dependent_count": 0
+            },
+            "mo_netcdf": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 10,
+              "file": "vendor/mo_netcdf/src/mo_netcdf.f90",
+              "group": "vendor/mo_netcdf",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 29
+            },
+            "mo_types": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 2,
+              "file": "vendor/mo_netcdf/src/mo_types.f90",
+              "group": "vendor/mo_netcdf",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 30
+            },
+            "mod_strptime": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 1,
+              "file": "src/mod_strptime.f90",
+              "group": "src/mod_strptime.f90",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 33
+            },
+            "modelassemblymodule": {
+              "component_dependency": 49,
+              "direct_dependency_count": 12,
+              "direct_dependent_count": 1,
+              "file": "src/ModelAssembly/ModelAssemblyModule.f90",
+              "group": "src/ModelAssembly",
+              "transitive_dependency_count": 48,
+              "transitive_dependent_count": 2
+            },
+            "modelconfigmodule": {
+              "component_dependency": 8,
+              "direct_dependency_count": 7,
+              "direct_dependent_count": 20,
+              "file": "src/ModelConfig/ModelConfigModule.f90",
+              "group": "src/ModelConfig",
+              "transitive_dependency_count": 7,
+              "transitive_dependent_count": 32
+            },
+            "modeldefaultsmodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 1,
+              "file": "src/ModelConfig/ModelDefaultsModule.f90",
+              "group": "src/ModelConfig",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 33
+            },
+            "modeldimensionsmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 28,
+              "file": "src/ModelDimensions/ModelDimensionsModule.f90",
+              "group": "src/ModelDimensions",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 35
+            },
+            "netcdfaggregatedoutputmodule": {
+              "component_dependency": 42,
+              "direct_dependency_count": 10,
+              "direct_dependent_count": 1,
+              "file": "src/Data/NetCDFAggregatedOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 41,
+              "transitive_dependent_count": 2
+            },
+            "netcdfoutputmodule": {
+              "component_dependency": 41,
+              "direct_dependency_count": 9,
+              "direct_dependent_count": 2,
+              "file": "src/Data/NetCDFOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 40,
+              "transitive_dependent_count": 3
+            },
+            "pointsourcemodule": {
+              "component_dependency": 23,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 1,
+              "file": "src/Source/PointSourceModule.f90",
+              "group": "src/Source",
+              "transitive_dependency_count": 22,
+              "transitive_dependent_count": 15
+            },
+            "reachmodule": {
+              "component_dependency": 33,
+              "direct_dependency_count": 9,
+              "direct_dependent_count": 6,
+              "file": "src/WaterBody/ReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 32,
+              "transitive_dependent_count": 13
+            },
+            "reactorconfigmodule": {
+              "component_dependency": 5,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/Reactor/ReactorConfigModule.f90",
+              "group": "src/Reactor",
+              "transitive_dependency_count": 4,
+              "transitive_dependent_count": 27
+            },
+            "reactormodule": {
+              "component_dependency": 23,
+              "direct_dependency_count": 7,
+              "direct_dependent_count": 2,
+              "file": "src/Reactor/ReactorModule.f90",
+              "group": "src/Reactor",
+              "transitive_dependency_count": 22,
+              "transitive_dependent_count": 6
+            },
+            "resultmodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 28,
+              "file": "vendor/feh/src/Result.f90",
+              "group": "vendor/feh",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 35
+            },
+            "riverreachmodule": {
+              "component_dependency": 37,
+              "direct_dependency_count": 14,
+              "direct_dependent_count": 3,
+              "file": "src/WaterBody/RiverReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 36,
+              "transitive_dependent_count": 4
+            },
+            "soilconfigmodule": {
+              "component_dependency": 7,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 4,
+              "file": "src/Soil/SoilConfigModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 6,
+              "transitive_dependent_count": 27
+            },
+            "soillayermodule": {
+              "component_dependency": 25,
+              "direct_dependency_count": 11,
+              "direct_dependent_count": 1,
+              "file": "src/Soil/SoilLayerModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 24,
+              "transitive_dependent_count": 4
+            },
+            "soilprofilemodule": {
+              "component_dependency": 27,
+              "direct_dependency_count": 11,
+              "direct_dependent_count": 1,
+              "file": "src/Soil/SoilProfileModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 26,
+              "transitive_dependent_count": 3
+            },
+            "sourceconfigmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 2,
+              "file": "src/Source/SourceConfigModule.f90",
+              "group": "src/Source",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 16
+            },
+            "sparskit": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 0,
+              "file": "vendor/spoof/src/sparskit.f90",
+              "group": "vendor/spoof",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 0
+            },
+            "utilmodule": {
+              "component_dependency": 10,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 19,
+              "file": "src/UtilModule.f90",
+              "group": "src/UtilModule.f90",
+              "transitive_dependency_count": 9,
+              "transitive_dependent_count": 30
+            },
+            "versionmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 1,
+              "file": "src/VersionModule.f90",
+              "group": "src/VersionModule.f90",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 33
+            },
+            "waterbodyconfigmodule": {
+              "component_dependency": 6,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 4,
+              "file": "src/WaterBody/WaterBodyConfigModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 5,
+              "transitive_dependent_count": 27
+            },
+            "waterbodymodule": {
+              "component_dependency": 32,
+              "direct_dependency_count": 10,
+              "direct_dependent_count": 1,
+              "file": "src/WaterBody/WaterBodyModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 31,
+              "transitive_dependent_count": 14
+            }
+          }
+        },
+        "src": {
+          "cyclic_components": [],
+          "groups": {
+            "src/BedSediment": {
+              "in_degree_sum": 12,
+              "internal_edge_count": 2,
+              "modularity_contribution": 0.005322494798470992,
+              "nodes": [
+                "abstractbedsedimentmodule",
+                "bedsedimentconfigmodule",
+                "bedsedimentmodule"
+              ],
+              "out_degree_sum": 14
+            },
+            "src/BedSedimentLayer": {
+              "in_degree_sum": 7,
+              "internal_edge_count": 3,
+              "modularity_contribution": 0.010580474508475669,
+              "nodes": [
+                "abstractbedsedimentlayermodule",
+                "bedsedimentlayermodule",
+                "finesedimentmodule"
+              ],
+              "out_degree_sum": 13
+            },
+            "src/Biota": {
+              "in_degree_sum": 7,
+              "internal_edge_count": 2,
+              "modularity_contribution": 0.006677311656263609,
+              "nodes": [
+                "abstractbiotamodule",
+                "biotaconfigmodule",
+                "biotasoilmodule",
+                "biotawatermodule"
+              ],
+              "out_degree_sum": 12
+            },
+            "src/Bootstrap": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.00024193158174868148,
+              "nodes": [
+                "bootstrapmodule"
+              ],
+              "out_degree_sum": 15
+            },
+            "src/CheckpointModule.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.00016128772116578765,
+              "nodes": [
+                "checkpointmodule"
+              ],
+              "out_degree_sum": 10
+            },
+            "src/Data": {
+              "in_degree_sum": 25,
+              "internal_edge_count": 6,
+              "modularity_contribution": 0.008774052031418848,
+              "nodes": [
+                "datainputmodule",
+                "dataoutputmodule",
+                "netcdfaggregatedoutputmodule",
+                "netcdfoutputmodule"
+              ],
+              "out_degree_sum": 38
+            },
+            "src/Environment": {
+              "in_degree_sum": 12,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.001499975806841825,
+              "nodes": [
+                "abstractenvironmentmodule",
+                "environmentmodule"
+              ],
+              "out_degree_sum": 13
+            },
+            "src/ErrorHandling": {
+              "in_degree_sum": 15,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "errorhandlingmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/GridCell": {
+              "in_degree_sum": 7,
+              "internal_edge_count": 3,
+              "modularity_contribution": 0.010128868889211464,
+              "nodes": [
+                "abstractgridcellmodule",
+                "cropmodule",
+                "gridcellmodule"
+              ],
+              "out_degree_sum": 17
+            },
+            "src/Kernel": {
+              "in_degree_sum": 41,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "kernelmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/Logger": {
+              "in_degree_sum": 10,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0003225754423315753,
+              "nodes": [
+                "loggermodule"
+              ],
+              "out_degree_sum": 2
+            },
+            "src/ModelAssembly": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.00016128772116578765,
+              "nodes": [
+                "modelassemblymodule"
+              ],
+              "out_degree_sum": 10
+            },
+            "src/ModelConfig": {
+              "in_degree_sum": 21,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.002322543184787342,
+              "nodes": [
+                "modelconfigmodule",
+                "modeldefaultsmodule"
+              ],
+              "out_degree_sum": 5
+            },
+            "src/ModelDimensions": {
+              "in_degree_sum": 28,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "modeldimensionsmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/Reactor": {
+              "in_degree_sum": 6,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.003145110562732859,
+              "nodes": [
+                "abstractreactormodule",
+                "reactorconfigmodule",
+                "reactormodule"
+              ],
+              "out_degree_sum": 9
+            },
+            "src/Soil": {
+              "in_degree_sum": 10,
+              "internal_edge_count": 6,
+              "modularity_contribution": 0.020064192513023982,
+              "nodes": [
+                "abstractsoillayermodule",
+                "abstractsoilprofilemodule",
+                "soilconfigmodule",
+                "soillayermodule",
+                "soilprofilemodule"
+              ],
+              "out_degree_sum": 25
+            },
+            "src/Source": {
+              "in_degree_sum": 5,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.003370913372364962,
+              "nodes": [
+                "diffusesourcemodule",
+                "pointsourcemodule",
+                "sourceconfigmodule"
+              ],
+              "out_degree_sum": 8
+            },
+            "src/UtilModule.f90": {
+              "in_degree_sum": 19,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0009193400106449896,
+              "nodes": [
+                "utilmodule"
+              ],
+              "out_degree_sum": 3
+            },
+            "src/VersionModule.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "versionmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/WaterBody": {
+              "in_degree_sum": 19,
+              "internal_edge_count": 6,
+              "modularity_contribution": 0.010919178722923823,
+              "nodes": [
+                "estuaryreachmodule",
+                "flowmodule",
+                "reachmodule",
+                "riverreachmodule",
+                "waterbodyconfigmodule",
+                "waterbodymodule"
+              ],
+              "out_degree_sum": 43
+            },
+            "src/main.f90": {
+              "in_degree_sum": 0,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "main"
+              ],
+              "out_degree_sum": 12
+            },
+            "src/mod_strptime.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "mod_strptime"
+              ],
+              "out_degree_sum": 0
+            }
+          },
+          "is_acyclic": true,
+          "isolated_nodes": [],
+          "metrics": {
+            "acd": 16.367346938775512,
+            "ccd": 802,
+            "cross_group_edge_count": 217,
+            "cross_group_edge_fraction": 0.8714859437751004,
+            "cyclic_component_count": 0,
+            "cyclic_node_count": 0,
+            "direct_edge_density": 0.10586734693877552,
+            "directed_modularity": 0.08099869356945856,
+            "edge_count": 249,
+            "group_count": 22,
+            "isolated_node_count": 0,
+            "largest_component_size": 1,
+            "node_count": 49,
+            "propagation_cost_percent": 33.402748854643896
+          },
+          "nodes": {
+            "abstractbedsedimentlayermodule": {
+              "component_dependency": 10,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/BedSedimentLayer/AbstractBedSedimentLayerModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 9,
+              "transitive_dependent_count": 18
+            },
+            "abstractbedsedimentmodule": {
+              "component_dependency": 12,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 2,
+              "file": "src/BedSediment/AbstractBedSedimentModule.f90",
+              "group": "src/BedSediment",
+              "transitive_dependency_count": 11,
+              "transitive_dependent_count": 16
+            },
+            "abstractbiotamodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/AbstractBiotaModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 21
+            },
+            "abstractenvironmentmodule": {
+              "component_dependency": 32,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 5,
+              "file": "src/Environment/AbstractEnvironmentModule.f90",
+              "group": "src/Environment",
+              "transitive_dependency_count": 31,
+              "transitive_dependent_count": 8
+            },
+            "abstractgridcellmodule": {
+              "component_dependency": 31,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 4,
+              "file": "src/GridCell/AbstractGridCellModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 30,
+              "transitive_dependent_count": 10
+            },
+            "abstractreactormodule": {
+              "component_dependency": 3,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/Reactor/AbstractReactorModule.f90",
+              "group": "src/Reactor",
+              "transitive_dependency_count": 2,
+              "transitive_dependent_count": 16
+            },
+            "abstractsoillayermodule": {
+              "component_dependency": 17,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/Soil/AbstractSoilLayerModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 16,
+              "transitive_dependent_count": 14
+            },
+            "abstractsoilprofilemodule": {
+              "component_dependency": 18,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 2,
+              "file": "src/Soil/AbstractSoilProfileModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 17,
+              "transitive_dependent_count": 12
+            },
+            "bedsedimentconfigmodule": {
+              "component_dependency": 4,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 8,
+              "file": "src/BedSediment/BedSedimentConfigModule.f90",
+              "group": "src/BedSediment",
+              "transitive_dependency_count": 3,
+              "transitive_dependent_count": 28
+            },
+            "bedsedimentlayermodule": {
+              "component_dependency": 17,
+              "direct_dependency_count": 7,
+              "direct_dependent_count": 1,
+              "file": "src/BedSedimentLayer/BedSedimentLayerModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 16,
+              "transitive_dependent_count": 7
+            },
+            "bedsedimentmodule": {
+              "component_dependency": 19,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 2,
+              "file": "src/BedSediment/BedSedimentModule.f90",
+              "group": "src/BedSediment",
+              "transitive_dependency_count": 18,
+              "transitive_dependent_count": 6
+            },
+            "biotaconfigmodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 1,
+              "file": "src/Biota/BiotaConfigModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 2
+            },
+            "biotasoilmodule": {
+              "component_dependency": 16,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/BiotaSoilModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 15,
+              "transitive_dependent_count": 15
+            },
+            "biotawatermodule": {
+              "component_dependency": 16,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/BiotaWaterModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 15,
+              "transitive_dependent_count": 15
+            },
+            "bootstrapmodule": {
+              "component_dependency": 44,
+              "direct_dependency_count": 15,
+              "direct_dependent_count": 1,
+              "file": "src/Bootstrap/BootstrapModule.f90",
+              "group": "src/Bootstrap",
+              "transitive_dependency_count": 43,
+              "transitive_dependent_count": 1
+            },
+            "checkpointmodule": {
+              "component_dependency": 34,
+              "direct_dependency_count": 10,
+              "direct_dependent_count": 1,
+              "file": "src/CheckpointModule.f90",
+              "group": "src/CheckpointModule.f90",
+              "transitive_dependency_count": 33,
+              "transitive_dependent_count": 1
+            },
+            "cropmodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 2,
+              "file": "src/GridCell/CropModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 11
+            },
+            "datainputmodule": {
+              "component_dependency": 14,
+              "direct_dependency_count": 9,
+              "direct_dependent_count": 21,
+              "file": "src/Data/DataInputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 13,
+              "transitive_dependent_count": 26
+            },
+            "dataoutputmodule": {
+              "component_dependency": 41,
+              "direct_dependency_count": 14,
+              "direct_dependent_count": 1,
+              "file": "src/Data/DataOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 40,
+              "transitive_dependent_count": 1
+            },
+            "diffusesourcemodule": {
+              "component_dependency": 15,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 2,
+              "file": "src/Source/DiffuseSourceModule.f90",
+              "group": "src/Source",
+              "transitive_dependency_count": 14,
+              "transitive_dependent_count": 15
+            },
+            "environmentmodule": {
+              "component_dependency": 33,
+              "direct_dependency_count": 9,
+              "direct_dependent_count": 7,
+              "file": "src/Environment/EnvironmentModule.f90",
+              "group": "src/Environment",
+              "transitive_dependency_count": 32,
+              "transitive_dependent_count": 7
+            },
+            "errorhandlingmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 15,
+              "file": "src/ErrorHandling/ErrorHandlingModule.f90",
+              "group": "src/ErrorHandling",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 35
+            },
+            "estuaryreachmodule": {
+              "component_dependency": 30,
+              "direct_dependency_count": 12,
+              "direct_dependent_count": 3,
+              "file": "src/WaterBody/EstuaryReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 29,
+              "transitive_dependent_count": 4
+            },
+            "finesedimentmodule": {
+              "component_dependency": 9,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 4,
+              "file": "src/BedSedimentLayer/FineSedimentModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 8,
+              "transitive_dependent_count": 19
+            },
+            "flowmodule": {
+              "component_dependency": 3,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/WaterBody/FlowModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 2,
+              "transitive_dependent_count": 15
+            },
+            "gridcellmodule": {
+              "component_dependency": 32,
+              "direct_dependency_count": 10,
+              "direct_dependent_count": 1,
+              "file": "src/GridCell/GridCellModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 31,
+              "transitive_dependent_count": 3
+            },
+            "kernelmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 41,
+              "file": "src/Kernel/KernelModule.f90",
+              "group": "src/Kernel",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 41
+            },
+            "loggermodule": {
+              "component_dependency": 6,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 10,
+              "file": "src/Logger/LoggerModule.f90",
+              "group": "src/Logger",
+              "transitive_dependency_count": 5,
+              "transitive_dependent_count": 27
+            },
+            "main": {
+              "component_dependency": 49,
+              "direct_dependency_count": 12,
+              "direct_dependent_count": 0,
+              "file": "src/main.f90",
+              "group": "src/main.f90",
+              "transitive_dependency_count": 48,
+              "transitive_dependent_count": 0
+            },
+            "mod_strptime": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 1,
+              "file": "src/mod_strptime.f90",
+              "group": "src/mod_strptime.f90",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 33
+            },
+            "modelassemblymodule": {
+              "component_dependency": 42,
+              "direct_dependency_count": 10,
+              "direct_dependent_count": 1,
+              "file": "src/ModelAssembly/ModelAssemblyModule.f90",
+              "group": "src/ModelAssembly",
+              "transitive_dependency_count": 41,
+              "transitive_dependent_count": 2
+            },
+            "modelconfigmodule": {
+              "component_dependency": 5,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 20,
+              "file": "src/ModelConfig/ModelConfigModule.f90",
+              "group": "src/ModelConfig",
+              "transitive_dependency_count": 4,
+              "transitive_dependent_count": 32
+            },
+            "modeldefaultsmodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 1,
+              "file": "src/ModelConfig/ModelDefaultsModule.f90",
+              "group": "src/ModelConfig",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 33
+            },
+            "modeldimensionsmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 28,
+              "file": "src/ModelDimensions/ModelDimensionsModule.f90",
+              "group": "src/ModelDimensions",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 35
+            },
+            "netcdfaggregatedoutputmodule": {
+              "component_dependency": 35,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 1,
+              "file": "src/Data/NetCDFAggregatedOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 34,
+              "transitive_dependent_count": 2
+            },
+            "netcdfoutputmodule": {
+              "component_dependency": 34,
+              "direct_dependency_count": 7,
+              "direct_dependent_count": 2,
+              "file": "src/Data/NetCDFOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 33,
+              "transitive_dependent_count": 3
+            },
+            "pointsourcemodule": {
+              "component_dependency": 16,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 1,
+              "file": "src/Source/PointSourceModule.f90",
+              "group": "src/Source",
+              "transitive_dependency_count": 15,
+              "transitive_dependent_count": 15
+            },
+            "reachmodule": {
+              "component_dependency": 26,
+              "direct_dependency_count": 7,
+              "direct_dependent_count": 6,
+              "file": "src/WaterBody/ReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 25,
+              "transitive_dependent_count": 13
+            },
+            "reactorconfigmodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 2,
+              "file": "src/Reactor/ReactorConfigModule.f90",
+              "group": "src/Reactor",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 27
+            },
+            "reactormodule": {
+              "component_dependency": 16,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 2,
+              "file": "src/Reactor/ReactorModule.f90",
+              "group": "src/Reactor",
+              "transitive_dependency_count": 15,
+              "transitive_dependent_count": 6
+            },
+            "riverreachmodule": {
+              "component_dependency": 30,
+              "direct_dependency_count": 11,
+              "direct_dependent_count": 3,
+              "file": "src/WaterBody/RiverReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 29,
+              "transitive_dependent_count": 4
+            },
+            "soilconfigmodule": {
+              "component_dependency": 4,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 4,
+              "file": "src/Soil/SoilConfigModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 3,
+              "transitive_dependent_count": 27
+            },
+            "soillayermodule": {
+              "component_dependency": 18,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 1,
+              "file": "src/Soil/SoilLayerModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 17,
+              "transitive_dependent_count": 4
+            },
+            "soilprofilemodule": {
+              "component_dependency": 20,
+              "direct_dependency_count": 9,
+              "direct_dependent_count": 1,
+              "file": "src/Soil/SoilProfileModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 19,
+              "transitive_dependent_count": 3
+            },
+            "sourceconfigmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 2,
+              "file": "src/Source/SourceConfigModule.f90",
+              "group": "src/Source",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 16
+            },
+            "utilmodule": {
+              "component_dependency": 7,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 19,
+              "file": "src/UtilModule.f90",
+              "group": "src/UtilModule.f90",
+              "transitive_dependency_count": 6,
+              "transitive_dependent_count": 30
+            },
+            "versionmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 1,
+              "file": "src/VersionModule.f90",
+              "group": "src/VersionModule.f90",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 33
+            },
+            "waterbodyconfigmodule": {
+              "component_dependency": 3,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 4,
+              "file": "src/WaterBody/WaterBodyConfigModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 2,
+              "transitive_dependent_count": 27
+            },
+            "waterbodymodule": {
+              "component_dependency": 25,
+              "direct_dependency_count": 9,
+              "direct_dependent_count": 1,
+              "file": "src/WaterBody/WaterBodyModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 24,
+              "transitive_dependent_count": 14
+            }
+          }
+        }
+      }
+    },
+    "pre": {
+      "edges": [
+        [
+          "abstractbedsedimentlayermodule",
+          "errorinstancemodule"
+        ],
+        [
+          "abstractbedsedimentlayermodule",
+          "finesedimentmodule"
+        ],
+        [
+          "abstractbedsedimentlayermodule",
+          "globalsmodule"
+        ],
+        [
+          "abstractbedsedimentlayermodule",
+          "resultmodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "abstractbedsedimentlayermodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "finesedimentmodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "globalsmodule"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "mo_netcdf"
+        ],
+        [
+          "abstractbedsedimentmodule",
+          "resultmodule"
+        ],
+        [
+          "abstractbiotamodule",
+          "globalsmodule"
+        ],
+        [
+          "abstractbiotamodule",
+          "resultmodule"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "abstractgridcellmodule"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "globalsmodule"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "mo_netcdf"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "reachmodule"
+        ],
+        [
+          "abstractenvironmentmodule",
+          "resultmodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "abstractsoilprofilemodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "cropmodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "diffusesourcemodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "globalsmodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "mo_netcdf"
+        ],
+        [
+          "abstractgridcellmodule",
+          "reachmodule"
+        ],
+        [
+          "abstractgridcellmodule",
+          "resultmodule"
+        ],
+        [
+          "abstractreactormodule",
+          "globalsmodule"
+        ],
+        [
+          "abstractreactormodule",
+          "resultmodule"
+        ],
+        [
+          "abstractsoillayermodule",
+          "biotasoilmodule"
+        ],
+        [
+          "abstractsoillayermodule",
+          "globalsmodule"
+        ],
+        [
+          "abstractsoillayermodule",
+          "mo_netcdf"
+        ],
+        [
+          "abstractsoillayermodule",
+          "resultmodule"
+        ],
+        [
+          "abstractsoilprofilemodule",
+          "abstractsoillayermodule"
+        ],
+        [
+          "abstractsoilprofilemodule",
+          "globalsmodule"
+        ],
+        [
+          "abstractsoilprofilemodule",
+          "resultmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "abstractbedsedimentlayermodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "datainputmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "errorinstancemodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "finesedimentmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "globalsmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "resultmodule"
+        ],
+        [
+          "bedsedimentlayermodule",
+          "utilmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "abstractbedsedimentmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "bedsedimentlayermodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "finesedimentmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "globalsmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "resultmodule"
+        ],
+        [
+          "bedsedimentmodule",
+          "utilmodule"
+        ],
+        [
+          "biotasoilmodule",
+          "abstractbiotamodule"
+        ],
+        [
+          "biotasoilmodule",
+          "datainputmodule"
+        ],
+        [
+          "biotasoilmodule",
+          "datetime_module"
+        ],
+        [
+          "biotasoilmodule",
+          "globalsmodule"
+        ],
+        [
+          "biotasoilmodule",
+          "resultmodule"
+        ],
+        [
+          "biotawatermodule",
+          "abstractbiotamodule"
+        ],
+        [
+          "biotawatermodule",
+          "datainputmodule"
+        ],
+        [
+          "biotawatermodule",
+          "datetime_module"
+        ],
+        [
+          "biotawatermodule",
+          "globalsmodule"
+        ],
+        [
+          "biotawatermodule",
+          "resultmodule"
+        ],
+        [
+          "checkpointmodule",
+          "abstractenvironmentmodule"
+        ],
+        [
+          "checkpointmodule",
+          "datainputmodule"
+        ],
+        [
+          "checkpointmodule",
+          "defaultsmodule"
+        ],
+        [
+          "checkpointmodule",
+          "environmentmodule"
+        ],
+        [
+          "checkpointmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "checkpointmodule",
+          "flowmodule"
+        ],
+        [
+          "checkpointmodule",
+          "globalsmodule"
+        ],
+        [
+          "checkpointmodule",
+          "loggermodule"
+        ],
+        [
+          "checkpointmodule",
+          "resultmodule"
+        ],
+        [
+          "checkpointmodule",
+          "utilmodule"
+        ],
+        [
+          "cropmodule",
+          "globalsmodule"
+        ],
+        [
+          "datainputmodule",
+          "defaultsmodule"
+        ],
+        [
+          "datainputmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "datainputmodule",
+          "globalsmodule"
+        ],
+        [
+          "datainputmodule",
+          "loggermodule"
+        ],
+        [
+          "datainputmodule",
+          "mo_netcdf"
+        ],
+        [
+          "datainputmodule",
+          "resultmodule"
+        ],
+        [
+          "datainputmodule",
+          "utilmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "abstractenvironmentmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "abstractgridcellmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "datainputmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "datetime_module"
+        ],
+        [
+          "dataoutputmodule",
+          "defaultsmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "environmentmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "estuaryreachmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "globalsmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "loggermodule"
+        ],
+        [
+          "dataoutputmodule",
+          "mo_netcdf"
+        ],
+        [
+          "dataoutputmodule",
+          "netcdfaggregatedoutputmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "netcdfoutputmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "riverreachmodule"
+        ],
+        [
+          "dataoutputmodule",
+          "utilmodule"
+        ],
+        [
+          "diffusesourcemodule",
+          "datainputmodule"
+        ],
+        [
+          "diffusesourcemodule",
+          "globalsmodule"
+        ],
+        [
+          "diffusesourcemodule",
+          "resultmodule"
+        ],
+        [
+          "environmentmodule",
+          "abstractenvironmentmodule"
+        ],
+        [
+          "environmentmodule",
+          "datainputmodule"
+        ],
+        [
+          "environmentmodule",
+          "datetime_module"
+        ],
+        [
+          "environmentmodule",
+          "globalsmodule"
+        ],
+        [
+          "environmentmodule",
+          "gridcellmodule"
+        ],
+        [
+          "environmentmodule",
+          "mo_netcdf"
+        ],
+        [
+          "environmentmodule",
+          "resultmodule"
+        ],
+        [
+          "environmentmodule",
+          "utilmodule"
+        ],
+        [
+          "errorcriteriamodule",
+          "errorhandlermodule"
+        ],
+        [
+          "errorcriteriamodule",
+          "errorinstancemodule"
+        ],
+        [
+          "errorhandlermodule",
+          "errorinstancemodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "bedsedimentmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "globalsmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "loggermodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "reachmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "reactormodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "resultmodule"
+        ],
+        [
+          "estuaryreachmodule",
+          "utilmodule"
+        ],
+        [
+          "finesedimentmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "finesedimentmodule",
+          "globalsmodule"
+        ],
+        [
+          "finesedimentmodule",
+          "resultmodule"
+        ],
+        [
+          "finesedimentmodule",
+          "utilmodule"
+        ],
+        [
+          "flowmodule",
+          "globalsmodule"
+        ],
+        [
+          "globalsmodule",
+          "datetime_module"
+        ],
+        [
+          "globalsmodule",
+          "defaultsmodule"
+        ],
+        [
+          "globalsmodule",
+          "errorcriteriamodule"
+        ],
+        [
+          "globalsmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "globalsmodule",
+          "mo_netcdf"
+        ],
+        [
+          "globalsmodule",
+          "mod_strptime"
+        ],
+        [
+          "globalsmodule",
+          "resultmodule"
+        ],
+        [
+          "globalsmodule",
+          "versionmodule"
+        ],
+        [
+          "gridcellmodule",
+          "abstractgridcellmodule"
+        ],
+        [
+          "gridcellmodule",
+          "cropmodule"
+        ],
+        [
+          "gridcellmodule",
+          "datainputmodule"
+        ],
+        [
+          "gridcellmodule",
+          "estuaryreachmodule"
+        ],
+        [
+          "gridcellmodule",
+          "globalsmodule"
+        ],
+        [
+          "gridcellmodule",
+          "loggermodule"
+        ],
+        [
+          "gridcellmodule",
+          "resultmodule"
+        ],
+        [
+          "gridcellmodule",
+          "riverreachmodule"
+        ],
+        [
+          "gridcellmodule",
+          "soilprofilemodule"
+        ],
+        [
+          "gridcellmodule",
+          "utilmodule"
+        ],
+        [
+          "loggermodule",
+          "errorinstancemodule"
+        ],
+        [
+          "loggermodule",
+          "globalsmodule"
+        ],
+        [
+          "loggermodule",
+          "utilmodule"
+        ],
+        [
+          "main",
+          "checkpointmodule"
+        ],
+        [
+          "main",
+          "datainputmodule"
+        ],
+        [
+          "main",
+          "dataoutputmodule"
+        ],
+        [
+          "main",
+          "datetime_module"
+        ],
+        [
+          "main",
+          "defaultsmodule"
+        ],
+        [
+          "main",
+          "environmentmodule"
+        ],
+        [
+          "main",
+          "estuaryreachmodule"
+        ],
+        [
+          "main",
+          "globalsmodule"
+        ],
+        [
+          "main",
+          "loggermodule"
+        ],
+        [
+          "main",
+          "resultmodule"
+        ],
+        [
+          "main",
+          "riverreachmodule"
+        ],
+        [
+          "main",
+          "utilmodule"
+        ],
+        [
+          "mo_netcdf",
+          "mo_types"
+        ],
+        [
+          "mod_strptime",
+          "datetime_module"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "abstractenvironmentmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "datainputmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "datetime_module"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "environmentmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "globalsmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "mo_netcdf"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "netcdfoutputmodule"
+        ],
+        [
+          "netcdfaggregatedoutputmodule",
+          "utilmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "abstractenvironmentmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "datainputmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "datetime_module"
+        ],
+        [
+          "netcdfoutputmodule",
+          "environmentmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "globalsmodule"
+        ],
+        [
+          "netcdfoutputmodule",
+          "mo_netcdf"
+        ],
+        [
+          "netcdfoutputmodule",
+          "utilmodule"
+        ],
+        [
+          "pointsourcemodule",
+          "datainputmodule"
+        ],
+        [
+          "pointsourcemodule",
+          "globalsmodule"
+        ],
+        [
+          "pointsourcemodule",
+          "resultmodule"
+        ],
+        [
+          "reachmodule",
+          "datainputmodule"
+        ],
+        [
+          "reachmodule",
+          "defaultsmodule"
+        ],
+        [
+          "reachmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "reachmodule",
+          "globalsmodule"
+        ],
+        [
+          "reachmodule",
+          "resultmodule"
+        ],
+        [
+          "reachmodule",
+          "waterbodymodule"
+        ],
+        [
+          "reactormodule",
+          "abstractreactormodule"
+        ],
+        [
+          "reactormodule",
+          "datainputmodule"
+        ],
+        [
+          "reactormodule",
+          "globalsmodule"
+        ],
+        [
+          "reactormodule",
+          "resultmodule"
+        ],
+        [
+          "reactormodule",
+          "utilmodule"
+        ],
+        [
+          "resultmodule",
+          "errorinstancemodule"
+        ],
+        [
+          "riverreachmodule",
+          "bedsedimentmodule"
+        ],
+        [
+          "riverreachmodule",
+          "biotawatermodule"
+        ],
+        [
+          "riverreachmodule",
+          "datainputmodule"
+        ],
+        [
+          "riverreachmodule",
+          "globalsmodule"
+        ],
+        [
+          "riverreachmodule",
+          "loggermodule"
+        ],
+        [
+          "riverreachmodule",
+          "reachmodule"
+        ],
+        [
+          "riverreachmodule",
+          "reactormodule"
+        ],
+        [
+          "riverreachmodule",
+          "resultmodule"
+        ],
+        [
+          "riverreachmodule",
+          "utilmodule"
+        ],
+        [
+          "soillayermodule",
+          "abstractsoillayermodule"
+        ],
+        [
+          "soillayermodule",
+          "biotasoilmodule"
+        ],
+        [
+          "soillayermodule",
+          "datainputmodule"
+        ],
+        [
+          "soillayermodule",
+          "datetime_module"
+        ],
+        [
+          "soillayermodule",
+          "globalsmodule"
+        ],
+        [
+          "soillayermodule",
+          "utilmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "abstractsoilprofilemodule"
+        ],
+        [
+          "soilprofilemodule",
+          "datainputmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "datetime_module"
+        ],
+        [
+          "soilprofilemodule",
+          "globalsmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "mo_netcdf"
+        ],
+        [
+          "soilprofilemodule",
+          "resultmodule"
+        ],
+        [
+          "soilprofilemodule",
+          "soillayermodule"
+        ],
+        [
+          "soilprofilemodule",
+          "utilmodule"
+        ],
+        [
+          "utilmodule",
+          "globalsmodule"
+        ],
+        [
+          "waterbodymodule",
+          "abstractbedsedimentmodule"
+        ],
+        [
+          "waterbodymodule",
+          "abstractreactormodule"
+        ],
+        [
+          "waterbodymodule",
+          "biotawatermodule"
+        ],
+        [
+          "waterbodymodule",
+          "datainputmodule"
+        ],
+        [
+          "waterbodymodule",
+          "diffusesourcemodule"
+        ],
+        [
+          "waterbodymodule",
+          "flowmodule"
+        ],
+        [
+          "waterbodymodule",
+          "globalsmodule"
+        ],
+        [
+          "waterbodymodule",
+          "pointsourcemodule"
+        ]
+      ],
+      "inputs": {
+        "dot": {
+          "path": "/Users/qianhuilin/Documents/nanofase-mono/nanofase/dependency_graphs/nanofase_premigration_fixed/nanofase_premigration.dot",
+          "sha256": "dd7c4828950b6f58a0acd5482cffacf481cdad4903c9ff481079a1e1f71e947e"
+        },
+        "source_files_sha256": {
+          "src/BedSediment/AbstractBedSedimentModule.f90": "a511ff60de648463b353c51432b7e8a62760295a8733b225d1e70cc60bf476d8",
+          "src/BedSediment/BedSedimentModule.f90": "98eb999e8fdaa15f5f1d202567a46baca175f6512df5f480039fcc4fc9befa38",
+          "src/BedSedimentLayer/AbstractBedSedimentLayerModule.f90": "a89c274cbc0f4c4467b5c959f7ed9dd72a84c1c18b82ffe0478e2615123c6bd7",
+          "src/BedSedimentLayer/BedSedimentLayerModule.f90": "a26c8f48e11d00811767de8d078bb5f8ee8ac85b55070c74a95916b0502e0705",
+          "src/BedSedimentLayer/FineSedimentModule.f90": "56f2f29a74911303755e73cc28f3337b109f20bc8d64a92a120972df59fc46ff",
+          "src/Biota/AbstractBiotaModule.f90": "65875870623a5ec77413e6e2a01b3ad24aa0895069e0ec21af1d1e92386c98bd",
+          "src/Biota/BiotaSoilModule.f90": "44398b2ca70d4838a421a3254a9785227af4a64e1ab8c21d658c63104e7e8084",
+          "src/Biota/BiotaWaterModule.f90": "ac3468df09e1da09ceb3a319eae787b0f7ddd5a7921c462a3b8646e159ce674f",
+          "src/CheckpointModule.f90": "d57ce045e4e92f5fd4e22674b70dbd65ad8ea513d3b7582cb94220ca2e939da2",
+          "src/Data/DataInputModule.f90": "4d4bf786e11f463ed18c8ac61c24b5c44812ebcee6a5090ed14bf5a0831cc3f2",
+          "src/Data/DataOutputModule.f90": "38c2e9ef892cd9ed528adb81a3c8187455b3582c9599dfbbdf4fdb68d1a30330",
+          "src/Data/NetCDFAggregatedOutputModule.f90": "cff7d0e538d245748e44c4cdf58b210316c1135e324c8632f59eef8762811bc3",
+          "src/Data/NetCDFOutputModule.f90": "a18df8434c8301e65a5a956c405e31fd674073ef8d20426bb5d4ca237db530f5",
+          "src/DefaultsModule.f90": "56a175f4dc83dcd5810a5e20f891fe1c590536c5a9a05ba107e2c34d2cebdf48",
+          "src/Environment/AbstractEnvironmentModule.f90": "2e491b9f15025bfec5eab09bd36d90ec0f77bcd13219d971558e625a4990bf8e",
+          "src/Environment/EnvironmentModule.f90": "ce185fbb14fd233bcff76b0da0b623ee1e36e7bd56aeb3c40a27f2dbb1f200d2",
+          "src/GlobalsModule.f90": "4a70e11411fd9ddb4d0f9829b8d0dbb3fa05b7ae2fe263c50f88bf5d337effcd",
+          "src/GridCell/AbstractGridCellModule.f90": "ec1fccabe304907d69a2c0fc3bfeb38acb8b7448b1e1df884f656ad08dfa944d",
+          "src/GridCell/CropModule.f90": "38a1349285081e326f0d81d5010834e99a5079b150e6ac027e47fe7f64edaef1",
+          "src/GridCell/GridCellModule.f90": "f1bc7edc9be753087417c08e3d54ac54c02c4c184e3a94cd5c4ed9a8e6391652",
+          "src/Logger/LoggerModule.f90": "ae8199b2bc854ce73e6167e241cf5cc8efc9b5cb901201b2c0e531f604693134",
+          "src/Reactor/AbstractReactorModule.f90": "baf52dd56be6e80c5ed83a0d851c542dc389d279470c6d249454d3e2ef126896",
+          "src/Reactor/ReactorModule.f90": "a5ca0b727f3358aad150c2de81bb8051dbbc275d17be4ed0785cc168c8162dbc",
+          "src/Soil/AbstractSoilLayerModule.f90": "8a6a563a90bef940f19337dd5f846ca47d8f14979fa14a92e99c944af1459426",
+          "src/Soil/AbstractSoilProfileModule.f90": "0a86cf9e766444029b85eb1a70baa01ac81617cb55bedf0127175d708a5b288b",
+          "src/Soil/SoilLayerModule.f90": "e1d61358cdfbf6b8a57432679d30d01f9322a45fe32912f911dc7c3e8b7bed23",
+          "src/Soil/SoilProfileModule.f90": "d745d51c5437f0d42db31ddebe24d71e1541f4df40b0e8668a1424622c586343",
+          "src/Source/DiffuseSourceModule.f90": "83ed4017cee5836676609aed750bc155607b8b3b03c36504cc33cc9581473cf0",
+          "src/Source/PointSourceModule.f90": "7c08d64ab4d7ff4bd0e5b8527c5107674459ec8dae39a0bf7bf442aeb85f8789",
+          "src/UtilModule.f90": "6b01334d7a610cd6d7030bb090b309fb1c44311eb043fcaf686391511bf5bc90",
+          "src/VersionModule.f90": "f14aec32cf5fb39eaf812ca25eff74205399153d628e8d644a3d2b94c8091a7e",
+          "src/WaterBody/EstuaryReachModule.f90": "c5bcaa7506243b1cd259e11bdfad03d795fd2958a75be4878989eeb0c14f42b7",
+          "src/WaterBody/FlowModule.f90": "cd2a08684439934009ba0a364d25a705320e9aacdc3ed4b736083b9bb96bca80",
+          "src/WaterBody/ReachModule.f90": "d5cd0286604b1cd183f6f9380a3627774fb2d16b8072103e40fa8028e407c211",
+          "src/WaterBody/RiverReachModule.f90": "de6461ca7afbba6c6169b3c82c2ca9a34e42cd2b951535d17b36aaa869e7446d",
+          "src/WaterBody/WaterBodyModule.f90": "544d3192f40d427f0342492aaf1825a8b0c11bf7c3f769ba49723d0c48005ef4",
+          "src/main.f90": "8baa8e8122f5d1073e1b851fff136d71deb25cd0f11d16d4926360fcaa46095e",
+          "src/mod_strptime.f90": "cb8828a251690ee092f62a750a84e0d29c02288cff59f35cb7497270578a4017",
+          "vendor/datetime-fortran/src/datetime_module.f90": "0a84dc889716e16647fa363b676261e1851ca0c046177add882b142f8abe0ca2",
+          "vendor/feh/src/ErrorCriteria.f90": "6b9e8265a18e15bb301435d06322d31467b220a93081cce403483da2229e2bd9",
+          "vendor/feh/src/ErrorHandler.f90": "e18d3cada5e55f396ed7adecc3ca3265a80bec590b0ce2c2ce0471c89c2f1a13",
+          "vendor/feh/src/ErrorInstance.f90": "a270e72c6883ceab3a9306f241b3e7fe9470647b0c5defacbdcc05e94b7fd51e",
+          "vendor/feh/src/Result.f90": "f3b59fe76f43275510ccdba480223a791a13ec5df2e18bc17d70fea5d169b7bb",
+          "vendor/mo_netcdf/src/mo_netcdf.f90": "685c108cc9d9dd353c5acd0c5b0992bce3204c79a1c292a3a0ffe32e8c8b900f",
+          "vendor/mo_netcdf/src/mo_types.f90": "6af88010ab2e9fb530ef87bfdf88beeaf657ae172005d758a616e50b8d022794",
+          "vendor/spoof/src/Spoof.f90": "ff986250dc3f21afd578a01a6e4651a677ddf9c368fc31060fc695d108af694b",
+          "vendor/spoof/src/sparskit.f90": "d7a961c71937f1a1bd8d1a6c31ea15181079f081c3742cee88e4185622632b14"
+        },
+        "source_manifest_sha256": "803a947d0f0c5e592e22fa41956fbed5a69b3393b58585d95d05d3bbfbc6d738",
+        "source_root": "/Users/qianhuilin/Documents/nanofase_before_migration/nanofase"
+      },
+      "node_mapping": {
+        "abstractbedsedimentlayermodule": {
+          "file": "src/BedSedimentLayer/AbstractBedSedimentLayerModule.f90",
+          "group": "src/BedSedimentLayer"
+        },
+        "abstractbedsedimentmodule": {
+          "file": "src/BedSediment/AbstractBedSedimentModule.f90",
+          "group": "src/BedSediment"
+        },
+        "abstractbiotamodule": {
+          "file": "src/Biota/AbstractBiotaModule.f90",
+          "group": "src/Biota"
+        },
+        "abstractenvironmentmodule": {
+          "file": "src/Environment/AbstractEnvironmentModule.f90",
+          "group": "src/Environment"
+        },
+        "abstractgridcellmodule": {
+          "file": "src/GridCell/AbstractGridCellModule.f90",
+          "group": "src/GridCell"
+        },
+        "abstractreactormodule": {
+          "file": "src/Reactor/AbstractReactorModule.f90",
+          "group": "src/Reactor"
+        },
+        "abstractsoillayermodule": {
+          "file": "src/Soil/AbstractSoilLayerModule.f90",
+          "group": "src/Soil"
+        },
+        "abstractsoilprofilemodule": {
+          "file": "src/Soil/AbstractSoilProfileModule.f90",
+          "group": "src/Soil"
+        },
+        "bedsedimentlayermodule": {
+          "file": "src/BedSedimentLayer/BedSedimentLayerModule.f90",
+          "group": "src/BedSedimentLayer"
+        },
+        "bedsedimentmodule": {
+          "file": "src/BedSediment/BedSedimentModule.f90",
+          "group": "src/BedSediment"
+        },
+        "biotasoilmodule": {
+          "file": "src/Biota/BiotaSoilModule.f90",
+          "group": "src/Biota"
+        },
+        "biotawatermodule": {
+          "file": "src/Biota/BiotaWaterModule.f90",
+          "group": "src/Biota"
+        },
+        "checkpointmodule": {
+          "file": "src/CheckpointModule.f90",
+          "group": "src/CheckpointModule.f90"
+        },
+        "cropmodule": {
+          "file": "src/GridCell/CropModule.f90",
+          "group": "src/GridCell"
+        },
+        "datainputmodule": {
+          "file": "src/Data/DataInputModule.f90",
+          "group": "src/Data"
+        },
+        "dataoutputmodule": {
+          "file": "src/Data/DataOutputModule.f90",
+          "group": "src/Data"
+        },
+        "datetime_module": {
+          "file": "vendor/datetime-fortran/src/datetime_module.f90",
+          "group": "vendor/datetime-fortran"
+        },
+        "defaultsmodule": {
+          "file": "src/DefaultsModule.f90",
+          "group": "src/DefaultsModule.f90"
+        },
+        "diffusesourcemodule": {
+          "file": "src/Source/DiffuseSourceModule.f90",
+          "group": "src/Source"
+        },
+        "environmentmodule": {
+          "file": "src/Environment/EnvironmentModule.f90",
+          "group": "src/Environment"
+        },
+        "errorcriteriamodule": {
+          "file": "vendor/feh/src/ErrorCriteria.f90",
+          "group": "vendor/feh"
+        },
+        "errorhandlermodule": {
+          "file": "vendor/feh/src/ErrorHandler.f90",
+          "group": "vendor/feh"
+        },
+        "errorinstancemodule": {
+          "file": "vendor/feh/src/ErrorInstance.f90",
+          "group": "vendor/feh"
+        },
+        "estuaryreachmodule": {
+          "file": "src/WaterBody/EstuaryReachModule.f90",
+          "group": "src/WaterBody"
+        },
+        "finesedimentmodule": {
+          "file": "src/BedSedimentLayer/FineSedimentModule.f90",
+          "group": "src/BedSedimentLayer"
+        },
+        "flowmodule": {
+          "file": "src/WaterBody/FlowModule.f90",
+          "group": "src/WaterBody"
+        },
+        "globalsmodule": {
+          "file": "src/GlobalsModule.f90",
+          "group": "src/GlobalsModule.f90"
+        },
+        "gridcellmodule": {
+          "file": "src/GridCell/GridCellModule.f90",
+          "group": "src/GridCell"
+        },
+        "loggermodule": {
+          "file": "src/Logger/LoggerModule.f90",
+          "group": "src/Logger"
+        },
+        "main": {
+          "file": "src/main.f90",
+          "group": "src/main.f90"
+        },
+        "mo_netcdf": {
+          "file": "vendor/mo_netcdf/src/mo_netcdf.f90",
+          "group": "vendor/mo_netcdf"
+        },
+        "mo_types": {
+          "file": "vendor/mo_netcdf/src/mo_types.f90",
+          "group": "vendor/mo_netcdf"
+        },
+        "mod_strptime": {
+          "file": "src/mod_strptime.f90",
+          "group": "src/mod_strptime.f90"
+        },
+        "netcdfaggregatedoutputmodule": {
+          "file": "src/Data/NetCDFAggregatedOutputModule.f90",
+          "group": "src/Data"
+        },
+        "netcdfoutputmodule": {
+          "file": "src/Data/NetCDFOutputModule.f90",
+          "group": "src/Data"
+        },
+        "pointsourcemodule": {
+          "file": "src/Source/PointSourceModule.f90",
+          "group": "src/Source"
+        },
+        "reachmodule": {
+          "file": "src/WaterBody/ReachModule.f90",
+          "group": "src/WaterBody"
+        },
+        "reactormodule": {
+          "file": "src/Reactor/ReactorModule.f90",
+          "group": "src/Reactor"
+        },
+        "resultmodule": {
+          "file": "vendor/feh/src/Result.f90",
+          "group": "vendor/feh"
+        },
+        "riverreachmodule": {
+          "file": "src/WaterBody/RiverReachModule.f90",
+          "group": "src/WaterBody"
+        },
+        "soillayermodule": {
+          "file": "src/Soil/SoilLayerModule.f90",
+          "group": "src/Soil"
+        },
+        "soilprofilemodule": {
+          "file": "src/Soil/SoilProfileModule.f90",
+          "group": "src/Soil"
+        },
+        "sparskit": {
+          "file": "vendor/spoof/src/sparskit.f90",
+          "group": "vendor/spoof"
+        },
+        "utilmodule": {
+          "file": "src/UtilModule.f90",
+          "group": "src/UtilModule.f90"
+        },
+        "versionmodule": {
+          "file": "src/VersionModule.f90",
+          "group": "src/VersionModule.f90"
+        },
+        "waterbodymodule": {
+          "file": "src/WaterBody/WaterBodyModule.f90",
+          "group": "src/WaterBody"
+        }
+      },
+      "scopes": {
+        "full": {
+          "cyclic_components": [],
+          "groups": {
+            "src/BedSediment": {
+              "in_degree_sum": 4,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.003661193594034276,
+              "nodes": [
+                "abstractbedsedimentmodule",
+                "bedsedimentmodule"
+              ],
+              "out_degree_sum": 12
+            },
+            "src/BedSedimentLayer": {
+              "in_degree_sum": 7,
+              "internal_edge_count": 3,
+              "modularity_contribution": 0.011859571887423913,
+              "nodes": [
+                "abstractbedsedimentlayermodule",
+                "bedsedimentlayermodule",
+                "finesedimentmodule"
+              ],
+              "out_degree_sum": 15
+            },
+            "src/Biota": {
+              "in_degree_sum": 6,
+              "internal_edge_count": 2,
+              "modularity_contribution": 0.007861458637496911,
+              "nodes": [
+                "abstractbiotamodule",
+                "biotasoilmodule",
+                "biotawatermodule"
+              ],
+              "out_degree_sum": 12
+            },
+            "src/CheckpointModule.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0002246131039284832,
+              "nodes": [
+                "checkpointmodule"
+              ],
+              "out_degree_sum": 10
+            },
+            "src/Data": {
+              "in_degree_sum": 22,
+              "internal_edge_count": 6,
+              "modularity_contribution": 0.010646661126210103,
+              "nodes": [
+                "datainputmodule",
+                "dataoutputmodule",
+                "netcdfaggregatedoutputmodule",
+                "netcdfoutputmodule"
+              ],
+              "out_degree_sum": 36
+            },
+            "src/DefaultsModule.f90": {
+              "in_degree_sum": 6,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "defaultsmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/Environment": {
+              "in_degree_sum": 10,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.0018193661418207138,
+              "nodes": [
+                "abstractenvironmentmodule",
+                "environmentmodule"
+              ],
+              "out_degree_sum": 13
+            },
+            "src/GlobalsModule.f90": {
+              "in_degree_sum": 34,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0061094764268547425,
+              "nodes": [
+                "globalsmodule"
+              ],
+              "out_degree_sum": 8
+            },
+            "src/GridCell": {
+              "in_degree_sum": 6,
+              "internal_edge_count": 3,
+              "modularity_contribution": 0.011792187956245367,
+              "nodes": [
+                "abstractgridcellmodule",
+                "cropmodule",
+                "gridcellmodule"
+              ],
+              "out_degree_sum": 18
+            },
+            "src/Logger": {
+              "in_degree_sum": 7,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0004716875182498147,
+              "nodes": [
+                "loggermodule"
+              ],
+              "out_degree_sum": 3
+            },
+            "src/Reactor": {
+              "in_degree_sum": 4,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.004110419801891242,
+              "nodes": [
+                "abstractreactormodule",
+                "reactormodule"
+              ],
+              "out_degree_sum": 7
+            },
+            "src/Soil": {
+              "in_degree_sum": 6,
+              "internal_edge_count": 4,
+              "modularity_contribution": 0.016127220862065094,
+              "nodes": [
+                "abstractsoillayermodule",
+                "abstractsoilprofilemodule",
+                "soillayermodule",
+                "soilprofilemodule"
+              ],
+              "out_degree_sum": 21
+            },
+            "src/Source": {
+              "in_degree_sum": 3,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.00040430358707126975,
+              "nodes": [
+                "diffusesourcemodule",
+                "pointsourcemodule"
+              ],
+              "out_degree_sum": 6
+            },
+            "src/UtilModule.f90": {
+              "in_degree_sum": 17,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0003818422766784214,
+              "nodes": [
+                "utilmodule"
+              ],
+              "out_degree_sum": 1
+            },
+            "src/VersionModule.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "versionmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/WaterBody": {
+              "in_degree_sum": 13,
+              "internal_edge_count": 4,
+              "modularity_contribution": 0.009905437883246108,
+              "nodes": [
+                "estuaryreachmodule",
+                "flowmodule",
+                "reachmodule",
+                "riverreachmodule",
+                "waterbodymodule"
+              ],
+              "out_degree_sum": 31
+            },
+            "src/main.f90": {
+              "in_degree_sum": 0,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "main"
+              ],
+              "out_degree_sum": 12
+            },
+            "src/mod_strptime.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": -2.246131039284832e-05,
+              "nodes": [
+                "mod_strptime"
+              ],
+              "out_degree_sum": 1
+            },
+            "vendor/datetime-fortran": {
+              "in_degree_sum": 11,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "datetime_module"
+              ],
+              "out_degree_sum": 0
+            },
+            "vendor/feh": {
+              "in_degree_sum": 40,
+              "internal_edge_count": 4,
+              "modularity_contribution": 0.01536353630870825,
+              "nodes": [
+                "errorcriteriamodule",
+                "errorhandlermodule",
+                "errorinstancemodule",
+                "resultmodule"
+              ],
+              "out_degree_sum": 4
+            },
+            "vendor/mo_netcdf": {
+              "in_degree_sum": 12,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.004469800768176815,
+              "nodes": [
+                "mo_netcdf",
+                "mo_types"
+              ],
+              "out_degree_sum": 1
+            },
+            "vendor/spoof": {
+              "in_degree_sum": 0,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "sparskit"
+              ],
+              "out_degree_sum": 0
+            }
+          },
+          "is_acyclic": true,
+          "isolated_nodes": [
+            "sparskit"
+          ],
+          "metrics": {
+            "acd": 17.434782608695652,
+            "ccd": 802,
+            "cross_group_edge_count": 181,
+            "cross_group_edge_fraction": 0.8578199052132701,
+            "cyclic_component_count": 0,
+            "cyclic_node_count": 0,
+            "direct_edge_density": 0.10193236714975845,
+            "directed_modularity": 0.0900024707441432,
+            "edge_count": 211,
+            "group_count": 22,
+            "isolated_node_count": 1,
+            "largest_component_size": 1,
+            "node_count": 46,
+            "propagation_cost_percent": 37.901701323251416
+          },
+          "nodes": {
+            "abstractbedsedimentlayermodule": {
+              "component_dependency": 14,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 2,
+              "file": "src/BedSedimentLayer/AbstractBedSedimentLayerModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 13,
+              "transitive_dependent_count": 16
+            },
+            "abstractbedsedimentmodule": {
+              "component_dependency": 15,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 2,
+              "file": "src/BedSediment/AbstractBedSedimentModule.f90",
+              "group": "src/BedSediment",
+              "transitive_dependency_count": 14,
+              "transitive_dependent_count": 14
+            },
+            "abstractbiotamodule": {
+              "component_dependency": 12,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/AbstractBiotaModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 11,
+              "transitive_dependent_count": 19
+            },
+            "abstractenvironmentmodule": {
+              "component_dependency": 31,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 5,
+              "file": "src/Environment/AbstractEnvironmentModule.f90",
+              "group": "src/Environment",
+              "transitive_dependency_count": 30,
+              "transitive_dependent_count": 6
+            },
+            "abstractgridcellmodule": {
+              "component_dependency": 30,
+              "direct_dependency_count": 7,
+              "direct_dependent_count": 3,
+              "file": "src/GridCell/AbstractGridCellModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 29,
+              "transitive_dependent_count": 8
+            },
+            "abstractreactormodule": {
+              "component_dependency": 12,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/Reactor/AbstractReactorModule.f90",
+              "group": "src/Reactor",
+              "transitive_dependency_count": 11,
+              "transitive_dependent_count": 14
+            },
+            "abstractsoillayermodule": {
+              "component_dependency": 17,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 2,
+              "file": "src/Soil/AbstractSoilLayerModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 16,
+              "transitive_dependent_count": 12
+            },
+            "abstractsoilprofilemodule": {
+              "component_dependency": 18,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 2,
+              "file": "src/Soil/AbstractSoilProfileModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 17,
+              "transitive_dependent_count": 10
+            },
+            "bedsedimentlayermodule": {
+              "component_dependency": 17,
+              "direct_dependency_count": 7,
+              "direct_dependent_count": 1,
+              "file": "src/BedSedimentLayer/BedSedimentLayerModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 16,
+              "transitive_dependent_count": 10
+            },
+            "bedsedimentmodule": {
+              "component_dependency": 19,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 2,
+              "file": "src/BedSediment/BedSedimentModule.f90",
+              "group": "src/BedSediment",
+              "transitive_dependency_count": 18,
+              "transitive_dependent_count": 9
+            },
+            "biotasoilmodule": {
+              "component_dependency": 16,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/BiotaSoilModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 15,
+              "transitive_dependent_count": 13
+            },
+            "biotawatermodule": {
+              "component_dependency": 16,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/BiotaWaterModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 15,
+              "transitive_dependent_count": 13
+            },
+            "checkpointmodule": {
+              "component_dependency": 41,
+              "direct_dependency_count": 10,
+              "direct_dependent_count": 1,
+              "file": "src/CheckpointModule.f90",
+              "group": "src/CheckpointModule.f90",
+              "transitive_dependency_count": 40,
+              "transitive_dependent_count": 1
+            },
+            "cropmodule": {
+              "component_dependency": 12,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 2,
+              "file": "src/GridCell/CropModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 11,
+              "transitive_dependent_count": 9
+            },
+            "datainputmodule": {
+              "component_dependency": 14,
+              "direct_dependency_count": 7,
+              "direct_dependent_count": 18,
+              "file": "src/Data/DataInputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 13,
+              "transitive_dependent_count": 24
+            },
+            "dataoutputmodule": {
+              "component_dependency": 43,
+              "direct_dependency_count": 14,
+              "direct_dependent_count": 1,
+              "file": "src/Data/DataOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 42,
+              "transitive_dependent_count": 1
+            },
+            "datetime_module": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 11,
+              "file": "vendor/datetime-fortran/src/datetime_module.f90",
+              "group": "vendor/datetime-fortran",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 36
+            },
+            "defaultsmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 6,
+              "file": "src/DefaultsModule.f90",
+              "group": "src/DefaultsModule.f90",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 35
+            },
+            "diffusesourcemodule": {
+              "component_dependency": 15,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 2,
+              "file": "src/Source/DiffuseSourceModule.f90",
+              "group": "src/Source",
+              "transitive_dependency_count": 14,
+              "transitive_dependent_count": 13
+            },
+            "environmentmodule": {
+              "component_dependency": 40,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 5,
+              "file": "src/Environment/EnvironmentModule.f90",
+              "group": "src/Environment",
+              "transitive_dependency_count": 39,
+              "transitive_dependent_count": 5
+            },
+            "errorcriteriamodule": {
+              "component_dependency": 3,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 1,
+              "file": "vendor/feh/src/ErrorCriteria.f90",
+              "group": "vendor/feh",
+              "transitive_dependency_count": 2,
+              "transitive_dependent_count": 35
+            },
+            "errorhandlermodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 1,
+              "file": "vendor/feh/src/ErrorHandler.f90",
+              "group": "vendor/feh",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 36
+            },
+            "errorinstancemodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 12,
+              "file": "vendor/feh/src/ErrorInstance.f90",
+              "group": "vendor/feh",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 38
+            },
+            "estuaryreachmodule": {
+              "component_dependency": 29,
+              "direct_dependency_count": 7,
+              "direct_dependent_count": 3,
+              "file": "src/WaterBody/EstuaryReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 28,
+              "transitive_dependent_count": 7
+            },
+            "finesedimentmodule": {
+              "component_dependency": 13,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 4,
+              "file": "src/BedSedimentLayer/FineSedimentModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 12,
+              "transitive_dependent_count": 17
+            },
+            "flowmodule": {
+              "component_dependency": 12,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 2,
+              "file": "src/WaterBody/FlowModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 11,
+              "transitive_dependent_count": 13
+            },
+            "globalsmodule": {
+              "component_dependency": 11,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 34,
+              "file": "src/GlobalsModule.f90",
+              "group": "src/GlobalsModule.f90",
+              "transitive_dependency_count": 10,
+              "transitive_dependent_count": 34
+            },
+            "gridcellmodule": {
+              "component_dependency": 38,
+              "direct_dependency_count": 10,
+              "direct_dependent_count": 1,
+              "file": "src/GridCell/GridCellModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 37,
+              "transitive_dependent_count": 6
+            },
+            "loggermodule": {
+              "component_dependency": 13,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 7,
+              "file": "src/Logger/LoggerModule.f90",
+              "group": "src/Logger",
+              "transitive_dependency_count": 12,
+              "transitive_dependent_count": 25
+            },
+            "main": {
+              "component_dependency": 45,
+              "direct_dependency_count": 12,
+              "direct_dependent_count": 0,
+              "file": "src/main.f90",
+              "group": "src/main.f90",
+              "transitive_dependency_count": 44,
+              "transitive_dependent_count": 0
+            },
+            "mo_netcdf": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 11,
+              "file": "vendor/mo_netcdf/src/mo_netcdf.f90",
+              "group": "vendor/mo_netcdf",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 35
+            },
+            "mo_types": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 1,
+              "file": "vendor/mo_netcdf/src/mo_types.f90",
+              "group": "vendor/mo_netcdf",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 36
+            },
+            "mod_strptime": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 1,
+              "file": "src/mod_strptime.f90",
+              "group": "src/mod_strptime.f90",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 35
+            },
+            "netcdfaggregatedoutputmodule": {
+              "component_dependency": 42,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 1,
+              "file": "src/Data/NetCDFAggregatedOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 41,
+              "transitive_dependent_count": 2
+            },
+            "netcdfoutputmodule": {
+              "component_dependency": 41,
+              "direct_dependency_count": 7,
+              "direct_dependent_count": 2,
+              "file": "src/Data/NetCDFOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 40,
+              "transitive_dependent_count": 3
+            },
+            "pointsourcemodule": {
+              "component_dependency": 15,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 1,
+              "file": "src/Source/PointSourceModule.f90",
+              "group": "src/Source",
+              "transitive_dependency_count": 14,
+              "transitive_dependent_count": 13
+            },
+            "reachmodule": {
+              "component_dependency": 25,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 4,
+              "file": "src/WaterBody/ReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 24,
+              "transitive_dependent_count": 11
+            },
+            "reactormodule": {
+              "component_dependency": 16,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 2,
+              "file": "src/Reactor/ReactorModule.f90",
+              "group": "src/Reactor",
+              "transitive_dependency_count": 15,
+              "transitive_dependent_count": 9
+            },
+            "resultmodule": {
+              "component_dependency": 2,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 26,
+              "file": "vendor/feh/src/Result.f90",
+              "group": "vendor/feh",
+              "transitive_dependency_count": 1,
+              "transitive_dependent_count": 35
+            },
+            "riverreachmodule": {
+              "component_dependency": 29,
+              "direct_dependency_count": 9,
+              "direct_dependent_count": 3,
+              "file": "src/WaterBody/RiverReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 28,
+              "transitive_dependent_count": 7
+            },
+            "soillayermodule": {
+              "component_dependency": 18,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 1,
+              "file": "src/Soil/SoilLayerModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 17,
+              "transitive_dependent_count": 8
+            },
+            "soilprofilemodule": {
+              "component_dependency": 20,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 1,
+              "file": "src/Soil/SoilProfileModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 19,
+              "transitive_dependent_count": 7
+            },
+            "sparskit": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 0,
+              "file": "vendor/spoof/src/sparskit.f90",
+              "group": "vendor/spoof",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 0
+            },
+            "utilmodule": {
+              "component_dependency": 12,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 17,
+              "file": "src/UtilModule.f90",
+              "group": "src/UtilModule.f90",
+              "transitive_dependency_count": 11,
+              "transitive_dependent_count": 29
+            },
+            "versionmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 1,
+              "file": "src/VersionModule.f90",
+              "group": "src/VersionModule.f90",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 35
+            },
+            "waterbodymodule": {
+              "component_dependency": 24,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 1,
+              "file": "src/WaterBody/WaterBodyModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 23,
+              "transitive_dependent_count": 12
+            }
+          }
+        },
+        "src": {
+          "cyclic_components": [],
+          "groups": {
+            "src/BedSediment": {
+              "in_degree_sum": 4,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.005295836376917458,
+              "nodes": [
+                "abstractbedsedimentmodule",
+                "bedsedimentmodule"
+              ],
+              "out_degree_sum": 8
+            },
+            "src/BedSedimentLayer": {
+              "in_degree_sum": 7,
+              "internal_edge_count": 3,
+              "modularity_contribution": 0.01739408327246165,
+              "nodes": [
+                "abstractbedsedimentlayermodule",
+                "bedsedimentlayermodule",
+                "finesedimentmodule"
+              ],
+              "out_degree_sum": 9
+            },
+            "src/Biota": {
+              "in_degree_sum": 6,
+              "internal_edge_count": 2,
+              "modularity_contribution": 0.011596055514974434,
+              "nodes": [
+                "abstractbiotamodule",
+                "biotasoilmodule",
+                "biotawatermodule"
+              ],
+              "out_degree_sum": 7
+            },
+            "src/CheckpointModule.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0003652300949598247,
+              "nodes": [
+                "checkpointmodule"
+              ],
+              "out_degree_sum": 8
+            },
+            "src/Data": {
+              "in_degree_sum": 22,
+              "internal_edge_count": 6,
+              "modularity_contribution": 0.013422205989773558,
+              "nodes": [
+                "datainputmodule",
+                "dataoutputmodule",
+                "netcdfaggregatedoutputmodule",
+                "netcdfoutputmodule"
+              ],
+              "out_degree_sum": 27
+            },
+            "src/DefaultsModule.f90": {
+              "in_degree_sum": 6,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "defaultsmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/Environment": {
+              "in_degree_sum": 10,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.00310445580715851,
+              "nodes": [
+                "abstractenvironmentmodule",
+                "environmentmodule"
+              ],
+              "out_degree_sum": 8
+            },
+            "src/GlobalsModule.f90": {
+              "in_degree_sum": 34,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.004656683710737765,
+              "nodes": [
+                "globalsmodule"
+              ],
+              "out_degree_sum": 3
+            },
+            "src/GridCell": {
+              "in_degree_sum": 6,
+              "internal_edge_count": 3,
+              "modularity_contribution": 0.01616143170197224,
+              "nodes": [
+                "abstractgridcellmodule",
+                "cropmodule",
+                "gridcellmodule"
+              ],
+              "out_degree_sum": 15
+            },
+            "src/Logger": {
+              "in_degree_sum": 7,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0006391526661796933,
+              "nodes": [
+                "loggermodule"
+              ],
+              "out_degree_sum": 2
+            },
+            "src/Reactor": {
+              "in_degree_sum": 4,
+              "internal_edge_count": 1,
+              "modularity_contribution": 0.005843681519357195,
+              "nodes": [
+                "abstractreactormodule",
+                "reactormodule"
+              ],
+              "out_degree_sum": 5
+            },
+            "src/Soil": {
+              "in_degree_sum": 6,
+              "internal_edge_count": 4,
+              "modularity_contribution": 0.023192111029948868,
+              "nodes": [
+                "abstractsoillayermodule",
+                "abstractsoilprofilemodule",
+                "soillayermodule",
+                "soilprofilemodule"
+              ],
+              "out_degree_sum": 14
+            },
+            "src/Source": {
+              "in_degree_sum": 3,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.000547845142439737,
+              "nodes": [
+                "diffusesourcemodule",
+                "pointsourcemodule"
+              ],
+              "out_degree_sum": 4
+            },
+            "src/UtilModule.f90": {
+              "in_degree_sum": 17,
+              "internal_edge_count": 0,
+              "modularity_contribution": -0.0007761139517896275,
+              "nodes": [
+                "utilmodule"
+              ],
+              "out_degree_sum": 1
+            },
+            "src/VersionModule.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "versionmodule"
+              ],
+              "out_degree_sum": 0
+            },
+            "src/WaterBody": {
+              "in_degree_sum": 13,
+              "internal_edge_count": 4,
+              "modularity_contribution": 0.011002556610664719,
+              "nodes": [
+                "estuaryreachmodule",
+                "flowmodule",
+                "reachmodule",
+                "riverreachmodule",
+                "waterbodymodule"
+              ],
+              "out_degree_sum": 27
+            },
+            "src/main.f90": {
+              "in_degree_sum": 0,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "main"
+              ],
+              "out_degree_sum": 10
+            },
+            "src/mod_strptime.f90": {
+              "in_degree_sum": 1,
+              "internal_edge_count": 0,
+              "modularity_contribution": 0.0,
+              "nodes": [
+                "mod_strptime"
+              ],
+              "out_degree_sum": 0
+            }
+          },
+          "is_acyclic": true,
+          "isolated_nodes": [],
+          "metrics": {
+            "acd": 14.289473684210526,
+            "ccd": 543,
+            "cross_group_edge_count": 123,
+            "cross_group_edge_fraction": 0.831081081081081,
+            "cyclic_component_count": 0,
+            "cyclic_node_count": 0,
+            "direct_edge_density": 0.10526315789473684,
+            "directed_modularity": 0.10002739225712198,
+            "edge_count": 148,
+            "group_count": 18,
+            "isolated_node_count": 0,
+            "largest_component_size": 1,
+            "node_count": 38,
+            "propagation_cost_percent": 37.60387811634349
+          },
+          "nodes": {
+            "abstractbedsedimentlayermodule": {
+              "component_dependency": 7,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/BedSedimentLayer/AbstractBedSedimentLayerModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 6,
+              "transitive_dependent_count": 16
+            },
+            "abstractbedsedimentmodule": {
+              "component_dependency": 8,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 2,
+              "file": "src/BedSediment/AbstractBedSedimentModule.f90",
+              "group": "src/BedSediment",
+              "transitive_dependency_count": 7,
+              "transitive_dependent_count": 14
+            },
+            "abstractbiotamodule": {
+              "component_dependency": 5,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/AbstractBiotaModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 4,
+              "transitive_dependent_count": 19
+            },
+            "abstractenvironmentmodule": {
+              "component_dependency": 24,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 5,
+              "file": "src/Environment/AbstractEnvironmentModule.f90",
+              "group": "src/Environment",
+              "transitive_dependency_count": 23,
+              "transitive_dependent_count": 6
+            },
+            "abstractgridcellmodule": {
+              "component_dependency": 23,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 3,
+              "file": "src/GridCell/AbstractGridCellModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 22,
+              "transitive_dependent_count": 8
+            },
+            "abstractreactormodule": {
+              "component_dependency": 5,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 2,
+              "file": "src/Reactor/AbstractReactorModule.f90",
+              "group": "src/Reactor",
+              "transitive_dependency_count": 4,
+              "transitive_dependent_count": 14
+            },
+            "abstractsoillayermodule": {
+              "component_dependency": 10,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/Soil/AbstractSoilLayerModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 9,
+              "transitive_dependent_count": 12
+            },
+            "abstractsoilprofilemodule": {
+              "component_dependency": 11,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/Soil/AbstractSoilProfileModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 10,
+              "transitive_dependent_count": 10
+            },
+            "bedsedimentlayermodule": {
+              "component_dependency": 10,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 1,
+              "file": "src/BedSedimentLayer/BedSedimentLayerModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 9,
+              "transitive_dependent_count": 10
+            },
+            "bedsedimentmodule": {
+              "component_dependency": 12,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 2,
+              "file": "src/BedSediment/BedSedimentModule.f90",
+              "group": "src/BedSediment",
+              "transitive_dependency_count": 11,
+              "transitive_dependent_count": 9
+            },
+            "biotasoilmodule": {
+              "component_dependency": 9,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/BiotaSoilModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 8,
+              "transitive_dependent_count": 13
+            },
+            "biotawatermodule": {
+              "component_dependency": 9,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 2,
+              "file": "src/Biota/BiotaWaterModule.f90",
+              "group": "src/Biota",
+              "transitive_dependency_count": 8,
+              "transitive_dependent_count": 13
+            },
+            "checkpointmodule": {
+              "component_dependency": 34,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 1,
+              "file": "src/CheckpointModule.f90",
+              "group": "src/CheckpointModule.f90",
+              "transitive_dependency_count": 33,
+              "transitive_dependent_count": 1
+            },
+            "cropmodule": {
+              "component_dependency": 5,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 2,
+              "file": "src/GridCell/CropModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 4,
+              "transitive_dependent_count": 9
+            },
+            "datainputmodule": {
+              "component_dependency": 7,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 18,
+              "file": "src/Data/DataInputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 6,
+              "transitive_dependent_count": 24
+            },
+            "dataoutputmodule": {
+              "component_dependency": 36,
+              "direct_dependency_count": 12,
+              "direct_dependent_count": 1,
+              "file": "src/Data/DataOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 35,
+              "transitive_dependent_count": 1
+            },
+            "defaultsmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 6,
+              "file": "src/DefaultsModule.f90",
+              "group": "src/DefaultsModule.f90",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 35
+            },
+            "diffusesourcemodule": {
+              "component_dependency": 8,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 2,
+              "file": "src/Source/DiffuseSourceModule.f90",
+              "group": "src/Source",
+              "transitive_dependency_count": 7,
+              "transitive_dependent_count": 13
+            },
+            "environmentmodule": {
+              "component_dependency": 33,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 5,
+              "file": "src/Environment/EnvironmentModule.f90",
+              "group": "src/Environment",
+              "transitive_dependency_count": 32,
+              "transitive_dependent_count": 5
+            },
+            "estuaryreachmodule": {
+              "component_dependency": 22,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 3,
+              "file": "src/WaterBody/EstuaryReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 21,
+              "transitive_dependent_count": 7
+            },
+            "finesedimentmodule": {
+              "component_dependency": 6,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 4,
+              "file": "src/BedSedimentLayer/FineSedimentModule.f90",
+              "group": "src/BedSedimentLayer",
+              "transitive_dependency_count": 5,
+              "transitive_dependent_count": 17
+            },
+            "flowmodule": {
+              "component_dependency": 5,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 2,
+              "file": "src/WaterBody/FlowModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 4,
+              "transitive_dependent_count": 13
+            },
+            "globalsmodule": {
+              "component_dependency": 4,
+              "direct_dependency_count": 3,
+              "direct_dependent_count": 34,
+              "file": "src/GlobalsModule.f90",
+              "group": "src/GlobalsModule.f90",
+              "transitive_dependency_count": 3,
+              "transitive_dependent_count": 34
+            },
+            "gridcellmodule": {
+              "component_dependency": 31,
+              "direct_dependency_count": 9,
+              "direct_dependent_count": 1,
+              "file": "src/GridCell/GridCellModule.f90",
+              "group": "src/GridCell",
+              "transitive_dependency_count": 30,
+              "transitive_dependent_count": 6
+            },
+            "loggermodule": {
+              "component_dependency": 6,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 7,
+              "file": "src/Logger/LoggerModule.f90",
+              "group": "src/Logger",
+              "transitive_dependency_count": 5,
+              "transitive_dependent_count": 25
+            },
+            "main": {
+              "component_dependency": 38,
+              "direct_dependency_count": 10,
+              "direct_dependent_count": 0,
+              "file": "src/main.f90",
+              "group": "src/main.f90",
+              "transitive_dependency_count": 37,
+              "transitive_dependent_count": 0
+            },
+            "mod_strptime": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 1,
+              "file": "src/mod_strptime.f90",
+              "group": "src/mod_strptime.f90",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 35
+            },
+            "netcdfaggregatedoutputmodule": {
+              "component_dependency": 35,
+              "direct_dependency_count": 6,
+              "direct_dependent_count": 1,
+              "file": "src/Data/NetCDFAggregatedOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 34,
+              "transitive_dependent_count": 2
+            },
+            "netcdfoutputmodule": {
+              "component_dependency": 34,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 2,
+              "file": "src/Data/NetCDFOutputModule.f90",
+              "group": "src/Data",
+              "transitive_dependency_count": 33,
+              "transitive_dependent_count": 3
+            },
+            "pointsourcemodule": {
+              "component_dependency": 8,
+              "direct_dependency_count": 2,
+              "direct_dependent_count": 1,
+              "file": "src/Source/PointSourceModule.f90",
+              "group": "src/Source",
+              "transitive_dependency_count": 7,
+              "transitive_dependent_count": 13
+            },
+            "reachmodule": {
+              "component_dependency": 18,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 4,
+              "file": "src/WaterBody/ReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 17,
+              "transitive_dependent_count": 11
+            },
+            "reactormodule": {
+              "component_dependency": 9,
+              "direct_dependency_count": 4,
+              "direct_dependent_count": 2,
+              "file": "src/Reactor/ReactorModule.f90",
+              "group": "src/Reactor",
+              "transitive_dependency_count": 8,
+              "transitive_dependent_count": 9
+            },
+            "riverreachmodule": {
+              "component_dependency": 22,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 3,
+              "file": "src/WaterBody/RiverReachModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 21,
+              "transitive_dependent_count": 7
+            },
+            "soillayermodule": {
+              "component_dependency": 11,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 1,
+              "file": "src/Soil/SoilLayerModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 10,
+              "transitive_dependent_count": 8
+            },
+            "soilprofilemodule": {
+              "component_dependency": 13,
+              "direct_dependency_count": 5,
+              "direct_dependent_count": 1,
+              "file": "src/Soil/SoilProfileModule.f90",
+              "group": "src/Soil",
+              "transitive_dependency_count": 12,
+              "transitive_dependent_count": 7
+            },
+            "utilmodule": {
+              "component_dependency": 5,
+              "direct_dependency_count": 1,
+              "direct_dependent_count": 17,
+              "file": "src/UtilModule.f90",
+              "group": "src/UtilModule.f90",
+              "transitive_dependency_count": 4,
+              "transitive_dependent_count": 29
+            },
+            "versionmodule": {
+              "component_dependency": 1,
+              "direct_dependency_count": 0,
+              "direct_dependent_count": 1,
+              "file": "src/VersionModule.f90",
+              "group": "src/VersionModule.f90",
+              "transitive_dependency_count": 0,
+              "transitive_dependent_count": 35
+            },
+            "waterbodymodule": {
+              "component_dependency": 17,
+              "direct_dependency_count": 8,
+              "direct_dependent_count": 1,
+              "file": "src/WaterBody/WaterBodyModule.f90",
+              "group": "src/WaterBody",
+              "transitive_dependency_count": 16,
+              "transitive_dependent_count": 12
+            }
+          }
+        }
+      }
+    }
+  }
+}
